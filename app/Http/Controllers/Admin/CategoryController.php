@@ -6,37 +6,41 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Category;
 use Illuminate\Http\Request;
-use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rule;
 
 class CategoryController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
     public function index()
     {
-        $categories = Category::withCount('tickets')->latest()->get();
+        $categories = Category::latest()->get();
         return view('admin.categories.index', compact('categories'));
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(Request $request)
     {
-        $validated = $request->validate([
+        $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
-            'code' => 'required|string|max:10|unique:categories,code',
+            'code' => 'required|string|max:50|unique:categories',
             'description' => 'nullable|string',
             'status' => 'required|in:active,inactive',
         ]);
 
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation error',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
         try {
-            Category::create($validated);
+            $category = Category::create($request->all());
 
             return response()->json([
                 'success' => true,
-                'message' => 'Category created successfully!'
+                'message' => 'Category created successfully!',
+                'data' => $category
             ]);
         } catch (\Exception $e) {
             return response()->json([
@@ -46,33 +50,30 @@ class CategoryController extends Controller
         }
     }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(Category $category)
-    {
-        $category->load('tickets');
-        return response()->json($category);
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
     public function update(Request $request, Category $category)
     {
-        $validated = $request->validate([
+        $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
-            'code' => 'required|string|max:10|unique:categories,code,' . $category->id,
+            'code' => ['required', 'string', 'max:50', Rule::unique('categories')->ignore($category->id)],
             'description' => 'nullable|string',
             'status' => 'required|in:active,inactive',
         ]);
 
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation error',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
         try {
-            $category->update($validated);
+            $category->update($request->all());
 
             return response()->json([
                 'success' => true,
-                'message' => 'Category updated successfully!'
+                'message' => 'Category updated successfully!',
+                'data' => $category
             ]);
         } catch (\Exception $e) {
             return response()->json([
@@ -82,20 +83,9 @@ class CategoryController extends Controller
         }
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
     public function destroy(Category $category)
     {
         try {
-            // Check if category has tickets
-            if ($category->tickets()->count() > 0) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Cannot delete category with existing tickets!'
-                ], 422);
-            }
-
             $category->delete();
 
             return response()->json([
@@ -110,20 +100,16 @@ class CategoryController extends Controller
         }
     }
 
-    /**
-     * Toggle category status
-     */
-    public function toggleStatus(Category $category)
+    public function toggleStatus(Request $request, Category $category)
     {
         try {
-            $category->update([
-                'status' => $category->status === 'active' ? 'inactive' : 'active'
-            ]);
+            $newStatus = $category->status === 'active' ? 'inactive' : 'active';
+            $category->update(['status' => $newStatus]);
 
             return response()->json([
                 'success' => true,
                 'message' => 'Category status updated successfully!',
-                'status' => $category->status
+                'data' => $category
             ]);
         } catch (\Exception $e) {
             return response()->json([

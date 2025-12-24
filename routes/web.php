@@ -1,10 +1,13 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Admin\AdminController;
+use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\LocationController;
+use App\Http\Controllers\Admin\PriorityController;
 use App\Http\Controllers\Admin\UserManagementController;
 
 // Public routes
@@ -19,6 +22,16 @@ Route::middleware('guest')->group(function () {
     Route::get('/register', [AuthController::class, 'showRegistrationForm'])->name('register');
     Route::post('/register', [AuthController::class, 'register']);
 });
+// Profile Routes
+// Profile Routes
+Route::middleware('auth')->group(function () {
+    Route::get('/profile', [ProfileController::class, 'index'])->name('profile.index');
+    Route::post('/profile/update', [ProfileController::class, 'updateProfile'])->name('profile.update');
+    Route::post('/profile/upload-picture', [ProfileController::class, 'uploadProfilePicture'])->name('profile.upload-picture');
+    Route::post('/profile/update-password', [ProfileController::class, 'updatePassword'])->name('profile.update-password');
+    Route::post('/profile/remove-picture', [ProfileController::class, 'removeProfilePicture'])->name('profile.remove-picture');
+});
+
 
 // Logout
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
@@ -50,6 +63,25 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'admin'])->group(fun
         Route::delete('/{location}', [LocationController::class, 'destroy'])->name('destroy');
         Route::post('/{location}/toggle-status', [LocationController::class, 'toggleStatus'])->name('toggle-status');
     });
+
+    // Category Management Routes
+    Route::prefix('categories')->name('categories.')->group(function () {
+        Route::get('/', [CategoryController::class, 'index'])->name('index');
+        Route::post('/', [CategoryController::class, 'store'])->name('store');
+        Route::put('/{category}', [CategoryController::class, 'update'])->name('update');
+        Route::delete('/{category}', [CategoryController::class, 'destroy'])->name('destroy');
+        Route::post('/{category}/toggle-status', [CategoryController::class, 'toggleStatus'])->name('toggle-status');
+    });
+
+    // Priority Management Routes
+    Route::prefix('priorities')->name('priorities.')->group(function () {
+        Route::get('/', [PriorityController::class, 'index'])->name('index');
+        Route::post('/', [PriorityController::class, 'store'])->name('store');
+        Route::put('/{priority}', [PriorityController::class, 'update'])->name('update');
+        Route::delete('/{priority}', [PriorityController::class, 'destroy'])->name('destroy');
+        Route::post('/{priority}/toggle-status', [PriorityController::class, 'toggleStatus'])->name('toggle-status');
+    });
+
 });
 
 // Captcha route

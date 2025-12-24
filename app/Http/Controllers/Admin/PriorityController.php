@@ -6,36 +6,40 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Priority;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
 
 class PriorityController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
     public function index()
     {
-        $priorities = Priority::withCount('tickets')->orderBy('level', 'asc')->get();
+        $priorities = Priority::orderByLevel()->get();
         return view('admin.priorities.index', compact('priorities'));
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(Request $request)
     {
-        $validated = $request->validate([
+        $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
-            'color' => 'required|string|max:7', // Hex color code
-            'level' => 'required|integer|min:1|unique:priorities,level',
+            'color' => 'required|string|max:7',
+            'level' => 'required|integer|min:1|max:10',
             'status' => 'required|in:active,inactive',
         ]);
 
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation error',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
         try {
-            Priority::create($validated);
+            $priority = Priority::create($request->all());
 
             return response()->json([
                 'success' => true,
-                'message' => 'Priority created successfully!'
+                'message' => 'Priority created successfully!',
+                'data' => $priority
             ]);
         } catch (\Exception $e) {
             return response()->json([
@@ -45,33 +49,30 @@ class PriorityController extends Controller
         }
     }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(Priority $priority)
-    {
-        $priority->load('tickets');
-        return response()->json($priority);
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
     public function update(Request $request, Priority $priority)
     {
-        $validated = $request->validate([
+        $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
             'color' => 'required|string|max:7',
-            'level' => 'required|integer|min:1|unique:priorities,level,' . $priority->id,
+            'level' => 'required|integer|min:1|max:10',
             'status' => 'required|in:active,inactive',
         ]);
 
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation error',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
         try {
-            $priority->update($validated);
+            $priority->update($request->all());
 
             return response()->json([
                 'success' => true,
-                'message' => 'Priority updated successfully!'
+                'message' => 'Priority updated successfully!',
+                'data' => $priority
             ]);
         } catch (\Exception $e) {
             return response()->json([
@@ -81,20 +82,9 @@ class PriorityController extends Controller
         }
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
     public function destroy(Priority $priority)
     {
         try {
-            // Check if priority has tickets
-            if ($priority->tickets()->count() > 0) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Cannot delete priority with existing tickets!'
-                ], 422);
-            }
-
             $priority->delete();
 
             return response()->json([
@@ -109,20 +99,16 @@ class PriorityController extends Controller
         }
     }
 
-    /**
-     * Toggle priority status
-     */
-    public function toggleStatus(Priority $priority)
+    public function toggleStatus(Request $request, Priority $priority)
     {
         try {
-            $priority->update([
-                'status' => $priority->status === 'active' ? 'inactive' : 'active'
-            ]);
+            $newStatus = $priority->status === 'active' ? 'inactive' : 'active';
+            $priority->update(['status' => $newStatus]);
 
             return response()->json([
                 'success' => true,
                 'message' => 'Priority status updated successfully!',
-                'status' => $priority->status
+                'data' => $priority
             ]);
         } catch (\Exception $e) {
             return response()->json([
