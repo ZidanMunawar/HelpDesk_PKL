@@ -28,18 +28,24 @@
                     <span class="nav-text">All Tickets</span>
                 </a>
                 <ul aria-expanded="false">
-                    <li><a href="#">
+                    <li><a href="{{ route('tickets.index') }}">
                             <i class="flaticon-381-list"></i> All Tickets
                         </a></li>
-                    <li><a href="#">
+                    <li><a href="{{ route('tickets.my-tickets') }}">
                             <i class="flaticon-381-file"></i> My Tickets
                         </a></li>
-                    @if (auth()->user()->role === 'admin')
-                        <li><a href="#">
+                    @if (auth()->user()->department_id || auth()->user()->role === 'admin')
+                        <li><a href="{{ route('tickets.assigned') }}">
                                 <i class="flaticon-381-user-7"></i> Assigned to Me
                             </a></li>
-                        <li><a href="#">
+                    @endif
+
+                    @if (auth()->user()->role === 'admin')
+                        <li><a href="{{ route('tickets.unassigned') }}">
                                 <i class="flaticon-381-folder-1"></i> Unassigned
+                                @if ($unassignedCount = App\Models\Ticket::whereNull('assigned_to')->whereNotIn('status', ['closed', 'cancelled'])->count())
+                                    <span class="badge badge-warning">{{ $unassignedCount }}</span>
+                                @endif
                             </a></li>
                     @endif
                 </ul>
@@ -61,6 +67,9 @@
                         <span class="nav-text">Master Data</span>
                     </a>
                     <ul aria-expanded="false">
+                        <li><a href="{{ route('admin.departments.index') }}">
+                                <i class="flaticon-381-layer-1"></i> Departments
+                            </a></li>
                         <li><a href="{{ route('admin.locations.index') }}">
                                 <i class="flaticon-381-location-1"></i> Locations
                             </a></li>

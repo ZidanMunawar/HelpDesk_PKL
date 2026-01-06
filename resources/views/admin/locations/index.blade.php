@@ -182,9 +182,39 @@
                 margin-top: 15px;
             }
         }
+
+        /* Badge colors for location types */
+        .badge-location-type {
+            font-size: 11px;
+            padding: 4px 8px;
+        }
+
+        .badge-area {
+            background-color: #6c757d;
+            color: white;
+        }
+
+        .badge-floor {
+            background-color: #17a2b8;
+            color: white;
+        }
+
+        .badge-room {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .badge-facility {
+            background-color: #fd7e14;
+            color: white;
+        }
+
+        .badge-department {
+            background-color: #6610f2;
+            color: white;
+        }
     </style>
 @endpush
-
 
 @section('content')
     <!-- Add Location Modal -->
@@ -198,23 +228,58 @@
                 <form id="addLocationForm">
                     @csrf
                     <div class="modal-body">
-                        <div class="form-group mb-3">
-                            <label class="text-black font-w500">Location Name <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" name="name"
-                                placeholder="e.g., Lobby, Room 101, Restaurant" required>
-                            <div class="invalid-feedback"></div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label class="text-black font-w500">Location Name <span
+                                            class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" name="name"
+                                        placeholder="e.g., Lobby, Room 101" required>
+                                    <div class="invalid-feedback"></div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label class="text-black font-w500">Location Type <span
+                                            class="text-danger">*</span></label>
+                                    <select class="form-control" name="location_type" id="add_location_type" required>
+                                        <option value="">Select Type</option>
+                                        <option value="area">Area</option>
+                                        <option value="floor">Floor</option>
+                                        <option value="room">Room</option>
+                                        <option value="facility">Facility</option>
+                                        <option value="department">Department</option>
+                                    </select>
+                                    <div class="invalid-feedback"></div>
+                                </div>
+                            </div>
                         </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label class="text-black font-w500">Floor Number</label>
+                                    <input type="text" class="form-control" name="floor_number" id="add_floor_number"
+                                        placeholder="e.g., 1, 2, L1, Basement">
+                                    <small class="text-muted">Optional - for all location types</small>
+                                    <div class="invalid-feedback"></div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label class="text-black font-w500">Status <span class="text-danger">*</span></label>
+                                    <select class="form-control" name="status" required>
+                                        <option value="active" selected>Active</option>
+                                        <option value="inactive">Inactive</option>
+                                    </select>
+                                    <div class="invalid-feedback"></div>
+                                </div>
+                            </div>
+                        </div>
+
                         <div class="form-group mb-3">
                             <label class="text-black font-w500">Description</label>
-                            <textarea class="form-control" name="description" rows="3" placeholder="Optional description"></textarea>
-                            <div class="invalid-feedback"></div>
-                        </div>
-                        <div class="form-group mb-3">
-                            <label class="text-black font-w500">Status <span class="text-danger">*</span></label>
-                            <select class="form-control" name="status" required>
-                                <option value="active" selected>Active</option>
-                                <option value="inactive">Inactive</option>
-                            </select>
+                            <textarea class="form-control" name="description" rows="2" placeholder="Optional description"></textarea>
                             <div class="invalid-feedback"></div>
                         </div>
                     </div>
@@ -244,22 +309,56 @@
                     @method('PUT')
                     <input type="hidden" name="location_id" id="edit_location_id">
                     <div class="modal-body">
-                        <div class="form-group mb-3">
-                            <label class="text-black font-w500">Location Name <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" name="name" id="edit_name" required>
-                            <div class="invalid-feedback"></div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label class="text-black font-w500">Location Name <span
+                                            class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" name="name" id="edit_name" required>
+                                    <div class="invalid-feedback"></div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label class="text-black font-w500">Location Type <span
+                                            class="text-danger">*</span></label>
+                                    <select class="form-control" name="location_type" id="edit_location_type" required>
+                                        <option value="area">Area</option>
+                                        <option value="floor">Floor</option>
+                                        <option value="room">Room</option>
+                                        <option value="facility">Facility</option>
+                                        <option value="department">Department</option>
+                                    </select>
+                                    <div class="invalid-feedback"></div>
+                                </div>
+                            </div>
                         </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label class="text-black font-w500">Floor Number</label>
+                                    <input type="text" class="form-control" name="floor_number"
+                                        id="edit_floor_number" placeholder="e.g., 1, 2, L1, Basement">
+                                    <small class="text-muted">Optional - for all location types</small>
+                                    <div class="invalid-feedback"></div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label class="text-black font-w500">Status <span class="text-danger">*</span></label>
+                                    <select class="form-control" name="status" id="edit_status" required>
+                                        <option value="active">Active</option>
+                                        <option value="inactive">Inactive</option>
+                                    </select>
+                                    <div class="invalid-feedback"></div>
+                                </div>
+                            </div>
+                        </div>
+
                         <div class="form-group mb-3">
                             <label class="text-black font-w500">Description</label>
-                            <textarea class="form-control" name="description" id="edit_description" rows="3"></textarea>
-                            <div class="invalid-feedback"></div>
-                        </div>
-                        <div class="form-group mb-3">
-                            <label class="text-black font-w500">Status <span class="text-danger">*</span></label>
-                            <select class="form-control" name="status" id="edit_status" required>
-                                <option value="active">Active</option>
-                                <option value="inactive">Inactive</option>
-                            </select>
+                            <textarea class="form-control" name="description" id="edit_description" rows="2"></textarea>
                             <div class="invalid-feedback"></div>
                         </div>
                     </div>
@@ -294,6 +393,8 @@
                                 <tr>
                                     <th>No</th>
                                     <th>Location Name</th>
+                                    <th>Type</th>
+                                    <th>Floor</th>
                                     <th>Description</th>
                                     <th>Status</th>
                                     <th>Created</th>
@@ -302,9 +403,31 @@
                             </thead>
                             <tbody>
                                 @foreach ($locations as $index => $location)
+                                    @php
+                                        $typeBadges = [
+                                            'area' => 'badge-area',
+                                            'floor' => 'badge-floor',
+                                            'room' => 'badge-room',
+                                            'facility' => 'badge-facility',
+                                            'department' => 'badge-department',
+                                        ];
+                                    @endphp
                                     <tr>
                                         <td>{{ $index + 1 }}</td>
                                         <td><strong>{{ $location->name }}</strong></td>
+                                        <td>
+                                            <span
+                                                class="badge badge-location-type {{ $typeBadges[$location->location_type] ?? 'badge-secondary' }}">
+                                                {{ ucfirst($location->location_type) }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            @if ($location->floor_number)
+                                                <span class="badge badge-light">{{ $location->floor_number }}</span>
+                                            @else
+                                                <span class="text-muted">-</span>
+                                            @endif
+                                        </td>
                                         <td>{{ $location->description ?? '-' }}</td>
                                         <td>
                                             <span
@@ -318,6 +441,8 @@
                                                 <button type="button"
                                                     class="btn btn-primary shadow btn-xs sharp me-1 edit-location"
                                                     data-id="{{ $location->id }}" data-name="{{ $location->name }}"
+                                                    data-location_type="{{ $location->location_type }}"
+                                                    data-floor_number="{{ $location->floor_number }}"
                                                     data-description="{{ $location->description }}"
                                                     data-status="{{ $location->status }}" title="Edit">
                                                     <i class="fa fa-pencil"></i>
@@ -363,7 +488,6 @@
             };
 
             // DataTable
-            // DataTable
             var table = $('#locationsTable').DataTable({
                 "pageLength": 10,
                 "ordering": true,
@@ -390,12 +514,12 @@
                 },
                 "columnDefs": [{
                         "orderable": false,
-                        "targets": [5]
-                    }, // Disable sorting for Action column
+                        "targets": [7] // Disable sorting for Action column
+                    },
                     {
                         "className": "text-center",
-                        "targets": [0, 3, 5]
-                    } // Center align specific columns
+                        "targets": [0, 2, 3, 5, 7] // Center align specific columns
+                    }
                 ],
                 "dom": '<"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6"f>>rtip',
                 "drawCallback": function() {
@@ -421,6 +545,7 @@
                     success: function(response) {
                         $('#addLocationModal').modal('hide');
                         $('#addLocationForm')[0].reset();
+                        $('.form-control').removeClass('is-invalid');
                         Swal.fire({
                             icon: 'success',
                             title: 'Success!',
@@ -433,6 +558,8 @@
                         submitBtn.prop('disabled', false).html(
                             '<i class="fa fa-save me-1"></i>Save');
                         if (xhr.status === 422) {
+                            $('.form-control').removeClass('is-invalid');
+                            $('.invalid-feedback').text('');
                             $.each(xhr.responseJSON.errors, function(key, value) {
                                 $('[name="' + key + '"]').addClass('is-invalid')
                                     .siblings('.invalid-feedback').text(value[0]);
@@ -446,8 +573,11 @@
             $(document).on('click', '.edit-location', function() {
                 $('#edit_location_id').val($(this).data('id'));
                 $('#edit_name').val($(this).data('name'));
+                $('#edit_location_type').val($(this).data('location_type'));
+                $('#edit_floor_number').val($(this).data('floor_number'));
                 $('#edit_description').val($(this).data('description'));
                 $('#edit_status').val($(this).data('status'));
+                $('.form-control').removeClass('is-invalid');
                 $('#editLocationModal').modal('show');
             });
 
@@ -467,6 +597,7 @@
                     contentType: false,
                     success: function(response) {
                         $('#editLocationModal').modal('hide');
+                        $('.form-control').removeClass('is-invalid');
                         Swal.fire({
                             icon: 'success',
                             title: 'Success!',
@@ -478,6 +609,14 @@
                     error: function(xhr) {
                         submitBtn.prop('disabled', false).html(
                             '<i class="fa fa-save me-1"></i>Update');
+                        if (xhr.status === 422) {
+                            $('.form-control').removeClass('is-invalid');
+                            $('.invalid-feedback').text('');
+                            $.each(xhr.responseJSON.errors, function(key, value) {
+                                $('[name="' + key + '"]').addClass('is-invalid')
+                                    .siblings('.invalid-feedback').text(value[0]);
+                            });
+                        }
                     }
                 });
             });
@@ -551,6 +690,13 @@
                         });
                     }
                 });
+            });
+
+            // Reset form when modal is closed
+            $('#addLocationModal, #editLocationModal').on('hidden.bs.modal', function() {
+                $(this).find('form')[0].reset();
+                $('.form-control').removeClass('is-invalid');
+                $('.invalid-feedback').text('');
             });
         });
     </script>

@@ -1,10 +1,10 @@
 <?php
-// app/Http/Controllers/Admin/UserManagementController.php
 
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Models\Department;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
@@ -17,8 +17,9 @@ class UserManagementController extends Controller
      */
     public function index()
     {
-        $users = User::latest()->get();
-        return view('admin.users.index', compact('users'));
+        $users = User::with('department')->latest()->get(); // ← TAMBAH with('department')
+        $departments = Department::active()->get(); // ← TAMBAH INI
+        return view('admin.users.index', compact('users', 'departments')); // ← TAMBAH departments
     }
 
     /**
@@ -33,6 +34,7 @@ class UserManagementController extends Controller
             'password' => 'required|string|min:8|confirmed',
             'role' => 'required|in:admin,user',
             'status' => 'required|in:active,inactive,pending',
+            'department_id' => 'nullable|exists:departments,id', // ← TAMBAH INI
             'profile_picture' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
 
@@ -78,7 +80,7 @@ class UserManagementController extends Controller
     {
         return response()->json([
             'success' => true,
-            'data' => $user
+            'data' => $user->load('department') // ← TAMBAH load('department')
         ]);
     }
 
@@ -94,6 +96,7 @@ class UserManagementController extends Controller
             'password' => 'nullable|string|min:8|confirmed',
             'role' => 'required|in:admin,user',
             'status' => 'required|in:active,inactive,pending',
+            'department_id' => 'nullable|exists:departments,id', // ← TAMBAH INI
             'profile_picture' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
 
@@ -131,7 +134,7 @@ class UserManagementController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'User updated successfully!',
-                'data' => $user
+                'data' => $user->load('department') // ← TAMBAH load('department')
             ]);
         } catch (\Exception $e) {
             return response()->json([
@@ -175,7 +178,7 @@ class UserManagementController extends Controller
     }
 
     /**
-     * Toggle user status
+     * Toggle user status (with department optional for activation)
      */
     public function toggleStatus(Request $request, User $user)
     {
@@ -188,13 +191,27 @@ class UserManagementController extends Controller
                 ], 403);
             }
 
-            $newStatus = $user->status === 'active' ? 'inactive' : 'active';
-            $user->update(['status' => $newStatus]);
+            // Jika status akan diubah ke 'active' dari 'pending'
+            if ($user->status === 'pending' && $request->status === 'active') {
+                // Department OPSIONAL, tidak wajib
+                $data = ['status' => 'active'];
+
+                // Jika department_id dikirim, tambahkan ke data
+                if ($request->has('department_id') && $request->department_id) {
+                    $data['department_id'] = $request->department_id;
+                }
+
+                $user->update($data);
+            } else {
+                // Toggle status biasa (active ↔ inactive)
+                $newStatus = $user->status === 'active' ? 'inactive' : 'active';
+                $user->update(['status' => $newStatus]);
+            }
 
             return response()->json([
                 'success' => true,
                 'message' => 'User status updated successfully!',
-                'data' => $user
+                'data' => $user->load('department')
             ]);
         } catch (\Exception $e) {
             return response()->json([

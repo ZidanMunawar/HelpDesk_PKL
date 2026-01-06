@@ -3,23 +3,33 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Category;
+use App\Models\Department;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 
-class CategoryController extends Controller
+class DepartmentController extends Controller
 {
+    /**
+     * Display a listing of departments
+     */
     public function index()
     {
-        $categories = Category::withCount('tickets')->latest()->get();
-        return view('admin.categories.index', compact('categories'));
+        $departments = Department::with(['manager', 'users'])->latest()->get();
+        $managers = User::where('role', 'admin')->where('status', 'active')->get();
+
+        return view('admin.departments.index', compact('departments', 'managers'));
     }
 
+    /**
+     * Store a newly created department
+     */
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'name' => 'required|string|max:255|unique:categories,name',
+            'name' => 'required|string|max:255|unique:departments,name',
+            'manager_id' => 'nullable|exists:users,id',
             'description' => 'nullable|string',
             'status' => 'required|in:active,inactive',
         ]);
@@ -33,25 +43,29 @@ class CategoryController extends Controller
         }
 
         try {
-            $category = Category::create($request->all());
+            $department = Department::create($request->all());
 
             return response()->json([
                 'success' => true,
-                'message' => 'Category created successfully!',
-                'data' => $category
+                'message' => 'Department created successfully!',
+                'data' => $department->load('manager')
             ]);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to create category: ' . $e->getMessage()
+                'message' => 'Failed to create department: ' . $e->getMessage()
             ], 500);
         }
     }
 
-    public function update(Request $request, Category $category)
+    /**
+     * Update the specified department
+     */
+    public function update(Request $request, Department $department)
     {
         $validator = Validator::make($request->all(), [
-            'name' => ['required', 'string', 'max:255', Rule::unique('categories')->ignore($category->id)],
+            'name' => ['required', 'string', 'max:255', Rule::unique('departments')->ignore($department->id)],
+            'manager_id' => 'nullable|exists:users,id',
             'description' => 'nullable|string',
             'status' => 'required|in:active,inactive',
         ]);
@@ -65,56 +79,62 @@ class CategoryController extends Controller
         }
 
         try {
-            $category->update($request->all());
+            $department->update($request->all());
 
             return response()->json([
                 'success' => true,
-                'message' => 'Category updated successfully!',
-                'data' => $category
+                'message' => 'Department updated successfully!',
+                'data' => $department->load('manager')
             ]);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to update category: ' . $e->getMessage()
+                'message' => 'Failed to update department: ' . $e->getMessage()
             ], 500);
         }
     }
 
-    public function destroy(Category $category)
+    /**
+     * Remove the specified department
+     */
+    public function destroy(Department $department)
     {
         try {
-            // Check if category has tickets
-            if ($category->tickets()->count() > 0) {
+            // Check if department has users
+            if ($department->users()->count() > 0) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Cannot delete category with existing tickets. Please reassign tickets first.'
+                    'message' => 'Cannot delete department with existing users. Please reassign users first.'
                 ], 422);
             }
 
-            $category->delete();
+            $department->delete();
 
             return response()->json([
                 'success' => true,
-                'message' => 'Category deleted successfully!'
+                'message' => 'Department deleted successfully!'
             ]);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to delete category: ' . $e->getMessage()
+                'message' => 'Failed to delete department: ' . $e->getMessage()
             ], 500);
         }
     }
 
-    public function toggleStatus(Request $request, Category $category)
+    /**
+     * Toggle department status
+     */
+    public function toggleStatus(Request $request, Department $department)
     {
         try {
-            $newStatus = $category->status === 'active' ? 'inactive' : 'active';
-            $category->update(['status' => $newStatus]);
+            $newStatus = $department->status === 'active' ? 'inactive' : 'active';
+            $department->update(['status' => $newStatus]);
 
             return response()->json([
                 'success' => true,
-                'message' => 'Category status updated successfully!',
-                'data' => $category
+                'message' => 'Department status updated successfully!',
+                'data' => $department
             ]);
         } catch (\Exception $e) {
             return response()->json([

@@ -20,6 +20,8 @@ class LocationController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
+            'location_type' => 'required|in:room,floor,department,facility,area',
+            'floor_number' => 'nullable|string|max:10',
             'description' => 'nullable|string',
             'status' => 'required|in:active,inactive',
         ]);
@@ -52,6 +54,8 @@ class LocationController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
+            'location_type' => 'required|in:room,floor,department,facility,area',
+            'floor_number' => 'nullable|string|max:10',
             'description' => 'nullable|string',
             'status' => 'required|in:active,inactive',
         ]);

@@ -24,6 +24,7 @@ class User extends Authenticatable
         'phone',
         'profile_picture',
         'role',
+        'department_id',
         'status',
         'email_verified_at',
     ];
@@ -138,6 +139,21 @@ class User extends Authenticatable
         return $this->hasMany(Notification::class);
     }
 
+    /**
+     * Department of this user
+     */
+    public function department()
+    {
+        return $this->belongsTo(Department::class);
+    }
+
+    /**
+     * Department managed by this user (if manager)
+     */
+    public function managedDepartment()
+    {
+        return $this->hasOne(Department::class, 'manager_id');
+    }
     /**
      * Unread notifications
      */

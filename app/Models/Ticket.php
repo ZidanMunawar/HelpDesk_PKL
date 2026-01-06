@@ -17,6 +17,7 @@ class Ticket extends Model
         'description',
         'category_id',
         'priority_id',
+        'location_id',
         'user_id',
         'assigned_to',
         'status',
@@ -131,7 +132,10 @@ class Ticket extends Model
     {
         return $this->hasMany(TicketComment::class);
     }
-
+    public function activities()
+    {
+        return $this->hasMany(ActivityLog::class)->orderBy('created_at', 'asc');
+    }
     public function notifications()
     {
         return $this->hasMany(Notification::class);
@@ -169,6 +173,10 @@ class Ticket extends Model
         return $this->due_date && $this->due_date->isPast() && !in_array($this->status, ['closed', 'resolved', 'cancelled']);
     }
 
+    public function location()
+    {
+        return $this->belongsTo(Location::class);
+    }
     public function getStatusBadgeAttribute()
     {
         $badges = [

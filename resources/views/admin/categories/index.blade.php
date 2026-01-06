@@ -177,7 +177,6 @@
     </style>
 @endpush
 
-
 @section('content')
     <!-- Add Category Modal -->
     <div class="modal fade" id="addCategoryModal">
@@ -193,18 +192,15 @@
                         <div class="form-group mb-3">
                             <label class="text-black font-w500">Category Name <span class="text-danger">*</span></label>
                             <input type="text" class="form-control" name="name"
-                                placeholder="e.g., IT Support, Maintenance" required>
-                            <div class="invalid-feedback"></div>
-                        </div>
-                        <div class="form-group mb-3">
-                            <label class="text-black font-w500">Category Code <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" name="code" placeholder="e.g., IT, MNT" required>
-                            <small class="text-muted">Unique code for category</small>
+                                placeholder="e.g., Engineering, Housekeeping, IT Support" required>
+                            <small class="text-muted">Nama kategori untuk pengelompokan ticket</small>
                             <div class="invalid-feedback"></div>
                         </div>
                         <div class="form-group mb-3">
                             <label class="text-black font-w500">Description</label>
-                            <textarea class="form-control" name="description" rows="3" placeholder="Optional description"></textarea>
+                            <textarea class="form-control" name="description" rows="3"
+                                placeholder="e.g., AC, electrical, plumbing, technical issues"></textarea>
+                            <small class="text-muted">Deskripsi jenis masalah yang termasuk kategori ini</small>
                             <div class="invalid-feedback"></div>
                         </div>
                         <div class="form-group mb-3">
@@ -248,11 +244,6 @@
                             <div class="invalid-feedback"></div>
                         </div>
                         <div class="form-group mb-3">
-                            <label class="text-black font-w500">Category Code <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" name="code" id="edit_code" required>
-                            <div class="invalid-feedback"></div>
-                        </div>
-                        <div class="form-group mb-3">
                             <label class="text-black font-w500">Description</label>
                             <textarea class="form-control" name="description" id="edit_description" rows="3"></textarea>
                             <div class="invalid-feedback"></div>
@@ -284,7 +275,7 @@
         <div class="col-12">
             <div class="card">
                 <div class="card-header">
-                    <h4 class="card-title">Category Management</h4>
+                    <h4 class="card-title">Category List</h4>
                     <button type="button" class="btn btn-primary" data-bs-toggle="modal"
                         data-bs-target="#addCategoryModal">
                         <i class="fa fa-plus me-2"></i>Add Category
@@ -292,12 +283,12 @@
                 </div>
                 <div class="card-body">
                     <div class="table-responsive">
-                        <table id="categoriesTable" class="display min-w850">
+                        <table id="categoriesTable" class="display table table-striped table-hover" style="width:100%">
                             <thead>
                                 <tr>
                                     <th>No</th>
-                                    <th>Code</th>
                                     <th>Category Name</th>
+                                    <th>Total Tickets</th>
                                     <th>Description</th>
                                     <th>Status</th>
                                     <th>Created</th>
@@ -305,12 +296,14 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                @foreach ($categories as $index => $category)
+                                @forelse ($categories as $index => $category)
                                     <tr>
                                         <td>{{ $index + 1 }}</td>
-                                        <td><span class="badge badge-primary">{{ $category->code }}</span></td>
                                         <td><strong>{{ $category->name }}</strong></td>
-                                        <td>{{ $category->description ?? '-' }}</td>
+                                        <td class="text-center">
+                                            <span class="badge badge-info">{{ $category->tickets_count ?? 0 }}</span>
+                                        </td>
+                                        <td>{{ Str::limit($category->description, 60) ?? '-' }}</td>
                                         <td>
                                             <span
                                                 class="badge badge-{{ $category->status === 'active' ? 'success' : 'danger' }}">
@@ -323,16 +316,16 @@
                                                 <button type="button"
                                                     class="btn btn-primary shadow btn-xs sharp me-1 edit-category"
                                                     data-id="{{ $category->id }}" data-name="{{ $category->name }}"
-                                                    data-code="{{ $category->code }}"
                                                     data-description="{{ $category->description }}"
                                                     data-status="{{ $category->status }}" title="Edit">
                                                     <i class="fa fa-pencil"></i>
                                                 </button>
                                                 <button type="button"
-                                                    class="btn btn-warning shadow btn-xs sharp me-1 toggle-status"
+                                                    class="btn btn-{{ $category->status === 'active' ? 'warning' : 'success' }} shadow btn-xs sharp me-1 toggle-status"
                                                     data-id="{{ $category->id }}" data-name="{{ $category->name }}"
                                                     data-status="{{ $category->status }}" title="Toggle Status">
-                                                    <i class="fa fa-power-off"></i>
+                                                    <i
+                                                        class="fa fa-{{ $category->status === 'active' ? 'ban' : 'check' }}"></i>
                                                 </button>
                                                 <button type="button"
                                                     class="btn btn-danger shadow btn-xs sharp delete-category"
@@ -343,7 +336,11 @@
                                             </div>
                                         </td>
                                     </tr>
-                                @endforeach
+                                @empty
+                                    <tr>
+                                        <td colspan="7" class="text-center">No categories found</td>
+                                    </tr>
+                                @endforelse
                             </tbody>
                         </table>
                     </div>
@@ -385,9 +382,17 @@
                         "previous": "<i class='fa fa-angle-left'></i>"
                     }
                 },
+                "columnDefs": [{
+                    "orderable": false,
+                    "targets": [6]
+                }, {
+                    "className": "text-center",
+                    "targets": [0, 2, 4, 5, 6]
+                }],
                 "dom": '<"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6"f>>rtip',
                 "drawCallback": function() {
-                    $('.dataTables_paginate > .pagination').addClass('pagination-gutter');
+                    $('.dataTables_paginate > .pagination').addClass(
+                        'pagination-gutter pagination-primary');
                 }
             });
 
@@ -424,6 +429,7 @@
                                 $('[name="' + key + '"]').addClass('is-invalid')
                                     .siblings('.invalid-feedback').text(value[0]);
                             });
+                            toastr.error('Please check the form for errors');
                         }
                     }
                 });
@@ -433,9 +439,9 @@
             $(document).on('click', '.edit-category', function() {
                 $('#edit_category_id').val($(this).data('id'));
                 $('#edit_name').val($(this).data('name'));
-                $('#edit_code').val($(this).data('code'));
                 $('#edit_description').val($(this).data('description'));
                 $('#edit_status').val($(this).data('status'));
+                $('.form-control').removeClass('is-invalid');
                 $('#editCategoryModal').modal('show');
             });
 
@@ -467,6 +473,9 @@
                     error: function(xhr) {
                         submitBtn.prop('disabled', false).html(
                             '<i class="fa fa-save me-1"></i>Update');
+                        if (xhr.status === 422) {
+                            toastr.error('Please check the form for errors');
+                        }
                     }
                 });
             });
@@ -536,10 +545,25 @@
                                     timer: 1500,
                                     showConfirmButton: false
                                 }).then(() => location.reload());
+                            },
+                            error: function(xhr) {
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'Failed!',
+                                    text: xhr.responseJSON.message ||
+                                        'Cannot delete category with existing tickets'
+                                });
                             }
                         });
                     }
                 });
+            });
+
+            // Reset form when modal is closed
+            $('#addCategoryModal, #editCategoryModal').on('hidden.bs.modal', function() {
+                $(this).find('form')[0].reset();
+                $('.form-control').removeClass('is-invalid');
+                $('.invalid-feedback').text('');
             });
         });
     </script>
