@@ -23,7 +23,7 @@
     <link rel="stylesheet" href="{{ asset('assets/vendor/sweetalert2/dist/sweetalert2.min.css') }}">
 
     <style>
-        /* Custom DataTable Styling - Larger Size */
+        /* DataTable Wrapper Styling */
         #usersTable_wrapper .dataTables_length,
         #usersTable_wrapper .dataTables_filter,
         #usersTable_wrapper .dataTables_info,
@@ -32,7 +32,6 @@
             font-size: 14px;
         }
 
-        /* Length Menu Styling */
         #usersTable_wrapper .dataTables_length select {
             padding: 8px 35px 8px 15px;
             font-size: 14px;
@@ -47,7 +46,6 @@
             color: #6e6e6e;
         }
 
-        /* Search Input Styling */
         #usersTable_wrapper .dataTables_filter input {
             padding: 10px 20px;
             font-size: 14px;
@@ -62,14 +60,12 @@
             color: #6e6e6e;
         }
 
-        /* Info Text Styling */
         #usersTable_wrapper .dataTables_info {
             font-size: 14px;
             font-weight: 500;
             color: #6e6e6e;
         }
 
-        /* Pagination Styling */
         #usersTable_wrapper .dataTables_paginate {
             float: right;
         }
@@ -124,7 +120,6 @@
             font-size: 16px;
         }
 
-        /* Table Styling */
         #usersTable {
             font-size: 14px;
         }
@@ -146,14 +141,12 @@
             background-color: #f8f9fa;
         }
 
-        /* Badge Styling */
         .badge {
             padding: 6px 12px;
             font-size: 12px;
             font-weight: 500;
         }
 
-        /* Button Action Styling */
         .btn-xs.sharp {
             width: 32px;
             height: 32px;
@@ -167,7 +160,60 @@
             font-size: 14px;
         }
 
-        /* Responsive adjustments */
+        .profile-img {
+            width: 40px;
+            height: 40px;
+            object-fit: cover;
+            border: 2px solid #e4e6ef;
+        }
+
+        /* Status badges */
+        .badge-active {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .badge-inactive {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .badge-pending {
+            background-color: #ffc107;
+            color: #212529;
+        }
+
+        /* Role badges */
+        .badge-admin {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .badge-manager {
+            background-color: #fd7e14;
+            color: white;
+        }
+
+        .badge-gm {
+            background-color: #6610f2;
+            color: white;
+        }
+
+        .badge-om {
+            background-color: #20c997;
+            color: white;
+        }
+
+        .badge-technician {
+            background-color: #17a2b8;
+            color: white;
+        }
+
+        .badge-user {
+            background-color: #6c757d;
+            color: white;
+        }
+
         @media (max-width: 768px) {
             #usersTable_wrapper .dataTables_filter input {
                 width: 100%;
@@ -187,7 +233,6 @@
         }
     </style>
 @endpush
-
 
 @section('content')
     <!-- Add User Modal -->
@@ -263,24 +308,30 @@
                                     <label class="text-black font-w500">Role <span class="text-danger">*</span></label>
                                     <select class="form-control" name="role" required>
                                         <option value="">Select Role</option>
-                                        <option value="user">User</option>
                                         <option value="admin">Admin</option>
+                                        <option value="manager">Manager</option>
+                                        <option value="gm">General Manager</option>
+                                        <option value="om">Operational Manager</option>
+                                        <option value="technician">Technician</option>
+                                        <option value="user">User</option>
                                     </select>
                                     <div class="invalid-feedback"></div>
                                 </div>
                             </div>
-                            <!-- Department -->
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">Department</label> <!-- Hapus tanda bintang -->
-                                <select class="form-control" id="department_id" name="department_id">
-                                    <option value="">Select Department (Optional)</option> <!-- Ubah placeholder -->
-                                    @foreach ($departments as $dept)
-                                        <option value="{{ $dept->id }}">{{ $dept->name }}</option>
-                                    @endforeach
-                                </select>
-                                <div class="invalid-feedback"></div>
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label class="text-black font-w500">Department</label>
+                                    <select class="form-control" name="department_id">
+                                        <option value="">Select Department (Optional)</option>
+                                        @foreach ($departments as $dept)
+                                            <option value="{{ $dept->id }}">{{ $dept->name }}</option>
+                                        @endforeach
+                                    </select>
+                                    <div class="invalid-feedback"></div>
+                                </div>
                             </div>
-
+                        </div>
+                        <div class="row">
                             <div class="col-md-6">
                                 <div class="form-group mb-3">
                                     <label class="text-black font-w500">Status <span class="text-danger">*</span></label>
@@ -383,24 +434,30 @@
                                     <label class="text-black font-w500">Role <span class="text-danger">*</span></label>
                                     <select class="form-control" name="role" id="edit_role" required>
                                         <option value="">Select Role</option>
-                                        <option value="user">User</option>
                                         <option value="admin">Admin</option>
+                                        <option value="manager">Manager</option>
+                                        <option value="gm">General Manager</option>
+                                        <option value="om">Operational Manager</option>
+                                        <option value="technician">Technician</option>
+                                        <option value="user">User</option>
                                     </select>
                                     <div class="invalid-feedback"></div>
                                 </div>
                             </div>
-                            <!-- Department -->
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">Department</label> <!-- Hapus tanda bintang -->
-                                <select class="form-control" id="department_id" name="department_id">
-                                    <option value="">Select Department (Optional)</option> <!-- Ubah placeholder -->
-                                    @foreach ($departments as $dept)
-                                        <option value="{{ $dept->id }}">{{ $dept->name }}</option>
-                                    @endforeach
-                                </select>
-                                <div class="invalid-feedback"></div>
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label class="text-black font-w500">Department</label>
+                                    <select class="form-control" name="department_id" id="edit_department_id">
+                                        <option value="">Select Department (Optional)</option>
+                                        @foreach ($departments as $dept)
+                                            <option value="{{ $dept->id }}">{{ $dept->name }}</option>
+                                        @endforeach
+                                    </select>
+                                    <div class="invalid-feedback"></div>
+                                </div>
                             </div>
-
+                        </div>
+                        <div class="row">
                             <div class="col-md-6">
                                 <div class="form-group mb-3">
                                     <label class="text-black font-w500">Status <span class="text-danger">*</span></label>
@@ -432,16 +489,16 @@
     <div class="row">
         <div class="col-12">
             <div class="card">
-                <div class="card-header">
+                <div class="card-header d-flex justify-content-between align-items-center">
                     <h4 class="card-title">User Management</h4>
-                    <button type="button" class="btn btn-primary" data-bs-toggle="modal"
+                    <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal"
                         data-bs-target="#addUserModal">
-                        <i class="fa fa-plus me-2"></i>Add New User
+                        <i class="fas fa-plus me-1"></i> Add New User
                     </button>
                 </div>
                 <div class="card-body">
                     <div class="table-responsive">
-                        <table id="usersTable" class="display min-w850">
+                        <table id="usersTable" class="display table table-striped table-hover" style="width:100%">
                             <thead>
                                 <tr>
                                     <th>No</th>
@@ -462,54 +519,49 @@
                                         <td>{{ $index + 1 }}</td>
                                         <td>
                                             <img src="{{ $user->profile_picture_url }}" alt="{{ $user->name }}"
-                                                class="rounded-circle" width="35" height="35"
-                                                style="object-fit: cover;">
+                                                class="rounded-circle profile-img">
                                         </td>
                                         <td><strong>{{ $user->name }}</strong></td>
                                         <td>{{ $user->email }}</td>
                                         <td>{{ $user->phone ?? '-' }}</td>
-                                        <td>
-                                            <span
-                                                class="badge badge-{{ $user->role === 'admin' ? 'danger' : 'primary' }}">
+                                        <td class="text-center">
+                                            <span class="badge badge-{{ $user->role }}">
                                                 {{ ucfirst($user->role) }}
                                             </span>
                                         </td>
-                                        <td>
+                                        <td class="text-center">
                                             @if ($user->department)
                                                 <span class="badge badge-info">{{ $user->department->name }}</span>
                                             @else
                                                 <span class="text-muted">-</span>
                                             @endif
                                         </td>
-                                        <td>
-                                            @php
-                                                $statusBadge = [
-                                                    'active' => 'success',
-                                                    'inactive' => 'danger',
-                                                    'pending' => 'warning',
-                                                ];
-                                            @endphp
-                                            <span class="badge badge-{{ $statusBadge[$user->status] }}">
+                                        <td class="text-center">
+                                            <span class="badge badge-{{ $user->status }}">
                                                 {{ ucfirst($user->status) }}
                                             </span>
                                         </td>
-                                        <td>{{ $user->created_at->format('d M Y') }}</td>
-                                        <td>
-                                            <div class="d-flex">
+                                        <td class="text-center">{{ $user->created_at->format('d M Y') }}</td>
+                                        <td class="text-center">
+                                            <div class="d-flex justify-content-center">
                                                 <button type="button"
                                                     class="btn btn-primary shadow btn-xs sharp me-1 edit-user"
                                                     data-id="{{ $user->id }}" data-name="{{ $user->name }}"
                                                     data-email="{{ $user->email }}" data-phone="{{ $user->phone }}"
                                                     data-role="{{ $user->role }}" data-status="{{ $user->status }}"
-                                                    title="Edit User">
+                                                    data-department-id="{{ $user->department_id }}" title="Edit User">
                                                     <i class="fa fa-pencil"></i>
                                                 </button>
+
                                                 <button type="button"
-                                                    class="btn btn-warning shadow btn-xs sharp me-1 toggle-status"
+                                                    class="btn btn-{{ $user->status === 'active' ? 'warning' : 'success' }} shadow btn-xs sharp me-1 toggle-status"
                                                     data-id="{{ $user->id }}" data-name="{{ $user->name }}"
-                                                    data-status="{{ $user->status }}" title="Toggle Status">
-                                                    <i class="fa fa-power-off"></i>
+                                                    data-status="{{ $user->status }}"
+                                                    title="{{ $user->status === 'active' ? 'Deactivate' : 'Activate' }}">
+                                                    <i
+                                                        class="fas fa-{{ $user->status === 'active' ? 'ban' : 'check' }}"></i>
                                                 </button>
+
                                                 <button type="button"
                                                     class="btn btn-danger shadow btn-xs sharp delete-user"
                                                     data-id="{{ $user->id }}" data-name="{{ $user->name }}"
@@ -527,44 +579,6 @@
             </div>
         </div>
     </div>
-
-    <!-- Approve User Modal (Khusus Pending → Active) -->
-    <div class="modal fade" id="approveUserModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Approve User</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <form id="approveUserForm">
-                    @csrf
-                    <input type="hidden" id="approve_user_id">
-                    <div class="modal-body">
-                        <p>Activate user <strong id="approve_user_name"></strong>:</p>
-                        <p class="text-muted mb-3">Department is optional. You can assign later.</p>
-
-                        <div class="mb-3">
-                            <label class="form-label">Department (Optional)</label> <!-- Ubah label -->
-                            <select class="form-control" id="approve_department_id" name="department_id">
-                                <option value="">Select Department (Optional)</option> <!-- Ubah placeholder -->
-                                @foreach ($departments as $dept)
-                                    <option value="{{ $dept->id }}">{{ $dept->name }}</option>
-                                @endforeach
-                            </select>
-                            <div class="invalid-feedback"></div>
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                        <button type="submit" class="btn btn-success">
-                            <i class="fas fa-check me-1"></i> Activate User
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-
 @endsection
 
 @push('scripts')
@@ -574,7 +588,6 @@
     <script src="{{ asset('assets/vendor/toastr/js/toastr.min.js') }}"></script>
     <!-- SweetAlert2 -->
     <script src="{{ asset('assets/vendor/sweetalert2/dist/sweetalert2.min.js') }}"></script>
-
 
     <script>
         $(document).ready(function() {
@@ -596,7 +609,6 @@
                 "showMethod": "fadeIn",
                 "hideMethod": "fadeOut"
             };
-
 
             // Initialize DataTable with Bootstrap styling
             var table = $('#usersTable').DataTable({
@@ -626,11 +638,11 @@
                 "columnDefs": [{
                         "orderable": false,
                         "targets": [1, 9]
-                    }, // Disable sorting for Photo and Action columns (updated: kolom 9 karena ada tambahan department)
+                    },
                     {
                         "className": "text-center",
                         "targets": [0, 1, 5, 6, 7, 9]
-                    } // Center align specific columns (updated)
+                    }
                 ],
                 "dom": '<"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6"f>>rtip',
                 "drawCallback": function() {
@@ -640,21 +652,17 @@
                 }
             });
 
-
             // Add User Form Submit
             $('#addUserForm').on('submit', function(e) {
                 e.preventDefault();
-
 
                 var formData = new FormData(this);
                 var submitBtn = $(this).find('button[type="submit"]');
                 var originalText = submitBtn.html();
 
-
                 // Disable button and show loading
                 submitBtn.prop('disabled', true).html(
                     '<i class="fa fa-spinner fa-spin me-1"></i>Saving...');
-
 
                 $.ajax({
                     url: "{{ route('admin.users.store') }}",
@@ -667,7 +675,6 @@
                             $('#addUserModal').modal('hide');
                             $('#addUserForm')[0].reset();
                             $('.form-control').removeClass('is-invalid');
-
 
                             // SweetAlert Success
                             Swal.fire({
@@ -683,7 +690,6 @@
                     },
                     error: function(xhr) {
                         submitBtn.prop('disabled', false).html(originalText);
-
 
                         if (xhr.status === 422) {
                             var errors = xhr.responseJSON.errors;
@@ -704,7 +710,6 @@
                 });
             });
 
-
             // Edit User Button Click
             $(document).on('click', '.edit-user', function() {
                 var id = $(this).data('id');
@@ -713,8 +718,7 @@
                 var phone = $(this).data('phone');
                 var role = $(this).data('role');
                 var status = $(this).data('status');
-                var departmentId = $(this).data('department-id'); // ← TAMBAH INI
-
+                var departmentId = $(this).data('department-id');
 
                 $('#edit_user_id').val(id);
                 $('#edit_name').val(name);
@@ -722,31 +726,26 @@
                 $('#edit_phone').val(phone);
                 $('#edit_role').val(role);
                 $('#edit_status').val(status);
-                $('#edit_department_id').val(departmentId); // ← TAMBAH INI
+                $('#edit_department_id').val(departmentId || '');
                 $('#edit_password').val('');
                 $('#edit_password_confirmation').val('');
-
 
                 $('.form-control').removeClass('is-invalid');
                 $('#editUserModal').modal('show');
             });
 
-
             // Edit User Form Submit
             $('#editUserForm').on('submit', function(e) {
                 e.preventDefault();
-
 
                 var userId = $('#edit_user_id').val();
                 var formData = new FormData(this);
                 var submitBtn = $(this).find('button[type="submit"]');
                 var originalText = submitBtn.html();
 
-
                 // Disable button and show loading
                 submitBtn.prop('disabled', true).html(
                     '<i class="fa fa-spinner fa-spin me-1"></i>Updating...');
-
 
                 $.ajax({
                     url: "{{ route('admin.users.update', ':id') }}".replace(':id', userId),
@@ -754,12 +753,14 @@
                     data: formData,
                     processData: false,
                     contentType: false,
+                    headers: {
+                        'X-HTTP-Method-Override': 'PUT'
+                    },
                     success: function(response) {
                         if (response.success) {
                             $('#editUserModal').modal('hide');
                             $('#editUserForm')[0].reset();
                             $('.form-control').removeClass('is-invalid');
-
 
                             // SweetAlert Success
                             Swal.fire({
@@ -775,7 +776,6 @@
                     },
                     error: function(xhr) {
                         submitBtn.prop('disabled', false).html(originalText);
-
 
                         if (xhr.status === 422) {
                             var errors = xhr.responseJSON.errors;
@@ -796,42 +796,30 @@
                 });
             });
 
-
-            // ========== MODIFIED: Toggle Status dengan Department Opsional ==========
-            // Toggle Status Button Click with SweetAlert2
+            // Toggle Status Button Click
             $(document).on('click', '.toggle-status', function() {
                 var userId = $(this).data('id');
                 var userName = $(this).data('name');
                 var currentStatus = $(this).data('status');
-
-                // Jika status pending, tampilkan modal approve (department opsional)
-                if (currentStatus === 'pending') {
-                    $('#approve_user_id').val(userId);
-                    $('#approve_user_name').text(userName);
-                    $('#approve_department_id').val(''); // Reset department selection
-                    $('.form-control').removeClass('is-invalid');
-                    $('#approveUserModal').modal('show');
-                    return;
-                }
-
-                // ← KODE LAMA TETAP ADA: Toggle biasa untuk active/inactive
                 var newStatus = currentStatus === 'active' ? 'inactive' : 'active';
 
-                // Status badge colors
                 var statusColors = {
                     'active': '#28a745',
                     'inactive': '#dc3545',
                     'pending': '#ffc107'
                 };
 
+                var actionText = currentStatus === 'active' ? 'deactivate' : 'activate';
+                var confirmText = currentStatus === 'active' ? 'Deactivate' : 'Activate';
+
                 Swal.fire({
-                    title: 'Change User Status?',
-                    html: `Are you sure you want to change <strong>${userName}</strong>'s status to <span style="color: ${statusColors[newStatus]}">${newStatus.toUpperCase()}</span>?`,
+                    title: `${confirmText} User?`,
+                    html: `Are you sure you want to ${actionText} <strong>${userName}</strong>?`,
                     icon: 'question',
                     showCancelButton: true,
-                    confirmButtonColor: '#3085d6',
-                    cancelButtonColor: '#d33',
-                    confirmButtonText: 'Yes, change it!',
+                    confirmButtonColor: currentStatus === 'active' ? '#dc3545' : '#28a745',
+                    cancelButtonColor: '#6c757d',
+                    confirmButtonText: `Yes, ${actionText}!`,
                     cancelButtonText: 'Cancel'
                 }).then((result) => {
                     if (result.isConfirmed) {
@@ -850,7 +838,8 @@
                                 ':id', userId),
                             type: 'POST',
                             data: {
-                                _token: '{{ csrf_token() }}'
+                                _token: '{{ csrf_token() }}',
+                                status: newStatus
                             },
                             success: function(response) {
                                 if (response.success) {
@@ -878,129 +867,93 @@
                 });
             });
 
-            // ========== BARU: Handle Approve User Form Submit (Department Opsional) ==========
-            $('#approveUserForm').on('submit', function(e) {
-                e.preventDefault();
-
-                var userId = $('#approve_user_id').val();
-                var departmentId = $('#approve_department_id').val();
-                var submitBtn = $(this).find('button[type="submit"]');
-                var originalText = submitBtn.html();
-
-                // Department sekarang OPSIONAL, tidak perlu validasi
-
-                // Disable button and show loading
-                submitBtn.prop('disabled', true).html(
-                    '<i class="fa fa-spinner fa-spin me-1"></i>Approving...');
-
-                $.ajax({
-                    url: "{{ route('admin.users.toggle-status', ':id') }}".replace(':id', userId),
-                    type: 'POST',
-                    data: {
-                        _token: '{{ csrf_token() }}',
-                        status: 'active',
-                        department_id: departmentId || null // Kirim null jika kosong
-                    },
-                    success: function(response) {
-                        if (response.success) {
-                            $('#approveUserModal').modal('hide');
-                            Swal.fire({
-                                icon: 'success',
-                                title: 'User Activated!',
-                                text: response.message,
-                                showConfirmButton: false,
-                                timer: 1500
-                            }).then(() => {
-                                location.reload();
-                            });
-                        }
-                    },
-                    error: function(xhr) {
-                        submitBtn.prop('disabled', false).html(originalText);
-
-                        if (xhr.status === 422) {
-                            var errors = xhr.responseJSON.errors;
-                            $('.form-control').removeClass('is-invalid');
-                            $.each(errors, function(key, value) {
-                                $('#approve_' + key).addClass('is-invalid')
-                                    .siblings('.invalid-feedback').text(value[0]);
-                            });
-                            toastr.error(xhr.responseJSON.message || 'Please check the form');
-                        } else {
-                            Swal.fire({
-                                icon: 'error',
-                                title: 'Failed!',
-                                text: xhr.responseJSON.message ||
-                                    'Failed to activate user'
-                            });
-                        }
-                    }
-                });
-            });
-            // Delete User Button Click with SweetAlert2
+            // Delete User Button Click dengan Password Verification
             $(document).on('click', '.delete-user', function() {
                 var userId = $(this).data('id');
                 var userName = $(this).data('name');
 
-
                 Swal.fire({
-                    title: 'Are you sure?',
+                    title: 'Delete User?',
                     html: `You are about to delete user <strong>${userName}</strong>.<br>This action cannot be undone!`,
                     icon: 'warning',
                     showCancelButton: true,
                     confirmButtonColor: '#d33',
                     cancelButtonColor: '#3085d6',
-                    confirmButtonText: 'Yes, delete it!',
-                    cancelButtonText: 'Cancel'
-                }).then((result) => {
-                    if (result.isConfirmed) {
-                        // Show loading
-                        Swal.fire({
-                            title: 'Deleting...',
-                            html: 'Please wait',
-                            allowOutsideClick: false,
-                            didOpen: () => {
-                                Swal.showLoading();
-                            }
-                        });
+                    confirmButtonText: 'Delete User',
+                    cancelButtonText: 'Cancel',
+                    showLoaderOnConfirm: true,
+                    preConfirm: () => {
+                        return new Promise((resolve) => {
+                            Swal.fire({
+                                title: 'Enter Your Password',
+                                html: `
+                                    <p class="mb-3">Please enter your admin password to confirm deletion:</p>
+                                    <input type="password" id="admin_password" class="swal2-input" placeholder="Your admin password" autocomplete="current-password">
+                                    <div class="text-danger small mt-2" id="password_error"></div>
+                                `,
+                                showCancelButton: true,
+                                confirmButtonText: 'Confirm Delete',
+                                cancelButtonText: 'Cancel',
+                                focusConfirm: false,
+                                showLoaderOnConfirm: true,
+                                preConfirm: () => {
+                                    const password = Swal.getPopup()
+                                        .querySelector('#admin_password')
+                                        .value;
 
+                                    if (!password) {
+                                        Swal.showValidationMessage(
+                                            'Password is required');
+                                        return false;
+                                    }
 
-                        $.ajax({
-                            url: "{{ route('admin.users.destroy', ':id') }}".replace(':id',
-                                userId),
-                            type: 'DELETE',
-                            data: {
-                                _token: '{{ csrf_token() }}'
-                            },
-                            success: function(response) {
-                                if (response.success) {
-                                    Swal.fire({
-                                        icon: 'success',
-                                        title: 'Deleted!',
-                                        text: response.message,
-                                        showConfirmButton: false,
-                                        timer: 1500
-                                    }).then(() => {
-                                        location.reload();
+                                    return $.ajax({
+                                        url: "{{ route('admin.users.destroy', ':id') }}"
+                                            .replace(':id', userId),
+                                        type: 'DELETE',
+                                        data: {
+                                            _token: '{{ csrf_token() }}',
+                                            admin_password: password
+                                        }
+                                    }).then(response => {
+                                        return response;
+                                    }).catch(error => {
+                                        Swal.showValidationMessage(
+                                            `Request failed: ${error.responseJSON?.message || 'Server error'}`
+                                        );
                                     });
+                                },
+                                allowOutsideClick: () => !Swal.isLoading()
+                            }).then((result) => {
+                                if (result.isConfirmed) {
+                                    if (result.value.success) {
+                                        Swal.fire({
+                                            icon: 'success',
+                                            title: 'Deleted!',
+                                            text: result.value.message,
+                                            showConfirmButton: false,
+                                            timer: 1500
+                                        }).then(() => {
+                                            location.reload();
+                                        });
+                                    } else {
+                                        Swal.fire({
+                                            icon: 'error',
+                                            title: 'Failed!',
+                                            text: result.value
+                                                .message ||
+                                                'Failed to delete user'
+                                        });
+                                    }
                                 }
-                            },
-                            error: function(xhr) {
-                                Swal.fire({
-                                    icon: 'error',
-                                    title: 'Failed!',
-                                    text: xhr.responseJSON.message ||
-                                        'An error occurred'
-                                });
-                            }
+                            });
                         });
                     }
                 });
             });
 
-
             // Reset form when modal is closed
-            $('#addUserModal, #editUserModal, #approveUserModal').on('hidden.bs.modal', function() {
+            $('#addUserModal, #editUserModal').on('hidden.bs.modal', function() {
                 $(this).find('form')[0].reset();
                 $('.form-control').removeClass('is-invalid');
                 $('.invalid-feedback').text('');

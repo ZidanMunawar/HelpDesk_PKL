@@ -20,7 +20,7 @@
     <link rel="stylesheet" href="{{ asset('assets/vendor/sweetalert2/dist/sweetalert2.min.css') }}">
 
     <style>
-        /* DataTable Wrapper Styling */
+        /* Custom DataTable Styling - Larger Size (Konsisten dengan Location) */
         #departmentsTable_wrapper .dataTables_length,
         #departmentsTable_wrapper .dataTables_filter,
         #departmentsTable_wrapper .dataTables_info,
@@ -29,6 +29,7 @@
             font-size: 14px;
         }
 
+        /* Length Menu Styling */
         #departmentsTable_wrapper .dataTables_length select {
             padding: 8px 35px 8px 15px;
             font-size: 14px;
@@ -43,6 +44,7 @@
             color: #6e6e6e;
         }
 
+        /* Search Input Styling */
         #departmentsTable_wrapper .dataTables_filter input {
             padding: 10px 20px;
             font-size: 14px;
@@ -57,12 +59,14 @@
             color: #6e6e6e;
         }
 
+        /* Info Text Styling */
         #departmentsTable_wrapper .dataTables_info {
             font-size: 14px;
             font-weight: 500;
             color: #6e6e6e;
         }
 
+        /* Pagination Styling */
         #departmentsTable_wrapper .dataTables_paginate {
             float: right;
         }
@@ -117,16 +121,40 @@
             font-size: 16px;
         }
 
+        /* Table Styling */
         #departmentsTable {
             font-size: 14px;
+            width: 100% !important;
         }
 
         #departmentsTable thead th {
             font-size: 14px;
             font-weight: 600;
             padding: 15px 10px;
-            background-color: #f8f9fa;
-            border-bottom: 2px solid #dee2e6;
+            background-color: #f8f9fa !important;
+            border-bottom: 2px solid #dee2e6 !important;
+            text-align: center;
+            vertical-align: middle;
+        }
+
+        #departmentsTable thead th:first-child {
+            width: 50px;
+        }
+
+        #departmentsTable thead th:nth-child(4) {
+            width: 100px;
+        }
+
+        #departmentsTable thead th:nth-child(6) {
+            width: 100px;
+        }
+
+        #departmentsTable thead th:nth-child(7) {
+            width: 120px;
+        }
+
+        #departmentsTable thead th:last-child {
+            width: 150px;
         }
 
         #departmentsTable tbody td {
@@ -134,16 +162,59 @@
             vertical-align: middle;
         }
 
+        #departmentsTable tbody td:first-child {
+            text-align: center;
+        }
+
+        #departmentsTable tbody td:nth-child(4) {
+            text-align: center;
+        }
+
+        #departmentsTable tbody td:nth-child(6) {
+            text-align: center;
+        }
+
+        #departmentsTable tbody td:nth-child(7) {
+            text-align: center;
+        }
+
+        #departmentsTable tbody td:last-child {
+            text-align: center;
+        }
+
         #departmentsTable tbody tr:hover {
             background-color: #f8f9fa;
         }
 
+        /* Badge Styling */
         .badge {
             padding: 6px 12px;
             font-size: 12px;
             font-weight: 500;
+            border-radius: 0.375rem;
         }
 
+        .badge-info {
+            background-color: #17a2b8;
+            color: white;
+        }
+
+        .badge-success {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .badge-danger {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .badge-warning {
+            background-color: #ffc107;
+            color: #212529;
+        }
+
+        /* Button Action Styling (Kembali seperti sebelumnya) */
         .btn-xs.sharp {
             width: 32px;
             height: 32px;
@@ -151,12 +222,22 @@
             display: inline-flex;
             align-items: center;
             justify-content: center;
+            border-radius: 0.375rem;
         }
 
         .btn-xs.sharp i {
             font-size: 14px;
         }
 
+        .d-flex .btn-xs.sharp {
+            margin-right: 5px;
+        }
+
+        .d-flex .btn-xs.sharp:last-child {
+            margin-right: 0;
+        }
+
+        /* Responsive adjustments */
         @media (max-width: 768px) {
             #departmentsTable_wrapper .dataTables_filter input {
                 width: 100%;
@@ -173,114 +254,45 @@
                 text-align: center;
                 margin-top: 15px;
             }
+
+            #departmentsTable thead th,
+            #departmentsTable tbody td {
+                padding: 8px 5px;
+            }
+        }
+
+        /* Modal adjustments */
+        .modal-footer .btn {
+            padding: 8px 16px;
+            font-size: 14px;
+        }
+
+        .modal-footer .btn i {
+            font-size: 14px;
+        }
+
+        .form-label {
+            font-weight: 500;
+            color: #333;
+        }
+
+        /* Avatar styling for manager */
+        .avatar-sm {
+            width: 28px;
+            height: 28px;
+            object-fit: cover;
+        }
+
+        .text-muted {
+            color: #6c757d !important;
         }
     </style>
 @endpush
 
 @section('content')
-    <div class="row">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h4 class="card-title">Department List</h4>
-                    <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal"
-                        data-bs-target="#addDepartmentModal">
-                        <i class="fas fa-plus me-1"></i> Add New Department
-                    </button>
-                </div>
-                <div class="card-body">
-                    <div class="table-responsive">
-                        <table id="departmentsTable" class="display table table-striped table-hover" style="width:100%">
-                            <thead>
-                                <tr>
-                                    <th>No</th>
-                                    <th>Department Name</th>
-                                    <th>Manager</th>
-                                    <th>Total Users</th>
-                                    <th>Description</th>
-                                    <th>Status</th>
-                                    <th>Created</th>
-                                    <th>Action</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @forelse ($departments as $index => $department)
-                                    <tr>
-                                        <td>{{ $index + 1 }}</td>
-                                        <td>
-                                            <strong>{{ $department->name }}</strong>
-                                        </td>
-                                        <td>
-                                            @if ($department->manager)
-                                                <div class="d-flex align-items-center">
-                                                    <img src="{{ $department->manager->profile_picture_url }}"
-                                                        class="rounded-circle me-2" width="28" height="28"
-                                                        alt="{{ $department->manager->name }}">
-                                                    <span>{{ $department->manager->name }}</span>
-                                                </div>
-                                            @else
-                                                <span class="text-muted">-</span>
-                                            @endif
-                                        </td>
-                                        <td class="text-center">
-                                            <span class="badge badge-info">{{ $department->users->count() }}</span>
-                                        </td>
-                                        <td>{{ Str::limit($department->description, 50) ?? '-' }}</td>
-                                        <td>
-                                            @php
-                                                $statusBadge = [
-                                                    'active' => 'success',
-                                                    'inactive' => 'danger',
-                                                ];
-                                            @endphp
-                                            <span class="badge badge-{{ $statusBadge[$department->status] }}">
-                                                {{ ucfirst($department->status) }}
-                                            </span>
-                                        </td>
-                                        <td>{{ $department->created_at->format('d M Y') }}</td>
-                                        <td>
-                                            <div class="d-flex">
-                                                <button type="button"
-                                                    class="btn btn-primary btn-sm shadow btn-xs sharp me-1 edit-department"
-                                                    data-id="{{ $department->id }}" data-name="{{ $department->name }}"
-                                                    data-manager-id="{{ $department->manager_id }}"
-                                                    data-description="{{ $department->description }}"
-                                                    data-status="{{ $department->status }}">
-                                                    <i class="fas fa-pencil-alt"></i>
-                                                </button>
-
-                                                <button type="button"
-                                                    class="btn btn-{{ $department->status === 'active' ? 'warning' : 'success' }} btn-sm shadow btn-xs sharp me-1 toggle-status"
-                                                    data-id="{{ $department->id }}" data-name="{{ $department->name }}"
-                                                    data-status="{{ $department->status }}">
-                                                    <i
-                                                        class="fas fa-{{ $department->status === 'active' ? 'ban' : 'check' }}"></i>
-                                                </button>
-
-                                                <button type="button"
-                                                    class="btn btn-danger btn-sm shadow btn-xs sharp delete-department"
-                                                    data-id="{{ $department->id }}" data-name="{{ $department->name }}">
-                                                    <i class="fas fa-trash"></i>
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                @empty
-                                    <tr>
-                                        <td colspan="8" class="text-center">No departments found</td>
-                                    </tr>
-                                @endforelse
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <!-- Add Department Modal -->
-    <div class="modal fade" id="addDepartmentModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-lg">
+    <div class="modal fade" id="addDepartmentModal">
+        <div class="modal-dialog modal-lg" role="document">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title">Add New Department</h5>
@@ -340,8 +352,8 @@
     </div>
 
     <!-- Edit Department Modal -->
-    <div class="modal fade" id="editDepartmentModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-lg">
+    <div class="modal fade" id="editDepartmentModal">
+        <div class="modal-dialog modal-lg" role="document">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title">Edit Department</h5>
@@ -402,14 +414,112 @@
             </div>
         </div>
     </div>
+
+    <!-- Departments Table -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h4 class="card-title">Department List</h4>
+                    <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal"
+                        data-bs-target="#addDepartmentModal">
+                        <i class="fas fa-plus me-1"></i> Add New Department
+                    </button>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table id="departmentsTable" class="display table table-striped table-hover" style="width:100%">
+                            <thead>
+                                <tr>
+                                    <th>No</th>
+                                    <th>Department Name</th>
+                                    <th>Manager</th>
+                                    <th>Total Users</th>
+                                    <th>Description</th>
+                                    <th>Status</th>
+                                    <th>Created</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @forelse ($departments as $index => $department)
+                                    <tr>
+                                        <td>{{ $index + 1 }}</td>
+                                        <td>
+                                            <strong>{{ $department->name }}</strong>
+                                        </td>
+                                        <td>
+                                            @if ($department->manager)
+                                                <div class="d-flex align-items-center">
+                                                    <img src="{{ $department->manager->profile_picture_url }}"
+                                                        class="rounded-circle me-2" width="28" height="28"
+                                                        alt="{{ $department->manager->name }}">
+                                                    <span>{{ $department->manager->name }}</span>
+                                                </div>
+                                            @else
+                                                <span class="text-muted">-</span>
+                                            @endif
+                                        </td>
+                                        <td>
+                                            <span class="badge badge-info">{{ $department->users->count() }}</span>
+                                        </td>
+                                        <td>{{ Str::limit($department->description, 50) ?? '-' }}</td>
+                                        <td>
+                                            @php
+                                                $statusBadge = [
+                                                    'active' => 'success',
+                                                    'inactive' => 'danger',
+                                                ];
+                                            @endphp
+                                            <span class="badge badge-{{ $statusBadge[$department->status] }}">
+                                                {{ ucfirst($department->status) }}
+                                            </span>
+                                        </td>
+                                        <td>{{ $department->created_at->format('d M Y') }}</td>
+                                        <td>
+                                            <div class="d-flex justify-content-center">
+                                                <button type="button"
+                                                    class="btn btn-primary btn-sm shadow btn-xs sharp me-1 edit-department"
+                                                    data-id="{{ $department->id }}" data-name="{{ $department->name }}"
+                                                    data-manager-id="{{ $department->manager_id }}"
+                                                    data-description="{{ $department->description }}"
+                                                    data-status="{{ $department->status }}">
+                                                    <i class="fas fa-pencil-alt"></i>
+                                                </button>
+
+                                                <button type="button"
+                                                    class="btn btn-{{ $department->status === 'active' ? 'warning' : 'success' }} btn-sm shadow btn-xs sharp me-1 toggle-status"
+                                                    data-id="{{ $department->id }}" data-name="{{ $department->name }}"
+                                                    data-status="{{ $department->status }}">
+                                                    <i
+                                                        class="fas fa-{{ $department->status === 'active' ? 'ban' : 'check' }}"></i>
+                                                </button>
+
+                                                <button type="button"
+                                                    class="btn btn-danger btn-sm shadow btn-xs sharp delete-department"
+                                                    data-id="{{ $department->id }}" data-name="{{ $department->name }}">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="8" class="text-center">No departments found</td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 @endsection
 
 @push('scripts')
-    <!-- Datatable -->
     <script src="{{ asset('assets/vendor/datatables/js/jquery.dataTables.min.js') }}"></script>
-    <!-- Toastr -->
     <script src="{{ asset('assets/vendor/toastr/js/toastr.min.js') }}"></script>
-    <!-- SweetAlert2 -->
     <script src="{{ asset('assets/vendor/sweetalert2/dist/sweetalert2.min.js') }}"></script>
 
     <script>

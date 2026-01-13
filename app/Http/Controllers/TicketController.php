@@ -2,27 +2,37 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\User;
 use App\Models\Ticket;
 use App\Models\Category;
-use App\Models\Priority;
 use App\Models\Location;
-use App\Models\User;
+use App\Models\Priority;
+use App\Models\Department;
 use App\Models\ActivityLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+
 class TicketController extends Controller
 {
     /**
      * Display all tickets (accessible by all users)
      */
+    /**
+     * Display all tickets (accessible by all users)
+     */
     public function index(Request $request)
     {
-        $query = Ticket::with(['user', 'category', 'priority', 'location', 'assignedUser']);
+        $query = Ticket::with(['user', 'category', 'priority', 'location', 'assignedUser', 'department']);
 
         // Filter by status
         if ($request->filled('status')) {
             $query->where('status', $request->status);
+        }
+
+        // Filter by approval status
+        if ($request->filled('approval_status')) {
+            $query->where('approval_status', $request->approval_status);
         }
 
         // Filter by category
@@ -40,20 +50,31 @@ class TicketController extends Controller
             $query->where('location_id', $request->location);
         }
 
+        // Filter by department
+        if ($request->filled('department')) {
+            $query->where('department_id', $request->department);
+        }
+
         // Search by ticket number or title
         if ($request->filled('search')) {
             $query->where(function ($q) use ($request) {
                 $q->where('ticket_number', 'like', '%' . $request->search . '%')
-                    ->orWhere('title', 'like', '%' . $request->search . '%');
+                    ->orWhere('title', 'like', '%' . $request->search . '%')
+                    ->orWhere('location_manual', 'like', '%' . $request->search . '%')
+                    ->orWhereHas('user', function ($q) use ($request) {
+                        $q->where('name', 'like', '%' . $request->search . '%');
+                    });
             });
         }
 
-        $tickets = $query->latest()->get();
+        // Order by latest
+        $tickets = $query->latest()->paginate(5);
 
         // Get filter options
-        $categories = Category::active()->get();
-        $priorities = Priority::active()->get();
+        $categories = Category::active()->with('department')->get();
+        $priorities = Priority::active()->orderBy('level')->get();
         $locations = Location::active()->get();
+        $departments = Department::active()->get();
 
         // Count by status
         $statusCounts = [
@@ -63,17 +84,21 @@ class TicketController extends Controller
             'pending' => Ticket::where('status', 'pending')->count(),
             'resolved' => Ticket::where('status', 'resolved')->count(),
             'closed' => Ticket::where('status', 'closed')->count(),
+            'cancelled' => Ticket::where('status', 'cancelled')->count(),
         ];
 
-        return view('tickets.index', compact('tickets', 'categories', 'priorities', 'locations', 'statusCounts'));
+        return view('tickets.index', compact('tickets', 'categories', 'priorities', 'locations', 'departments', 'statusCounts'));
     }
 
     /**
      * Display tickets created by authenticated user
      */
+    /**
+     * Display tickets created by authenticated user
+     */
     public function myTickets(Request $request)
     {
-        $query = Ticket::with(['category', 'priority', 'location', 'assignedUser'])
+        $query = Ticket::with(['category', 'priority', 'location', 'assignedUser', 'department'])
             ->where('user_id', auth()->id());
 
         // Filter by status
@@ -81,44 +106,72 @@ class TicketController extends Controller
             $query->where('status', $request->status);
         }
 
+        // Filter by approval status
+        if ($request->filled('approval_status')) {
+            $query->where('approval_status', $request->approval_status);
+        }
+
         // Filter by category
         if ($request->filled('category')) {
             $query->where('category_id', $request->category);
+        }
+
+        // Filter by priority
+        if ($request->filled('priority')) {
+            $query->where('priority_id', $request->priority);
+        }
+
+        // Filter by location
+        if ($request->filled('location')) {
+            $query->where('location_id', $request->location);
+        }
+
+        // Filter by department
+        if ($request->filled('department')) {
+            $query->where('department_id', $request->department);
         }
 
         // Search by ticket number or title
         if ($request->filled('search')) {
             $query->where(function ($q) use ($request) {
                 $q->where('ticket_number', 'like', '%' . $request->search . '%')
-                    ->orWhere('title', 'like', '%' . $request->search . '%');
+                    ->orWhere('title', 'like', '%' . $request->search . '%')
+                    ->orWhere('location_manual', 'like', '%' . $request->search . '%');
             });
         }
 
-        $tickets = $query->latest()->get();
+        $tickets = $query->latest()->paginate(5);
 
         // Get filter options
-        $categories = Category::active()->get();
-        $priorities = Priority::active()->get();
-        $locations = Location::active()->get();
+        $categories = Category::where('status', 'active')->with('department')->get();
+        $priorities = Priority::where('status', 'active')->orderBy('level')->get();
+        $locations = Location::where('status', 'active')->get();
+        $departments = Department::where('status', 'active')->get();
 
         // Count by status (only for current user's tickets)
         $statusCounts = [
             'all' => Ticket::where('user_id', auth()->id())->count(),
             'open' => Ticket::where('user_id', auth()->id())->where('status', 'open')->count(),
             'in_progress' => Ticket::where('user_id', auth()->id())->where('status', 'in_progress')->count(),
+            'pending' => Ticket::where('user_id', auth()->id())->where('status', 'pending')->count(),
             'resolved' => Ticket::where('user_id', auth()->id())->where('status', 'resolved')->count(),
             'closed' => Ticket::where('user_id', auth()->id())->where('status', 'closed')->count(),
+            'cancelled' => Ticket::where('user_id', auth()->id())->where('status', 'cancelled')->count(),
         ];
 
-        return view('tickets.my-tickets', compact('tickets', 'categories', 'priorities', 'locations', 'statusCounts'));
+        return view('tickets.my-tickets', compact('tickets', 'categories', 'priorities', 'locations', 'departments', 'statusCounts'));
     }
+    /**
+     * Show the form for creating a new ticket
+     */
     public function create()
     {
         $categories = Category::where('status', 'active')->get();
         $priorities = Priority::where('status', 'active')->orderBy('level')->get();
         $locations = Location::where('status', 'active')->get();
+        $departments = Department::where('status', 'active')->get();
 
-        return view('tickets.create', compact('categories', 'priorities', 'locations'));
+        return view('tickets.create', compact('categories', 'priorities', 'locations', 'departments'));
     }
 
     /**
@@ -131,7 +184,10 @@ class TicketController extends Controller
             'description' => 'required|string',
             'category_id' => 'required|exists:categories,id',
             'priority_id' => 'required|exists:priorities,id',
+            'department_id' => 'nullable|exists:departments,id',
             'location_id' => 'nullable|exists:locations,id',
+            'location_manual' => 'nullable|string|max:255',
+            'estimated_cost' => 'nullable|numeric|min:0',
             'due_date' => 'nullable|date|after:now',
             'attachments.*' => 'nullable|file|mimes:jpg,jpeg,png,pdf,doc,docx|max:5120', // 5MB max
         ]);
@@ -141,18 +197,32 @@ class TicketController extends Controller
             // Generate ticket number
             $ticketNumber = $this->generateTicketNumber();
 
-            // Create ticket
-            $ticket = Ticket::create([
+            // Prepare ticket data
+            $ticketData = [
                 'ticket_number' => $ticketNumber,
                 'title' => $request->title,
                 'description' => $request->description,
                 'category_id' => $request->category_id,
                 'priority_id' => $request->priority_id,
-                'location_id' => $request->location_id,
+                'department_id' => $request->department_id,
                 'user_id' => auth()->id(),
                 'status' => 'open',
+                'approval_status' => 'pending_approval',
                 'due_date' => $request->due_date,
-            ]);
+                'estimated_cost' => $request->estimated_cost,
+            ];
+
+            // Handle location
+            if ($request->filled('location_id')) {
+                $ticketData['location_id'] = $request->location_id;
+                $ticketData['location_manual'] = null;
+            } elseif ($request->filled('location_manual')) {
+                $ticketData['location_id'] = null;
+                $ticketData['location_manual'] = $request->location_manual;
+            }
+
+            // Create ticket
+            $ticket = Ticket::create($ticketData);
 
             // Handle file attachments
             if ($request->hasFile('attachments')) {

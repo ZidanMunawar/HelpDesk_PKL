@@ -12,7 +12,12 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule): void
     {
-        // $schedule->command('inspire')->hourly();
+
+        // Cleanup soft deleted users older than 30 days (every month)
+        $schedule->command('users:cleanup-soft-deleted --days=30')->monthly();
+
+        // Cleanup unverified users older than 7 days (daily)
+        $schedule->command('users:cleanup-unverified')->daily();
     }
 
     /**
@@ -24,5 +29,6 @@ class Kernel extends ConsoleKernel
 
         require base_path('routes/console.php');
     }
+
 
 }

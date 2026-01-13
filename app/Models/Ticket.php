@@ -16,11 +16,14 @@ class Ticket extends Model
         'title',
         'description',
         'category_id',
+        'department_id',
         'priority_id',
         'location_id',
+        'location_manual',
         'user_id',
         'assigned_to',
         'status',
+        'approval_status',
         'due_date',
         'resolved_at',
         'closed_at',
@@ -32,7 +35,39 @@ class Ticket extends Model
         'closed_at' => 'datetime',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
+
     ];
+
+    // Di dalam class Ticket (app/Models/Ticket.php)
+// Tambahkan relationship ini:
+
+    public function department()
+    {
+        return $this->belongsTo(Department::class);
+    }
+
+    // Tambahkan juga method ini jika belum ada:
+
+    public function getLocationDisplayAttribute()
+    {
+        if ($this->location_id) {
+            $location = $this->location;
+            if ($location) {
+                $display = $location->name;
+                if ($location->location_type) {
+                    $display .= ' (' . ucfirst($location->location_type) . ')';
+                }
+                if ($location->floor_number) {
+                    $display .= ' - Floor: ' . $location->floor_number;
+                }
+                return $display;
+            }
+        } elseif ($this->location_manual) {
+            return $this->location_manual . ' (Manual)';
+        }
+        return 'N/A';
+    }
+
 
     /**
      * Boot method for auto-generating ticket number

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Category;
+use App\Models\Department;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
@@ -12,8 +13,13 @@ class CategoryController extends Controller
 {
     public function index()
     {
-        $categories = Category::withCount('tickets')->latest()->get();
-        return view('admin.categories.index', compact('categories'));
+        $categories = Category::withCount('tickets')
+            ->with('department')
+            ->latest()
+            ->get();
+        $departments = Department::where('status', 'active')->get();
+
+        return view('admin.categories.index', compact('categories', 'departments'));
     }
 
     public function store(Request $request)
@@ -21,6 +27,7 @@ class CategoryController extends Controller
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255|unique:categories,name',
             'description' => 'nullable|string',
+            'department_id' => 'nullable|exists:departments,id',
             'status' => 'required|in:active,inactive',
         ]);
 
@@ -33,7 +40,12 @@ class CategoryController extends Controller
         }
 
         try {
-            $category = Category::create($request->all());
+            $category = Category::create([
+                'name' => $request->name,
+                'description' => $request->description,
+                'department_id' => $request->department_id,
+                'status' => $request->status,
+            ]);
 
             return response()->json([
                 'success' => true,
@@ -53,6 +65,7 @@ class CategoryController extends Controller
         $validator = Validator::make($request->all(), [
             'name' => ['required', 'string', 'max:255', Rule::unique('categories')->ignore($category->id)],
             'description' => 'nullable|string',
+            'department_id' => 'nullable|exists:departments,id',
             'status' => 'required|in:active,inactive',
         ]);
 
@@ -65,7 +78,12 @@ class CategoryController extends Controller
         }
 
         try {
-            $category->update($request->all());
+            $category->update([
+                'name' => $request->name,
+                'description' => $request->description,
+                'department_id' => $request->department_id,
+                'status' => $request->status,
+            ]);
 
             return response()->json([
                 'success' => true,

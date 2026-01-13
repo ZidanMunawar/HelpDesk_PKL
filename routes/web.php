@@ -1,5 +1,6 @@
 <?php
 
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\TicketController;
 use App\Http\Controllers\ProfileController;
@@ -12,7 +13,10 @@ use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\LocationController;
 use App\Http\Controllers\Admin\PriorityController;
 use App\Http\Controllers\Admin\DepartmentController;
+use App\Http\Controllers\Auth\ResetPasswordController;
+use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\Admin\UserManagementController;
+use Illuminate\Foundation\Auth\EmailVerificationRequest;
 
 /*
 |--------------------------------------------------------------------------
@@ -20,9 +24,6 @@ use App\Http\Controllers\Admin\UserManagementController;
 |--------------------------------------------------------------------------
 */
 
-// ================================
-// PUBLIC ROUTES
-// ================================
 Route::get('/', function () {
     return redirect()->route('login');
 });
@@ -38,11 +39,97 @@ Route::get('/reload-captcha', function () {
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
     Route::post('/login', [AuthController::class, 'login']);
+
     Route::get('/register', [AuthController::class, 'showRegistrationForm'])->name('register');
     Route::post('/register', [AuthController::class, 'register']);
+
+    // Reset unverified account
+    Route::post('/auth/reset-unverified', [AuthController::class, 'resetUnverified'])->name('auth.reset-unverified');
 });
 
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout')->middleware('auth');
+
+
+// PASSWORD RESET ROUTES
+Route::get('password/reset', [ForgotPasswordController::class, 'showLinkRequestForm'])
+    ->name('password.request');
+
+Route::post('password/email', [ForgotPasswordController::class, 'sendResetLinkEmail'])
+    ->name('password.email');
+
+Route::get('password/reset/{token}', [ResetPasswordController::class, 'showResetForm'])
+    ->name('password.reset');
+
+Route::post('password/reset', [ResetPasswordController::class, 'reset'])
+    ->name('password.update');
+// ================================
+// EMAIL VERIFICATION ROUTES
+// ================================
+
+// Email verification notice page (butuh login)
+Route::middleware('auth')->group(function () {
+    Route::get('/email/verify', function () {
+        // Redirect jika sudah verified
+        if (auth()->user()->hasVerifiedEmail()) {
+            return redirect()->route('dashboard');
+        }
+        return view('auth.verify-email');
+    })->name('verification.notice');
+
+    // Resend verification email (butuh login)
+    Route::post('/email/verification-notification', function (Request $request) {
+        if ($request->user()->hasVerifiedEmail()) {
+            return redirect()->route('dashboard');
+        }
+
+        $request->user()->sendEmailVerificationNotification();
+
+        return back()->with('success', 'Verification link has been sent to your email!');
+    })->middleware(['throttle:6,1'])->name('verification.send');
+});
+
+// ================================
+// VERIFICATION HANDLER (PUBLIC - NO AUTH REQUIRED!)
+// ================================
+Route::get('/email/verify/{id}/{hash}', function (Request $request, $id, $hash) {
+    // Find user by ID
+    $user = \App\Models\User::findOrFail($id);
+
+    // Verify hash
+    if (!hash_equals((string) $hash, sha1($user->getEmailForVerification()))) {
+        abort(403, 'Invalid verification link.');
+    }
+
+    // Check if already verified
+    if ($user->hasVerifiedEmail()) {
+        return redirect()->route('login')->with('info', 'Email already verified. Please login.');
+    }
+
+    // === VERIFY EMAIL ===
+    $user->markEmailAsVerified();
+    event(new \Illuminate\Auth\Events\Verified($user));
+
+    \Log::info('Email verified for user: ' . $user->email);
+
+    // === AUTO LOGIN USER ===
+    Auth::login($user);
+
+    // Check user status before redirect
+    if (!$user->isActive()) {
+        Auth::logout();
+
+        $message = $user->role === 'technician'
+            ? 'Email verified! Your technician account is pending approval from admin. You will be notified once approved.'
+            : 'Email verified! Your account is not active yet. Please contact administrator.';
+
+        return redirect()->route('login')->with('success', $message);
+    }
+
+    // === REDIRECT TO DASHBOARD ===
+    return redirect()->route('dashboard')->with('success', 'Email verified successfully! Welcome to Harris Hotel Ticketing System.');
+
+})->middleware(['signed', 'throttle:6,1'])->name('verification.verify');
+
 
 // ================================
 // AUTHENTICATED USER ROUTES
@@ -99,14 +186,13 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'admin'])->group(fun
     Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('dashboard');
 
     // User Management
-    Route::prefix('users')->name('users.')->group(function () {
+    Route::prefix('users')->name('users.')->middleware(['auth', 'admin'])->group(function () {
         Route::get('/', [UserManagementController::class, 'index'])->name('index');
         Route::post('/', [UserManagementController::class, 'store'])->name('store');
         Route::get('/{user}', [UserManagementController::class, 'show'])->name('show');
         Route::put('/{user}', [UserManagementController::class, 'update'])->name('update');
         Route::delete('/{user}', [UserManagementController::class, 'destroy'])->name('destroy');
         Route::post('/{user}/toggle-status', [UserManagementController::class, 'toggleStatus'])->name('toggle-status');
-        Route::post('/{user}/approve', [UserManagementController::class, 'approve'])->name('approve');
     });
 
     // Department Management

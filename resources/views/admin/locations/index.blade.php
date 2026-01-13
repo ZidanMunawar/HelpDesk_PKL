@@ -20,7 +20,7 @@
     <link rel="stylesheet" href="{{ asset('assets/vendor/sweetalert2/dist/sweetalert2.min.css') }}">
 
     <style>
-        /* Custom DataTable Styling - Larger Size */
+        /* Custom DataTable Styling - Larger Size (Konsisten dengan Department) */
         #locationsTable_wrapper .dataTables_length,
         #locationsTable_wrapper .dataTables_filter,
         #locationsTable_wrapper .dataTables_info,
@@ -124,19 +124,62 @@
         /* Table Styling */
         #locationsTable {
             font-size: 14px;
+            width: 100% !important;
         }
 
         #locationsTable thead th {
             font-size: 14px;
             font-weight: 600;
             padding: 15px 10px;
-            background-color: #f8f9fa;
-            border-bottom: 2px solid #dee2e6;
+            background-color: #f8f9fa !important;
+            border-bottom: 2px solid #dee2e6 !important;
+            text-align: center;
+            vertical-align: middle;
+        }
+
+        #locationsTable thead th:first-child {
+            width: 50px;
+        }
+
+        #locationsTable thead th:nth-child(4) {
+            width: 100px;
+        }
+
+        #locationsTable thead th:nth-child(6) {
+            width: 100px;
+        }
+
+        #locationsTable thead th:nth-child(7) {
+            width: 120px;
+        }
+
+        #locationsTable thead th:last-child {
+            width: 150px;
         }
 
         #locationsTable tbody td {
             padding: 12px 10px;
             vertical-align: middle;
+        }
+
+        #locationsTable tbody td:first-child {
+            text-align: center;
+        }
+
+        #locationsTable tbody td:nth-child(4) {
+            text-align: center;
+        }
+
+        #locationsTable tbody td:nth-child(6) {
+            text-align: center;
+        }
+
+        #locationsTable tbody td:nth-child(7) {
+            text-align: center;
+        }
+
+        #locationsTable tbody td:last-child {
+            text-align: center;
         }
 
         #locationsTable tbody tr:hover {
@@ -148,47 +191,30 @@
             padding: 6px 12px;
             font-size: 12px;
             font-weight: 500;
+            border-radius: 0.375rem;
         }
 
-        /* Button Action Styling */
-        .btn-xs.sharp {
-            width: 32px;
-            height: 32px;
-            padding: 0;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
+        .badge-info {
+            background-color: #17a2b8;
+            color: white;
         }
 
-        .btn-xs.sharp i {
-            font-size: 14px;
+        .badge-success {
+            background-color: #28a745;
+            color: white;
         }
 
-        /* Responsive adjustments */
-        @media (max-width: 768px) {
-            #locationsTable_wrapper .dataTables_filter input {
-                width: 100%;
-                margin-top: 10px;
-            }
-
-            #locationsTable_wrapper .dataTables_length,
-            #locationsTable_wrapper .dataTables_filter {
-                text-align: left;
-            }
-
-            #locationsTable_wrapper .dataTables_paginate {
-                float: none;
-                text-align: center;
-                margin-top: 15px;
-            }
+        .badge-danger {
+            background-color: #dc3545;
+            color: white;
         }
 
-        /* Badge colors for location types */
-        .badge-location-type {
-            font-size: 11px;
-            padding: 4px 8px;
+        .badge-warning {
+            background-color: #ffc107;
+            color: #212529;
         }
 
+        /* Location Type Badges */
         .badge-area {
             background-color: #6c757d;
             color: white;
@@ -213,13 +239,79 @@
             background-color: #6610f2;
             color: white;
         }
+
+        /* Button Action Styling (Sama dengan Department) */
+        .btn-xs.sharp {
+            width: 32px;
+            height: 32px;
+            padding: 0;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 0.375rem;
+        }
+
+        .btn-xs.sharp i {
+            font-size: 14px;
+        }
+
+        .d-flex .btn-xs.sharp {
+            margin-right: 5px;
+        }
+
+        .d-flex .btn-xs.sharp:last-child {
+            margin-right: 0;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            #locationsTable_wrapper .dataTables_filter input {
+                width: 100%;
+                margin-top: 10px;
+            }
+
+            #locationsTable_wrapper .dataTables_length,
+            #locationsTable_wrapper .dataTables_filter {
+                text-align: left;
+            }
+
+            #locationsTable_wrapper .dataTables_paginate {
+                float: none;
+                text-align: center;
+                margin-top: 15px;
+            }
+
+            #locationsTable thead th,
+            #locationsTable tbody td {
+                padding: 8px 5px;
+            }
+        }
+
+        /* Modal adjustments */
+        .modal-footer .btn {
+            padding: 8px 16px;
+            font-size: 14px;
+        }
+
+        .modal-footer .btn i {
+            font-size: 14px;
+        }
+
+        .form-label {
+            font-weight: 500;
+            color: #333;
+        }
+
+        .text-muted {
+            color: #6c757d !important;
+        }
     </style>
 @endpush
 
 @section('content')
     <!-- Add Location Modal -->
     <div class="modal fade" id="addLocationModal">
-        <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-dialog modal-lg" role="document">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title">Add New Location</h5>
@@ -229,66 +321,59 @@
                     @csrf
                     <div class="modal-body">
                         <div class="row">
-                            <div class="col-md-6">
-                                <div class="form-group mb-3">
-                                    <label class="text-black font-w500">Location Name <span
-                                            class="text-danger">*</span></label>
-                                    <input type="text" class="form-control" name="name"
-                                        placeholder="e.g., Lobby, Room 101" required>
-                                    <div class="invalid-feedback"></div>
-                                </div>
+                            <!-- Location Name -->
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Location Name <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" name="name"
+                                    placeholder="e.g., Lobby, Room 101" required>
+                                <div class="invalid-feedback"></div>
                             </div>
-                            <div class="col-md-6">
-                                <div class="form-group mb-3">
-                                    <label class="text-black font-w500">Location Type <span
-                                            class="text-danger">*</span></label>
-                                    <select class="form-control" name="location_type" id="add_location_type" required>
-                                        <option value="">Select Type</option>
-                                        <option value="area">Area</option>
-                                        <option value="floor">Floor</option>
-                                        <option value="room">Room</option>
-                                        <option value="facility">Facility</option>
-                                        <option value="department">Department</option>
-                                    </select>
-                                    <div class="invalid-feedback"></div>
-                                </div>
-                            </div>
-                        </div>
 
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="form-group mb-3">
-                                    <label class="text-black font-w500">Floor Number</label>
-                                    <input type="text" class="form-control" name="floor_number" id="add_floor_number"
-                                        placeholder="e.g., 1, 2, L1, Basement">
-                                    <small class="text-muted">Optional - for all location types</small>
-                                    <div class="invalid-feedback"></div>
-                                </div>
+                            <!-- Location Type -->
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Location Type <span class="text-danger">*</span></label>
+                                <select class="form-control" name="location_type" id="add_location_type" required>
+                                    <option value="">Select Type</option>
+                                    <option value="area">Area</option>
+                                    <option value="floor">Floor</option>
+                                    <option value="room">Room</option>
+                                    <option value="facility">Facility</option>
+                                    <option value="department">Department</option>
+                                </select>
+                                <div class="invalid-feedback"></div>
                             </div>
-                            <div class="col-md-6">
-                                <div class="form-group mb-3">
-                                    <label class="text-black font-w500">Status <span class="text-danger">*</span></label>
-                                    <select class="form-control" name="status" required>
-                                        <option value="active" selected>Active</option>
-                                        <option value="inactive">Inactive</option>
-                                    </select>
-                                    <div class="invalid-feedback"></div>
-                                </div>
-                            </div>
-                        </div>
 
-                        <div class="form-group mb-3">
-                            <label class="text-black font-w500">Description</label>
-                            <textarea class="form-control" name="description" rows="2" placeholder="Optional description"></textarea>
-                            <div class="invalid-feedback"></div>
+                            <!-- Floor Number -->
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Floor Number</label>
+                                <input type="text" class="form-control" name="floor_number" id="add_floor_number"
+                                    placeholder="e.g., 1, 2, L1, Basement">
+                                <small class="text-muted">Optional - for all location types</small>
+                                <div class="invalid-feedback"></div>
+                            </div>
+
+                            <!-- Status -->
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Status <span class="text-danger">*</span></label>
+                                <select class="form-control" name="status" required>
+                                    <option value="active" selected>Active</option>
+                                    <option value="inactive">Inactive</option>
+                                </select>
+                                <div class="invalid-feedback"></div>
+                            </div>
+
+                            <!-- Description -->
+                            <div class="col-12 mb-3">
+                                <label class="form-label">Description</label>
+                                <textarea class="form-control" name="description" rows="3" placeholder="Optional description"></textarea>
+                                <div class="invalid-feedback"></div>
+                            </div>
                         </div>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-danger light" data-bs-dismiss="modal">
-                            <i class="fa fa-times me-1"></i>Close
-                        </button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                         <button type="submit" class="btn btn-primary">
-                            <i class="fa fa-save me-1"></i>Save
+                            <i class="fas fa-save me-1"></i> Save Location
                         </button>
                     </div>
                 </form>
@@ -298,7 +383,7 @@
 
     <!-- Edit Location Modal -->
     <div class="modal fade" id="editLocationModal">
-        <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-dialog modal-lg" role="document">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title">Edit Location</h5>
@@ -307,67 +392,60 @@
                 <form id="editLocationForm">
                     @csrf
                     @method('PUT')
-                    <input type="hidden" name="location_id" id="edit_location_id">
+                    <input type="hidden" id="edit_location_id">
                     <div class="modal-body">
                         <div class="row">
-                            <div class="col-md-6">
-                                <div class="form-group mb-3">
-                                    <label class="text-black font-w500">Location Name <span
-                                            class="text-danger">*</span></label>
-                                    <input type="text" class="form-control" name="name" id="edit_name" required>
-                                    <div class="invalid-feedback"></div>
-                                </div>
+                            <!-- Location Name -->
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Location Name <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="edit_name" name="name" required>
+                                <div class="invalid-feedback"></div>
                             </div>
-                            <div class="col-md-6">
-                                <div class="form-group mb-3">
-                                    <label class="text-black font-w500">Location Type <span
-                                            class="text-danger">*</span></label>
-                                    <select class="form-control" name="location_type" id="edit_location_type" required>
-                                        <option value="area">Area</option>
-                                        <option value="floor">Floor</option>
-                                        <option value="room">Room</option>
-                                        <option value="facility">Facility</option>
-                                        <option value="department">Department</option>
-                                    </select>
-                                    <div class="invalid-feedback"></div>
-                                </div>
-                            </div>
-                        </div>
 
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="form-group mb-3">
-                                    <label class="text-black font-w500">Floor Number</label>
-                                    <input type="text" class="form-control" name="floor_number"
-                                        id="edit_floor_number" placeholder="e.g., 1, 2, L1, Basement">
-                                    <small class="text-muted">Optional - for all location types</small>
-                                    <div class="invalid-feedback"></div>
-                                </div>
+                            <!-- Location Type -->
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Location Type <span class="text-danger">*</span></label>
+                                <select class="form-control" id="edit_location_type" name="location_type" required>
+                                    <option value="area">Area</option>
+                                    <option value="floor">Floor</option>
+                                    <option value="room">Room</option>
+                                    <option value="facility">Facility</option>
+                                    <option value="department">Department</option>
+                                </select>
+                                <div class="invalid-feedback"></div>
                             </div>
-                            <div class="col-md-6">
-                                <div class="form-group mb-3">
-                                    <label class="text-black font-w500">Status <span class="text-danger">*</span></label>
-                                    <select class="form-control" name="status" id="edit_status" required>
-                                        <option value="active">Active</option>
-                                        <option value="inactive">Inactive</option>
-                                    </select>
-                                    <div class="invalid-feedback"></div>
-                                </div>
-                            </div>
-                        </div>
 
-                        <div class="form-group mb-3">
-                            <label class="text-black font-w500">Description</label>
-                            <textarea class="form-control" name="description" id="edit_description" rows="2"></textarea>
-                            <div class="invalid-feedback"></div>
+                            <!-- Floor Number -->
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Floor Number</label>
+                                <input type="text" class="form-control" id="edit_floor_number" name="floor_number"
+                                    placeholder="e.g., 1, 2, L1, Basement">
+                                <small class="text-muted">Optional - for all location types</small>
+                                <div class="invalid-feedback"></div>
+                            </div>
+
+                            <!-- Status -->
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Status <span class="text-danger">*</span></label>
+                                <select class="form-control" id="edit_status" name="status" required>
+                                    <option value="active">Active</option>
+                                    <option value="inactive">Inactive</option>
+                                </select>
+                                <div class="invalid-feedback"></div>
+                            </div>
+
+                            <!-- Description -->
+                            <div class="col-12 mb-3">
+                                <label class="form-label">Description</label>
+                                <textarea class="form-control" id="edit_description" name="description" rows="3"></textarea>
+                                <div class="invalid-feedback"></div>
+                            </div>
                         </div>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-danger light" data-bs-dismiss="modal">
-                            <i class="fa fa-times me-1"></i>Close
-                        </button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                         <button type="submit" class="btn btn-primary">
-                            <i class="fa fa-save me-1"></i>Update
+                            <i class="fas fa-save me-1"></i> Update Location
                         </button>
                     </div>
                 </form>
@@ -379,16 +457,16 @@
     <div class="row">
         <div class="col-12">
             <div class="card">
-                <div class="card-header">
-                    <h4 class="card-title">Location Management</h4>
-                    <button type="button" class="btn btn-primary" data-bs-toggle="modal"
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h4 class="card-title">Location List</h4>
+                    <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal"
                         data-bs-target="#addLocationModal">
-                        <i class="fa fa-plus me-2"></i>Add Location
+                        <i class="fas fa-plus me-1"></i> Add New Location
                     </button>
                 </div>
                 <div class="card-body">
                     <div class="table-responsive">
-                        <table id="locationsTable" class="display min-w850">
+                        <table id="locationsTable" class="display table table-striped table-hover" style="width:100%">
                             <thead>
                                 <tr>
                                     <th>No</th>
@@ -402,7 +480,7 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                @foreach ($locations as $index => $location)
+                                @forelse ($locations as $index => $location)
                                     @php
                                         $typeBadges = [
                                             'area' => 'badge-area',
@@ -414,55 +492,68 @@
                                     @endphp
                                     <tr>
                                         <td>{{ $index + 1 }}</td>
-                                        <td><strong>{{ $location->name }}</strong></td>
+                                        <td>
+                                            <strong>{{ $location->name }}</strong>
+                                        </td>
                                         <td>
                                             <span
-                                                class="badge badge-location-type {{ $typeBadges[$location->location_type] ?? 'badge-secondary' }}">
+                                                class="badge {{ $typeBadges[$location->location_type] ?? 'badge-secondary' }}">
                                                 {{ ucfirst($location->location_type) }}
                                             </span>
                                         </td>
                                         <td>
                                             @if ($location->floor_number)
-                                                <span class="badge badge-light">{{ $location->floor_number }}</span>
+                                                <span class="badge badge-info">{{ $location->floor_number }}</span>
                                             @else
                                                 <span class="text-muted">-</span>
                                             @endif
                                         </td>
-                                        <td>{{ $location->description ?? '-' }}</td>
+                                        <td>{{ Str::limit($location->description, 50) ?? '-' }}</td>
                                         <td>
-                                            <span
-                                                class="badge badge-{{ $location->status === 'active' ? 'success' : 'danger' }}">
+                                            @php
+                                                $statusBadge = [
+                                                    'active' => 'success',
+                                                    'inactive' => 'danger',
+                                                ];
+                                            @endphp
+                                            <span class="badge badge-{{ $statusBadge[$location->status] }}">
                                                 {{ ucfirst($location->status) }}
                                             </span>
                                         </td>
                                         <td>{{ $location->created_at->format('d M Y') }}</td>
                                         <td>
-                                            <div class="d-flex">
+                                            <div class="d-flex justify-content-center">
                                                 <button type="button"
-                                                    class="btn btn-primary shadow btn-xs sharp me-1 edit-location"
+                                                    class="btn btn-primary btn-sm shadow btn-xs sharp me-1 edit-location"
                                                     data-id="{{ $location->id }}" data-name="{{ $location->name }}"
                                                     data-location_type="{{ $location->location_type }}"
                                                     data-floor_number="{{ $location->floor_number }}"
                                                     data-description="{{ $location->description }}"
-                                                    data-status="{{ $location->status }}" title="Edit">
-                                                    <i class="fa fa-pencil"></i>
+                                                    data-status="{{ $location->status }}">
+                                                    <i class="fas fa-pencil-alt"></i>
                                                 </button>
+
                                                 <button type="button"
-                                                    class="btn btn-warning shadow btn-xs sharp me-1 toggle-status"
+                                                    class="btn btn-{{ $location->status === 'active' ? 'warning' : 'success' }} btn-sm shadow btn-xs sharp me-1 toggle-status"
                                                     data-id="{{ $location->id }}" data-name="{{ $location->name }}"
-                                                    data-status="{{ $location->status }}" title="Toggle Status">
-                                                    <i class="fa fa-power-off"></i>
+                                                    data-status="{{ $location->status }}">
+                                                    <i
+                                                        class="fas fa-{{ $location->status === 'active' ? 'ban' : 'check' }}"></i>
                                                 </button>
+
                                                 <button type="button"
-                                                    class="btn btn-danger shadow btn-xs sharp delete-location"
-                                                    data-id="{{ $location->id }}" data-name="{{ $location->name }}"
-                                                    title="Delete">
-                                                    <i class="fa fa-trash"></i>
+                                                    class="btn btn-danger btn-sm shadow btn-xs sharp delete-location"
+                                                    data-id="{{ $location->id }}" data-name="{{ $location->name }}">
+                                                    <i class="fas fa-trash"></i>
                                                 </button>
                                             </div>
                                         </td>
                                     </tr>
-                                @endforeach
+                                @empty
+                                    <tr>
+                                        <td colspan="8" class="text-center">No locations found</td>
+                                    </tr>
+                                @endforelse
                             </tbody>
                         </table>
                     </div>
@@ -479,32 +570,43 @@
 
     <script>
         $(document).ready(function() {
-            // Toastr config
+            // Toastr configuration
             toastr.options = {
-                "positionClass": "toast-top-right",
-                "timeOut": "5000",
                 "closeButton": true,
-                "progressBar": true
+                "debug": false,
+                "newestOnTop": true,
+                "progressBar": true,
+                "positionClass": "toast-top-right",
+                "preventDuplicates": false,
+                "onclick": null,
+                "showDuration": "300",
+                "hideDuration": "1000",
+                "timeOut": "5000",
+                "extendedTimeOut": "1000",
+                "showEasing": "swing",
+                "hideEasing": "linear",
+                "showMethod": "fadeIn",
+                "hideMethod": "fadeOut"
             };
 
-            // DataTable
+            // Initialize DataTable
             var table = $('#locationsTable').DataTable({
                 "pageLength": 10,
                 "ordering": true,
                 "searching": true,
                 "lengthMenu": [
-                    [10, 25, 50, 100, -1],
-                    [10, 25, 50, 100, "All"]
+                    [10, 25, 50, -1],
+                    [10, 25, 50, "All"]
                 ],
                 "language": {
-                    "search": "",
+                    "search": "_INPUT_",
                     "searchPlaceholder": "Search locations...",
                     "lengthMenu": "Show _MENU_ entries",
-                    "info": "Showing _START_ to _END_ of _TOTAL_ locations",
-                    "infoEmpty": "Showing 0 to 0 of 0 locations",
-                    "infoFiltered": "(filtered from _MAX_ total locations)",
-                    "zeroRecords": "No matching locations found",
-                    "emptyTable": "No locations available",
+                    "info": "Showing _START_ to _END_ of _TOTAL_ entries",
+                    "infoEmpty": "Showing 0 to 0 of 0 entries",
+                    "infoFiltered": "(filtered from _MAX_ total entries)",
+                    "zeroRecords": "No matching records found",
+                    "emptyTable": "No data available in table",
                     "paginate": {
                         "first": "First",
                         "last": "Last",
@@ -514,25 +616,28 @@
                 },
                 "columnDefs": [{
                         "orderable": false,
-                        "targets": [7] // Disable sorting for Action column
+                        "targets": [7]
                     },
                     {
                         "className": "text-center",
-                        "targets": [0, 2, 3, 5, 7] // Center align specific columns
+                        "targets": [0, 3, 5, 6, 7]
                     }
                 ],
                 "dom": '<"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6"f>>rtip',
                 "drawCallback": function() {
-                    // Custom pagination styling
-                    $('.dataTables_paginate > .pagination').addClass('pagination-gutter');
+                    $('.dataTables_paginate > .pagination').addClass(
+                        'pagination-gutter pagination-primary');
                 }
             });
 
-            // Add Location
+            // Add Location Form Submit
             $('#addLocationForm').on('submit', function(e) {
                 e.preventDefault();
-                var formData = new FormData(this);
+
+                var formData = $(this).serialize();
                 var submitBtn = $(this).find('button[type="submit"]');
+                var originalText = submitBtn.html();
+
                 submitBtn.prop('disabled', true).html(
                     '<i class="fa fa-spinner fa-spin me-1"></i>Saving...');
 
@@ -540,81 +645,114 @@
                     url: "{{ route('admin.locations.store') }}",
                     type: 'POST',
                     data: formData,
-                    processData: false,
-                    contentType: false,
                     success: function(response) {
-                        $('#addLocationModal').modal('hide');
-                        $('#addLocationForm')[0].reset();
-                        $('.form-control').removeClass('is-invalid');
-                        Swal.fire({
-                            icon: 'success',
-                            title: 'Success!',
-                            text: response.message,
-                            timer: 1500,
-                            showConfirmButton: false
-                        }).then(() => location.reload());
+                        if (response.success) {
+                            $('#addLocationModal').modal('hide');
+                            $('#addLocationForm')[0].reset();
+                            $('.form-control').removeClass('is-invalid');
+
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Success!',
+                                text: response.message,
+                                showConfirmButton: false,
+                                timer: 1500
+                            }).then(() => {
+                                location.reload();
+                            });
+                        }
                     },
                     error: function(xhr) {
-                        submitBtn.prop('disabled', false).html(
-                            '<i class="fa fa-save me-1"></i>Save');
+                        submitBtn.prop('disabled', false).html(originalText);
+
                         if (xhr.status === 422) {
+                            var errors = xhr.responseJSON.errors;
                             $('.form-control').removeClass('is-invalid');
-                            $('.invalid-feedback').text('');
-                            $.each(xhr.responseJSON.errors, function(key, value) {
+                            $.each(errors, function(key, value) {
                                 $('[name="' + key + '"]').addClass('is-invalid')
                                     .siblings('.invalid-feedback').text(value[0]);
+                            });
+                            toastr.error('Please check the form for errors');
+                        } else {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Oops...',
+                                text: xhr.responseJSON.message || 'An error occurred'
                             });
                         }
                     }
                 });
             });
 
-            // Edit Location
+            // Edit Location Button Click
             $(document).on('click', '.edit-location', function() {
-                $('#edit_location_id').val($(this).data('id'));
-                $('#edit_name').val($(this).data('name'));
-                $('#edit_location_type').val($(this).data('location_type'));
-                $('#edit_floor_number').val($(this).data('floor_number'));
-                $('#edit_description').val($(this).data('description'));
-                $('#edit_status').val($(this).data('status'));
+                var id = $(this).data('id');
+                var name = $(this).data('name');
+                var locationType = $(this).data('location_type');
+                var floorNumber = $(this).data('floor_number');
+                var description = $(this).data('description');
+                var status = $(this).data('status');
+
+                $('#edit_location_id').val(id);
+                $('#edit_name').val(name);
+                $('#edit_location_type').val(locationType);
+                $('#edit_floor_number').val(floorNumber);
+                $('#edit_description').val(description);
+                $('#edit_status').val(status);
+
                 $('.form-control').removeClass('is-invalid');
                 $('#editLocationModal').modal('show');
             });
 
+            // Edit Location Form Submit
             $('#editLocationForm').on('submit', function(e) {
                 e.preventDefault();
+
                 var locationId = $('#edit_location_id').val();
-                var formData = new FormData(this);
+                var formData = $(this).serialize();
                 var submitBtn = $(this).find('button[type="submit"]');
+                var originalText = submitBtn.html();
+
                 submitBtn.prop('disabled', true).html(
                     '<i class="fa fa-spinner fa-spin me-1"></i>Updating...');
 
                 $.ajax({
                     url: "{{ route('admin.locations.update', ':id') }}".replace(':id', locationId),
-                    type: 'POST',
+                    type: 'PUT',
                     data: formData,
-                    processData: false,
-                    contentType: false,
                     success: function(response) {
-                        $('#editLocationModal').modal('hide');
-                        $('.form-control').removeClass('is-invalid');
-                        Swal.fire({
-                            icon: 'success',
-                            title: 'Success!',
-                            text: response.message,
-                            timer: 1500,
-                            showConfirmButton: false
-                        }).then(() => location.reload());
+                        if (response.success) {
+                            $('#editLocationModal').modal('hide');
+                            $('#editLocationForm')[0].reset();
+                            $('.form-control').removeClass('is-invalid');
+
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Success!',
+                                text: response.message,
+                                showConfirmButton: false,
+                                timer: 1500
+                            }).then(() => {
+                                location.reload();
+                            });
+                        }
                     },
                     error: function(xhr) {
-                        submitBtn.prop('disabled', false).html(
-                            '<i class="fa fa-save me-1"></i>Update');
+                        submitBtn.prop('disabled', false).html(originalText);
+
                         if (xhr.status === 422) {
+                            var errors = xhr.responseJSON.errors;
                             $('.form-control').removeClass('is-invalid');
-                            $('.invalid-feedback').text('');
-                            $.each(xhr.responseJSON.errors, function(key, value) {
-                                $('[name="' + key + '"]').addClass('is-invalid')
+                            $.each(errors, function(key, value) {
+                                $('#edit_' + key).addClass('is-invalid')
                                     .siblings('.invalid-feedback').text(value[0]);
+                            });
+                            toastr.error('Please check the form for errors');
+                        } else {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Oops...',
+                                text: xhr.responseJSON.message || 'An error occurred'
                             });
                         }
                     }
@@ -628,14 +766,31 @@
                 var currentStatus = $(this).data('status');
                 var newStatus = currentStatus === 'active' ? 'inactive' : 'active';
 
+                var statusColors = {
+                    'active': '#28a745',
+                    'inactive': '#dc3545'
+                };
+
                 Swal.fire({
-                    title: 'Change Status?',
-                    html: `Change <strong>${locationName}</strong> to <span style="color: ${newStatus === 'active' ? '#28a745' : '#dc3545'}">${newStatus.toUpperCase()}</span>?`,
+                    title: 'Change Location Status?',
+                    html: `Are you sure you want to change <strong>${locationName}</strong>'s status to <span style="color: ${statusColors[newStatus]}">${newStatus.toUpperCase()}</span>?`,
                     icon: 'question',
                     showCancelButton: true,
-                    confirmButtonText: 'Yes, change it!'
+                    confirmButtonColor: '#3085d6',
+                    cancelButtonColor: '#d33',
+                    confirmButtonText: 'Yes, change it!',
+                    cancelButtonText: 'Cancel'
                 }).then((result) => {
                     if (result.isConfirmed) {
+                        Swal.fire({
+                            title: 'Processing...',
+                            html: 'Please wait',
+                            allowOutsideClick: false,
+                            didOpen: () => {
+                                Swal.showLoading();
+                            }
+                        });
+
                         $.ajax({
                             url: "{{ route('admin.locations.toggle-status', ':id') }}"
                                 .replace(':id', locationId),
@@ -644,13 +799,25 @@
                                 _token: '{{ csrf_token() }}'
                             },
                             success: function(response) {
+                                if (response.success) {
+                                    Swal.fire({
+                                        icon: 'success',
+                                        title: 'Status Changed!',
+                                        text: response.message,
+                                        showConfirmButton: false,
+                                        timer: 1500
+                                    }).then(() => {
+                                        location.reload();
+                                    });
+                                }
+                            },
+                            error: function(xhr) {
                                 Swal.fire({
-                                    icon: 'success',
-                                    title: 'Changed!',
-                                    text: response.message,
-                                    timer: 1500,
-                                    showConfirmButton: false
-                                }).then(() => location.reload());
+                                    icon: 'error',
+                                    title: 'Failed!',
+                                    text: xhr.responseJSON.message ||
+                                        'An error occurred'
+                                });
                             }
                         });
                     }
@@ -664,28 +831,52 @@
 
                 Swal.fire({
                     title: 'Are you sure?',
-                    html: `Delete location <strong>${locationName}</strong>?<br>This action cannot be undone!`,
+                    html: `You are about to delete <strong>${locationName}</strong> location.<br>This action cannot be undone!`,
                     icon: 'warning',
                     showCancelButton: true,
                     confirmButtonColor: '#d33',
-                    confirmButtonText: 'Yes, delete it!'
+                    cancelButtonColor: '#3085d6',
+                    confirmButtonText: 'Yes, delete it!',
+                    cancelButtonText: 'Cancel'
                 }).then((result) => {
                     if (result.isConfirmed) {
+                        Swal.fire({
+                            title: 'Deleting...',
+                            html: 'Please wait',
+                            allowOutsideClick: false,
+                            didOpen: () => {
+                                Swal.showLoading();
+                            }
+                        });
+
                         $.ajax({
                             url: "{{ route('admin.locations.destroy', ':id') }}".replace(
-                                ':id', locationId),
+                                ':id',
+                                locationId),
                             type: 'DELETE',
                             data: {
                                 _token: '{{ csrf_token() }}'
                             },
                             success: function(response) {
+                                if (response.success) {
+                                    Swal.fire({
+                                        icon: 'success',
+                                        title: 'Deleted!',
+                                        text: response.message,
+                                        showConfirmButton: false,
+                                        timer: 1500
+                                    }).then(() => {
+                                        location.reload();
+                                    });
+                                }
+                            },
+                            error: function(xhr) {
                                 Swal.fire({
-                                    icon: 'success',
-                                    title: 'Deleted!',
-                                    text: response.message,
-                                    timer: 1500,
-                                    showConfirmButton: false
-                                }).then(() => location.reload());
+                                    icon: 'error',
+                                    title: 'Failed!',
+                                    text: xhr.responseJSON.message ||
+                                        'An error occurred'
+                                });
                             }
                         });
                     }

@@ -23,12 +23,17 @@ class TicketFilterController extends Controller
             abort(403, 'You do not have permission to access this page. Please contact administrator.');
         }
 
-        $query = Ticket::with(['user', 'category', 'priority', 'location', 'assignedUser'])
+        $query = Ticket::with(['user', 'category', 'priority', 'location', 'assignedUser', 'department'])
             ->where('assigned_to', $user->id);
 
         // Filter by status
         if ($request->filled('status')) {
             $query->where('status', $request->status);
+        }
+
+        // Filter by approval status
+        if ($request->filled('approval_status')) {
+            $query->where('approval_status', $request->approval_status);
         }
 
         // Filter by category
@@ -46,29 +51,29 @@ class TicketFilterController extends Controller
             $query->where('location_id', $request->location);
         }
 
-        // Search by ticket number or title
+        // Filter by department
+        if ($request->filled('department')) {
+            $query->where('department_id', $request->department);
+        }
+
+        // Search by ticket number or title or user
         if ($request->filled('search')) {
             $query->where(function ($q) use ($request) {
                 $q->where('ticket_number', 'like', '%' . $request->search . '%')
-                    ->orWhere('title', 'like', '%' . $request->search . '%');
+                    ->orWhere('title', 'like', '%' . $request->search . '%')
+                    ->orWhereHas('user', function ($q) use ($request) {
+                        $q->where('name', 'like', '%' . $request->search . '%');
+                    });
             });
         }
 
-        // Sort by priority and created date
-        $tickets = $query->orderByRaw('
-            CASE
-                WHEN status = "open" THEN 1
-                WHEN status = "in_progress" THEN 2
-                WHEN status = "pending" THEN 3
-                WHEN status = "resolved" THEN 4
-                ELSE 5
-            END
-        ')->orderBy('created_at', 'desc')->get();
+        // Get all tickets (no pagination for assigned tickets)
+        $tickets = $query->latest()->get();
 
         // Get filter options
-        $categories = Category::active()->get();
-        $priorities = Priority::active()->get();
-        $locations = Location::active()->get();
+        $categories = Category::where('status', 'active')->get();
+        $priorities = Priority::where('status', 'active')->orderBy('level')->get();
+        $locations = Location::where('status', 'active')->get();
 
         // Count by status (only for assigned tickets)
         $statusCounts = [
@@ -93,13 +98,18 @@ class TicketFilterController extends Controller
             abort(403, 'Only administrators can access this page.');
         }
 
-        $query = Ticket::with(['user', 'category', 'priority', 'location'])
+        $query = Ticket::with(['user', 'category', 'priority', 'location', 'department'])
             ->whereNull('assigned_to')
             ->whereNotIn('status', ['closed', 'cancelled']);
 
         // Filter by status
         if ($request->filled('status')) {
             $query->where('status', $request->status);
+        }
+
+        // Filter by approval status
+        if ($request->filled('approval_status')) {
+            $query->where('approval_status', $request->approval_status);
         }
 
         // Filter by category
@@ -117,23 +127,31 @@ class TicketFilterController extends Controller
             $query->where('location_id', $request->location);
         }
 
-        // Search by ticket number or title
+        // Filter by department
+        if ($request->filled('department')) {
+            $query->where('department_id', $request->department);
+        }
+
+        // Search by ticket number, title, or user
         if ($request->filled('search')) {
             $query->where(function ($q) use ($request) {
                 $q->where('ticket_number', 'like', '%' . $request->search . '%')
-                    ->orWhere('title', 'like', '%' . $request->search . '%');
+                    ->orWhere('title', 'like', '%' . $request->search . '%')
+                    ->orWhereHas('user', function ($q) use ($request) {
+                        $q->where('name', 'like', '%' . $request->search . '%');
+                    });
             });
         }
 
-        // ✅ CARA BARU: Sort by priority using relationship
+        // Sort by priority level (urgent first)
         $tickets = $query->get()->sortBy(function ($ticket) {
-            return $ticket->priority->level; // Urgent (level 1) first
+            return $ticket->priority->level ?? 999;
         })->values();
 
         // Get filter options
-        $categories = Category::active()->get();
-        $priorities = Priority::active()->get();
-        $locations = Location::active()->get();
+        $categories = Category::where('status', 'active')->get();
+        $priorities = Priority::where('status', 'active')->get();
+        $locations = Location::where('status', 'active')->get();
 
         // Get assignable users
         $assignableUsers = User::whereNotNull('department_id')
@@ -150,7 +168,6 @@ class TicketFilterController extends Controller
 
         return view('tickets.unassigned', compact('tickets', 'categories', 'priorities', 'locations', 'statusCounts', 'assignableUsers'));
     }
-
 
     /**
      * Bulk assign tickets (Admin only)

@@ -1,5 +1,4 @@
 <?php
-// app/Models/Category.php
 
 namespace App\Models;
 
@@ -14,12 +13,15 @@ class Category extends Model
     protected $fillable = [
         'name',
         'description',
+        'department_id',
         'status',
+        'deleted_at'
     ];
 
     protected $casts = [
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
+        'deleted_at' => 'datetime',
     ];
 
     /**
@@ -38,6 +40,14 @@ class Category extends Model
     public function tickets()
     {
         return $this->hasMany(Ticket::class);
+    }
+
+    /**
+     * Department relationship
+     */
+    public function department()
+    {
+        return $this->belongsTo(Department::class);
     }
 
     /**
