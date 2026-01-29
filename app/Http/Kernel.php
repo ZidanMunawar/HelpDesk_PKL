@@ -69,5 +69,7 @@ class Kernel extends HttpKernel
         // ... middleware lainnya
         'admin' => \App\Http\Middleware\AdminMiddleware::class,
         'active' => \App\Http\Middleware\ActiveUserMiddleware::class,
+        'superadmin' => \App\Http\Middleware\SuperAdmin::class,
+        'admin_or_superadmin' => \App\Http\Middleware\AdminOrSuperAdmin::class,
     ];
 }

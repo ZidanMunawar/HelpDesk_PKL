@@ -184,18 +184,18 @@
         }
 
         /* Role badges */
+        .badge-superadmin {
+            background-color: #212529;
+            color: white;
+        }
+
         .badge-admin {
             background-color: #dc3545;
             color: white;
         }
 
-        .badge-manager {
-            background-color: #fd7e14;
-            color: white;
-        }
-
         .badge-gm {
-            background-color: #6610f2;
+            background-color: #0d6efd;
             color: white;
         }
 
@@ -235,255 +235,266 @@
 @endpush
 
 @section('content')
-    <!-- Add User Modal -->
-    <div class="modal fade" id="addUserModal">
-        <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Add New User</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+    <!-- Add User Modal (Only for SuperAdmin) -->
+    @if (auth()->user()->canCreateDeleteUsers())
+        <div class="modal fade" id="addUserModal">
+            <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Add New User</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <form id="addUserForm" enctype="multipart/form-data">
+                        @csrf
+                        <div class="modal-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group mb-3">
+                                        <label class="text-black font-w500">Full Name <span
+                                                class="text-danger">*</span></label>
+                                        <input type="text" class="form-control" name="name"
+                                            placeholder="Enter full name" required>
+                                        <div class="invalid-feedback"></div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group mb-3">
+                                        <label class="text-black font-w500">Email <span class="text-danger">*</span></label>
+                                        <input type="email" class="form-control" name="email" placeholder="Enter email"
+                                            required>
+                                        <div class="invalid-feedback"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group mb-3">
+                                        <label class="text-black font-w500">Phone</label>
+                                        <input type="text" class="form-control" name="phone"
+                                            placeholder="Enter phone number">
+                                        <div class="invalid-feedback"></div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group mb-3">
+                                        <label class="text-black font-w500">Profile Picture</label>
+                                        <input type="file" class="form-control" name="profile_picture" accept="image/*">
+                                        <small class="text-muted">Max size: 2MB (jpg, jpeg, png, gif)</small>
+                                        <div class="invalid-feedback"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group mb-3">
+                                        <label class="text-black font-w500">Password <span
+                                                class="text-danger">*</span></label>
+                                        <input type="password" class="form-control" name="password"
+                                            placeholder="Enter password" required>
+                                        <small class="text-muted">Minimum 8 characters</small>
+                                        <div class="invalid-feedback"></div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group mb-3">
+                                        <label class="text-black font-w500">Confirm Password <span
+                                                class="text-danger">*</span></label>
+                                        <input type="password" class="form-control" name="password_confirmation"
+                                            placeholder="Confirm password" required>
+                                        <div class="invalid-feedback"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group mb-3">
+                                        <label class="text-black font-w500">Role <span class="text-danger">*</span></label>
+                                        <select class="form-control" name="role" required>
+                                            <option value="">Select Role</option>
+                                            <option value="superadmin">Super Administrator</option>
+                                            <option value="admin">Administrator</option>
+                                            <option value="gm">General Manager</option>
+                                            <option value="om">Operational Manager</option>
+                                            <option value="technician">Technician</option>
+                                            <option value="user">User</option>
+                                        </select>
+                                        <div class="invalid-feedback"></div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group mb-3">
+                                        <label class="text-black font-w500">Department</label>
+                                        <select class="form-control" name="department_id">
+                                            <option value="">Select Department (Optional)</option>
+                                            @foreach ($departments as $dept)
+                                                <option value="{{ $dept->id }}">{{ $dept->name }}</option>
+                                            @endforeach
+                                        </select>
+                                        <div class="invalid-feedback"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group mb-3">
+                                        <label class="text-black font-w500">Status <span
+                                                class="text-danger">*</span></label>
+                                        <select class="form-control" name="status" required>
+                                            <option value="">Select Status</option>
+                                            <option value="active">Active</option>
+                                            <option value="inactive">Inactive</option>
+                                            <option value="pending">Pending</option>
+                                        </select>
+                                        <div class="invalid-feedback"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-danger light" data-bs-dismiss="modal">
+                                <i class="fa fa-times me-1"></i>Close
+                            </button>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fa fa-save me-1"></i>Save User
+                            </button>
+                        </div>
+                    </form>
                 </div>
-                <form id="addUserForm" enctype="multipart/form-data">
-                    @csrf
-                    <div class="modal-body">
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="form-group mb-3">
-                                    <label class="text-black font-w500">Full Name <span class="text-danger">*</span></label>
-                                    <input type="text" class="form-control" name="name" placeholder="Enter full name"
-                                        required>
-                                    <div class="invalid-feedback"></div>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="form-group mb-3">
-                                    <label class="text-black font-w500">Email <span class="text-danger">*</span></label>
-                                    <input type="email" class="form-control" name="email" placeholder="Enter email"
-                                        required>
-                                    <div class="invalid-feedback"></div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="form-group mb-3">
-                                    <label class="text-black font-w500">Phone</label>
-                                    <input type="text" class="form-control" name="phone"
-                                        placeholder="Enter phone number">
-                                    <div class="invalid-feedback"></div>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="form-group mb-3">
-                                    <label class="text-black font-w500">Profile Picture</label>
-                                    <input type="file" class="form-control" name="profile_picture" accept="image/*">
-                                    <small class="text-muted">Max size: 2MB (jpg, jpeg, png, gif)</small>
-                                    <div class="invalid-feedback"></div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="form-group mb-3">
-                                    <label class="text-black font-w500">Password <span class="text-danger">*</span></label>
-                                    <input type="password" class="form-control" name="password" placeholder="Enter password"
-                                        required>
-                                    <small class="text-muted">Minimum 8 characters</small>
-                                    <div class="invalid-feedback"></div>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="form-group mb-3">
-                                    <label class="text-black font-w500">Confirm Password <span
-                                            class="text-danger">*</span></label>
-                                    <input type="password" class="form-control" name="password_confirmation"
-                                        placeholder="Confirm password" required>
-                                    <div class="invalid-feedback"></div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="form-group mb-3">
-                                    <label class="text-black font-w500">Role <span class="text-danger">*</span></label>
-                                    <select class="form-control" name="role" required>
-                                        <option value="">Select Role</option>
-                                        <option value="admin">Admin</option>
-                                        <option value="manager">Manager</option>
-                                        <option value="gm">General Manager</option>
-                                        <option value="om">Operational Manager</option>
-                                        <option value="technician">Technician</option>
-                                        <option value="user">User</option>
-                                    </select>
-                                    <div class="invalid-feedback"></div>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="form-group mb-3">
-                                    <label class="text-black font-w500">Department</label>
-                                    <select class="form-control" name="department_id">
-                                        <option value="">Select Department (Optional)</option>
-                                        @foreach ($departments as $dept)
-                                            <option value="{{ $dept->id }}">{{ $dept->name }}</option>
-                                        @endforeach
-                                    </select>
-                                    <div class="invalid-feedback"></div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="form-group mb-3">
-                                    <label class="text-black font-w500">Status <span class="text-danger">*</span></label>
-                                    <select class="form-control" name="status" required>
-                                        <option value="">Select Status</option>
-                                        <option value="active">Active</option>
-                                        <option value="inactive">Inactive</option>
-                                        <option value="pending">Pending</option>
-                                    </select>
-                                    <div class="invalid-feedback"></div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-danger light" data-bs-dismiss="modal">
-                            <i class="fa fa-times me-1"></i>Close
-                        </button>
-                        <button type="submit" class="btn btn-primary">
-                            <i class="fa fa-save me-1"></i>Save User
-                        </button>
-                    </div>
-                </form>
             </div>
         </div>
-    </div>
+    @endif
 
-    <!-- Edit User Modal -->
-    <div class="modal fade" id="editUserModal">
-        <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Edit User</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+    <!-- Edit User Modal (For SuperAdmin & Admin) -->
+    @if (auth()->user()->canEditUsers())
+        <div class="modal fade" id="editUserModal">
+            <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Edit User</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <form id="editUserForm" enctype="multipart/form-data">
+                        @csrf
+                        @method('PUT')
+                        <input type="hidden" name="user_id" id="edit_user_id">
+                        <div class="modal-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group mb-3">
+                                        <label class="text-black font-w500">Full Name <span
+                                                class="text-danger">*</span></label>
+                                        <input type="text" class="form-control" name="name" id="edit_name"
+                                            placeholder="Enter full name" required>
+                                        <div class="invalid-feedback"></div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group mb-3">
+                                        <label class="text-black font-w500">Email <span
+                                                class="text-danger">*</span></label>
+                                        <input type="email" class="form-control" name="email" id="edit_email"
+                                            placeholder="Enter email" required>
+                                        <div class="invalid-feedback"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group mb-3">
+                                        <label class="text-black font-w500">Phone</label>
+                                        <input type="text" class="form-control" name="phone" id="edit_phone"
+                                            placeholder="Enter phone number">
+                                        <div class="invalid-feedback"></div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group mb-3">
+                                        <label class="text-black font-w500">Profile Picture</label>
+                                        <input type="file" class="form-control" name="profile_picture"
+                                            accept="image/*">
+                                        <small class="text-muted">Max size: 2MB (jpg, jpeg, png, gif)</small>
+                                        <div class="invalid-feedback"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group mb-3">
+                                        <label class="text-black font-w500">Password</label>
+                                        <input type="password" class="form-control" name="password" id="edit_password"
+                                            placeholder="Enter new password">
+                                        <small class="text-muted">Leave blank to keep current password</small>
+                                        <div class="invalid-feedback"></div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group mb-3">
+                                        <label class="text-black font-w500">Confirm Password</label>
+                                        <input type="password" class="form-control" name="password_confirmation"
+                                            id="edit_password_confirmation" placeholder="Confirm new password">
+                                        <div class="invalid-feedback"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group mb-3">
+                                        <label class="text-black font-w500">Role <span
+                                                class="text-danger">*</span></label>
+                                        <select class="form-control" name="role" id="edit_role" required>
+                                            <option value="">Select Role</option>
+                                            <option value="superadmin">Super Administrator</option>
+                                            <option value="admin">Administrator</option>
+                                            <option value="gm">General Manager</option>
+                                            <option value="om">Operational Manager</option>
+                                            <option value="technician">Technician</option>
+                                            <option value="user">User</option>
+                                        </select>
+                                        <div class="invalid-feedback"></div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group mb-3">
+                                        <label class="text-black font-w500">Department</label>
+                                        <select class="form-control" name="department_id" id="edit_department_id">
+                                            <option value="">Select Department (Optional)</option>
+                                            @foreach ($departments as $dept)
+                                                <option value="{{ $dept->id }}">{{ $dept->name }}</option>
+                                            @endforeach
+                                        </select>
+                                        <div class="invalid-feedback"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group mb-3">
+                                        <label class="text-black font-w500">Status <span
+                                                class="text-danger">*</span></label>
+                                        <select class="form-control" name="status" id="edit_status" required>
+                                            <option value="">Select Status</option>
+                                            <option value="active">Active</option>
+                                            <option value="inactive">Inactive</option>
+                                            <option value="pending">Pending</option>
+                                        </select>
+                                        <div class="invalid-feedback"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-danger light" data-bs-dismiss="modal">
+                                <i class="fa fa-times me-1"></i>Close
+                            </button>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fa fa-save me-1"></i>Update User
+                            </button>
+                        </div>
+                    </form>
                 </div>
-                <form id="editUserForm" enctype="multipart/form-data">
-                    @csrf
-                    @method('PUT')
-                    <input type="hidden" name="user_id" id="edit_user_id">
-                    <div class="modal-body">
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="form-group mb-3">
-                                    <label class="text-black font-w500">Full Name <span
-                                            class="text-danger">*</span></label>
-                                    <input type="text" class="form-control" name="name" id="edit_name"
-                                        placeholder="Enter full name" required>
-                                    <div class="invalid-feedback"></div>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="form-group mb-3">
-                                    <label class="text-black font-w500">Email <span class="text-danger">*</span></label>
-                                    <input type="email" class="form-control" name="email" id="edit_email"
-                                        placeholder="Enter email" required>
-                                    <div class="invalid-feedback"></div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="form-group mb-3">
-                                    <label class="text-black font-w500">Phone</label>
-                                    <input type="text" class="form-control" name="phone" id="edit_phone"
-                                        placeholder="Enter phone number">
-                                    <div class="invalid-feedback"></div>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="form-group mb-3">
-                                    <label class="text-black font-w500">Profile Picture</label>
-                                    <input type="file" class="form-control" name="profile_picture" accept="image/*">
-                                    <small class="text-muted">Max size: 2MB (jpg, jpeg, png, gif)</small>
-                                    <div class="invalid-feedback"></div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="form-group mb-3">
-                                    <label class="text-black font-w500">Password</label>
-                                    <input type="password" class="form-control" name="password" id="edit_password"
-                                        placeholder="Enter new password">
-                                    <small class="text-muted">Leave blank to keep current password</small>
-                                    <div class="invalid-feedback"></div>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="form-group mb-3">
-                                    <label class="text-black font-w500">Confirm Password</label>
-                                    <input type="password" class="form-control" name="password_confirmation"
-                                        id="edit_password_confirmation" placeholder="Confirm new password">
-                                    <div class="invalid-feedback"></div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="form-group mb-3">
-                                    <label class="text-black font-w500">Role <span class="text-danger">*</span></label>
-                                    <select class="form-control" name="role" id="edit_role" required>
-                                        <option value="">Select Role</option>
-                                        <option value="admin">Admin</option>
-                                        <option value="manager">Manager</option>
-                                        <option value="gm">General Manager</option>
-                                        <option value="om">Operational Manager</option>
-                                        <option value="technician">Technician</option>
-                                        <option value="user">User</option>
-                                    </select>
-                                    <div class="invalid-feedback"></div>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="form-group mb-3">
-                                    <label class="text-black font-w500">Department</label>
-                                    <select class="form-control" name="department_id" id="edit_department_id">
-                                        <option value="">Select Department (Optional)</option>
-                                        @foreach ($departments as $dept)
-                                            <option value="{{ $dept->id }}">{{ $dept->name }}</option>
-                                        @endforeach
-                                    </select>
-                                    <div class="invalid-feedback"></div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="form-group mb-3">
-                                    <label class="text-black font-w500">Status <span class="text-danger">*</span></label>
-                                    <select class="form-control" name="status" id="edit_status" required>
-                                        <option value="">Select Status</option>
-                                        <option value="active">Active</option>
-                                        <option value="inactive">Inactive</option>
-                                        <option value="pending">Pending</option>
-                                    </select>
-                                    <div class="invalid-feedback"></div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-danger light" data-bs-dismiss="modal">
-                            <i class="fa fa-times me-1"></i>Close
-                        </button>
-                        <button type="submit" class="btn btn-primary">
-                            <i class="fa fa-save me-1"></i>Update User
-                        </button>
-                    </div>
-                </form>
             </div>
         </div>
-    </div>
+    @endif
 
     <!-- User Table -->
     <div class="row">
@@ -491,12 +502,24 @@
             <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h4 class="card-title">User Management</h4>
-                    <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal"
-                        data-bs-target="#addUserModal">
-                        <i class="fas fa-plus me-1"></i> Add New User
-                    </button>
+                    @if (auth()->user()->canCreateDeleteUsers())
+                        <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal"
+                            data-bs-target="#addUserModal">
+                            <i class="fas fa-plus me-1"></i> Add New User
+                        </button>
+                    @endif
                 </div>
                 <div class="card-body">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        @if (auth()->user()->isSuperAdmin())
+                            <strong>SuperAdmin Access:</strong> Full user management permissions (Create, Read, Update,
+                            Delete)
+                        @elseif(auth()->user()->isAdmin())
+                            <strong>Admin Access:</strong> Limited user management (Read, Update status) - Cannot
+                            create/delete users or edit SuperAdmin
+                        @endif
+                    </div>
                     <div class="table-responsive">
                         <table id="usersTable" class="display table table-striped table-hover" style="width:100%">
                             <thead>
@@ -544,30 +567,43 @@
                                         <td class="text-center">{{ $user->created_at->format('d M Y') }}</td>
                                         <td class="text-center">
                                             <div class="d-flex justify-content-center">
-                                                <button type="button"
-                                                    class="btn btn-primary shadow btn-xs sharp me-1 edit-user"
-                                                    data-id="{{ $user->id }}" data-name="{{ $user->name }}"
-                                                    data-email="{{ $user->email }}" data-phone="{{ $user->phone }}"
-                                                    data-role="{{ $user->role }}" data-status="{{ $user->status }}"
-                                                    data-department-id="{{ $user->department_id }}" title="Edit User">
-                                                    <i class="fa fa-pencil"></i>
-                                                </button>
+                                                @if (auth()->user()->canEditUsers())
+                                                    @if (!(auth()->user()->isAdmin() && $user->isSuperAdmin()))
+                                                        <button type="button"
+                                                            class="btn btn-primary shadow btn-xs sharp me-1 edit-user"
+                                                            data-id="{{ $user->id }}"
+                                                            data-name="{{ $user->name }}"
+                                                            data-email="{{ $user->email }}"
+                                                            data-phone="{{ $user->phone }}"
+                                                            data-role="{{ $user->role }}"
+                                                            data-status="{{ $user->status }}"
+                                                            data-department-id="{{ $user->department_id }}"
+                                                            title="Edit User">
+                                                            <i class="fa fa-pencil"></i>
+                                                        </button>
+                                                    @endif
 
-                                                <button type="button"
-                                                    class="btn btn-{{ $user->status === 'active' ? 'warning' : 'success' }} shadow btn-xs sharp me-1 toggle-status"
-                                                    data-id="{{ $user->id }}" data-name="{{ $user->name }}"
-                                                    data-status="{{ $user->status }}"
-                                                    title="{{ $user->status === 'active' ? 'Deactivate' : 'Activate' }}">
-                                                    <i
-                                                        class="fas fa-{{ $user->status === 'active' ? 'ban' : 'check' }}"></i>
-                                                </button>
+                                                    @if (!(auth()->user()->isAdmin() && $user->isSuperAdmin()))
+                                                        <button type="button"
+                                                            class="btn btn-{{ $user->status === 'active' ? 'warning' : 'success' }} shadow btn-xs sharp me-1 toggle-status"
+                                                            data-id="{{ $user->id }}"
+                                                            data-name="{{ $user->name }}"
+                                                            data-status="{{ $user->status }}"
+                                                            title="{{ $user->status === 'active' ? 'Deactivate' : 'Activate' }}">
+                                                            <i
+                                                                class="fas fa-{{ $user->status === 'active' ? 'ban' : 'check' }}"></i>
+                                                        </button>
+                                                    @endif
+                                                @endif
 
-                                                <button type="button"
-                                                    class="btn btn-danger shadow btn-xs sharp delete-user"
-                                                    data-id="{{ $user->id }}" data-name="{{ $user->name }}"
-                                                    title="Delete User">
-                                                    <i class="fa fa-trash"></i>
-                                                </button>
+                                                @if (auth()->user()->canCreateDeleteUsers())
+                                                    <button type="button"
+                                                        class="btn btn-danger shadow btn-xs sharp delete-user"
+                                                        data-id="{{ $user->id }}" data-name="{{ $user->name }}"
+                                                        title="Delete User">
+                                                        <i class="fa fa-trash"></i>
+                                                    </button>
+                                                @endif
                                             </div>
                                         </td>
                                     </tr>
@@ -652,311 +688,336 @@
                 }
             });
 
-            // Add User Form Submit
-            $('#addUserForm').on('submit', function(e) {
-                e.preventDefault();
+            // Add User Form Submit (Only for SuperAdmin)
+            @if (auth()->user()->canCreateDeleteUsers())
+                $('#addUserForm').on('submit', function(e) {
+                    e.preventDefault();
 
-                var formData = new FormData(this);
-                var submitBtn = $(this).find('button[type="submit"]');
-                var originalText = submitBtn.html();
+                    var formData = new FormData(this);
+                    var submitBtn = $(this).find('button[type="submit"]');
+                    var originalText = submitBtn.html();
 
-                // Disable button and show loading
-                submitBtn.prop('disabled', true).html(
-                    '<i class="fa fa-spinner fa-spin me-1"></i>Saving...');
+                    // Disable button and show loading
+                    submitBtn.prop('disabled', true).html(
+                        '<i class="fa fa-spinner fa-spin me-1"></i>Saving...');
 
-                $.ajax({
-                    url: "{{ route('admin.users.store') }}",
-                    type: 'POST',
-                    data: formData,
-                    processData: false,
-                    contentType: false,
-                    success: function(response) {
-                        if (response.success) {
-                            $('#addUserModal').modal('hide');
-                            $('#addUserForm')[0].reset();
-                            $('.form-control').removeClass('is-invalid');
+                    $.ajax({
+                        url: "{{ route('admin.users.store') }}",
+                        type: 'POST',
+                        data: formData,
+                        processData: false,
+                        contentType: false,
+                        success: function(response) {
+                            if (response.success) {
+                                $('#addUserModal').modal('hide');
+                                $('#addUserForm')[0].reset();
+                                $('.form-control').removeClass('is-invalid');
 
-                            // SweetAlert Success
-                            Swal.fire({
-                                icon: 'success',
-                                title: 'Success!',
-                                text: response.message,
-                                showConfirmButton: false,
-                                timer: 1500
-                            }).then(() => {
-                                location.reload();
-                            });
-                        }
-                    },
-                    error: function(xhr) {
-                        submitBtn.prop('disabled', false).html(originalText);
-
-                        if (xhr.status === 422) {
-                            var errors = xhr.responseJSON.errors;
-                            $('.form-control').removeClass('is-invalid');
-                            $.each(errors, function(key, value) {
-                                $('[name="' + key + '"]').addClass('is-invalid')
-                                    .siblings('.invalid-feedback').text(value[0]);
-                            });
-                            toastr.error('Please check the form for errors');
-                        } else {
-                            Swal.fire({
-                                icon: 'error',
-                                title: 'Oops...',
-                                text: xhr.responseJSON.message || 'An error occurred'
-                            });
-                        }
-                    }
-                });
-            });
-
-            // Edit User Button Click
-            $(document).on('click', '.edit-user', function() {
-                var id = $(this).data('id');
-                var name = $(this).data('name');
-                var email = $(this).data('email');
-                var phone = $(this).data('phone');
-                var role = $(this).data('role');
-                var status = $(this).data('status');
-                var departmentId = $(this).data('department-id');
-
-                $('#edit_user_id').val(id);
-                $('#edit_name').val(name);
-                $('#edit_email').val(email);
-                $('#edit_phone').val(phone);
-                $('#edit_role').val(role);
-                $('#edit_status').val(status);
-                $('#edit_department_id').val(departmentId || '');
-                $('#edit_password').val('');
-                $('#edit_password_confirmation').val('');
-
-                $('.form-control').removeClass('is-invalid');
-                $('#editUserModal').modal('show');
-            });
-
-            // Edit User Form Submit
-            $('#editUserForm').on('submit', function(e) {
-                e.preventDefault();
-
-                var userId = $('#edit_user_id').val();
-                var formData = new FormData(this);
-                var submitBtn = $(this).find('button[type="submit"]');
-                var originalText = submitBtn.html();
-
-                // Disable button and show loading
-                submitBtn.prop('disabled', true).html(
-                    '<i class="fa fa-spinner fa-spin me-1"></i>Updating...');
-
-                $.ajax({
-                    url: "{{ route('admin.users.update', ':id') }}".replace(':id', userId),
-                    type: 'POST',
-                    data: formData,
-                    processData: false,
-                    contentType: false,
-                    headers: {
-                        'X-HTTP-Method-Override': 'PUT'
-                    },
-                    success: function(response) {
-                        if (response.success) {
-                            $('#editUserModal').modal('hide');
-                            $('#editUserForm')[0].reset();
-                            $('.form-control').removeClass('is-invalid');
-
-                            // SweetAlert Success
-                            Swal.fire({
-                                icon: 'success',
-                                title: 'Success!',
-                                text: response.message,
-                                showConfirmButton: false,
-                                timer: 1500
-                            }).then(() => {
-                                location.reload();
-                            });
-                        }
-                    },
-                    error: function(xhr) {
-                        submitBtn.prop('disabled', false).html(originalText);
-
-                        if (xhr.status === 422) {
-                            var errors = xhr.responseJSON.errors;
-                            $('.form-control').removeClass('is-invalid');
-                            $.each(errors, function(key, value) {
-                                $('#edit_' + key).addClass('is-invalid')
-                                    .siblings('.invalid-feedback').text(value[0]);
-                            });
-                            toastr.error('Please check the form for errors');
-                        } else {
-                            Swal.fire({
-                                icon: 'error',
-                                title: 'Oops...',
-                                text: xhr.responseJSON.message || 'An error occurred'
-                            });
-                        }
-                    }
-                });
-            });
-
-            // Toggle Status Button Click
-            $(document).on('click', '.toggle-status', function() {
-                var userId = $(this).data('id');
-                var userName = $(this).data('name');
-                var currentStatus = $(this).data('status');
-                var newStatus = currentStatus === 'active' ? 'inactive' : 'active';
-
-                var statusColors = {
-                    'active': '#28a745',
-                    'inactive': '#dc3545',
-                    'pending': '#ffc107'
-                };
-
-                var actionText = currentStatus === 'active' ? 'deactivate' : 'activate';
-                var confirmText = currentStatus === 'active' ? 'Deactivate' : 'Activate';
-
-                Swal.fire({
-                    title: `${confirmText} User?`,
-                    html: `Are you sure you want to ${actionText} <strong>${userName}</strong>?`,
-                    icon: 'question',
-                    showCancelButton: true,
-                    confirmButtonColor: currentStatus === 'active' ? '#dc3545' : '#28a745',
-                    cancelButtonColor: '#6c757d',
-                    confirmButtonText: `Yes, ${actionText}!`,
-                    cancelButtonText: 'Cancel'
-                }).then((result) => {
-                    if (result.isConfirmed) {
-                        // Show loading
-                        Swal.fire({
-                            title: 'Processing...',
-                            html: 'Please wait',
-                            allowOutsideClick: false,
-                            didOpen: () => {
-                                Swal.showLoading();
+                                // SweetAlert Success
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: 'Success!',
+                                    text: response.message,
+                                    showConfirmButton: false,
+                                    timer: 1500
+                                }).then(() => {
+                                    location.reload();
+                                });
                             }
-                        });
+                        },
+                        error: function(xhr) {
+                            submitBtn.prop('disabled', false).html(originalText);
 
-                        $.ajax({
-                            url: "{{ route('admin.users.toggle-status', ':id') }}".replace(
-                                ':id', userId),
-                            type: 'POST',
-                            data: {
-                                _token: '{{ csrf_token() }}',
-                                status: newStatus
-                            },
-                            success: function(response) {
-                                if (response.success) {
-                                    Swal.fire({
-                                        icon: 'success',
-                                        title: 'Status Changed!',
-                                        text: response.message,
-                                        showConfirmButton: false,
-                                        timer: 1500
-                                    }).then(() => {
-                                        location.reload();
-                                    });
-                                }
-                            },
-                            error: function(xhr) {
+                            if (xhr.status === 422) {
+                                var errors = xhr.responseJSON.errors;
+                                $('.form-control').removeClass('is-invalid');
+                                $.each(errors, function(key, value) {
+                                    $('[name="' + key + '"]').addClass('is-invalid')
+                                        .siblings('.invalid-feedback').text(value[0]);
+                                });
+                                toastr.error('Please check the form for errors');
+                            } else if (xhr.status === 403) {
                                 Swal.fire({
                                     icon: 'error',
-                                    title: 'Failed!',
+                                    title: 'Permission Denied',
+                                    text: xhr.responseJSON.message
+                                });
+                            } else {
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'Oops...',
                                     text: xhr.responseJSON.message ||
                                         'An error occurred'
                                 });
                             }
-                        });
-                    }
+                        }
+                    });
                 });
-            });
+            @endif
 
-            // Delete User Button Click dengan Password Verification
-            $(document).on('click', '.delete-user', function() {
-                var userId = $(this).data('id');
-                var userName = $(this).data('name');
+            // Edit User Button Click (For SuperAdmin & Admin)
+            @if (auth()->user()->canEditUsers())
+                $(document).on('click', '.edit-user', function() {
+                    var id = $(this).data('id');
+                    var name = $(this).data('name');
+                    var email = $(this).data('email');
+                    var phone = $(this).data('phone');
+                    var role = $(this).data('role');
+                    var status = $(this).data('status');
+                    var departmentId = $(this).data('department-id');
 
-                Swal.fire({
-                    title: 'Delete User?',
-                    html: `You are about to delete user <strong>${userName}</strong>.<br>This action cannot be undone!`,
-                    icon: 'warning',
-                    showCancelButton: true,
-                    confirmButtonColor: '#d33',
-                    cancelButtonColor: '#3085d6',
-                    confirmButtonText: 'Delete User',
-                    cancelButtonText: 'Cancel',
-                    showLoaderOnConfirm: true,
-                    preConfirm: () => {
-                        return new Promise((resolve) => {
+                    $('#edit_user_id').val(id);
+                    $('#edit_name').val(name);
+                    $('#edit_email').val(email);
+                    $('#edit_phone').val(phone);
+                    $('#edit_role').val(role);
+                    $('#edit_status').val(status);
+                    $('#edit_department_id').val(departmentId || '');
+                    $('#edit_password').val('');
+                    $('#edit_password_confirmation').val('');
+
+                    // If user is admin, disable superadmin role option
+                    @if (auth()->user()->isAdmin())
+                        $('#edit_role option[value="superadmin"]').prop('disabled', true);
+                    @endif
+
+                    $('.form-control').removeClass('is-invalid');
+                    $('#editUserModal').modal('show');
+                });
+
+                // Edit User Form Submit
+                $('#editUserForm').on('submit', function(e) {
+                    e.preventDefault();
+
+                    var userId = $('#edit_user_id').val();
+                    var formData = new FormData(this);
+                    var submitBtn = $(this).find('button[type="submit"]');
+                    var originalText = submitBtn.html();
+
+                    // Disable button and show loading
+                    submitBtn.prop('disabled', true).html(
+                        '<i class="fa fa-spinner fa-spin me-1"></i>Updating...');
+
+                    $.ajax({
+                        url: "{{ route('admin.users.update', ':id') }}".replace(':id', userId),
+                        type: 'POST',
+                        data: formData,
+                        processData: false,
+                        contentType: false,
+                        headers: {
+                            'X-HTTP-Method-Override': 'PUT'
+                        },
+                        success: function(response) {
+                            if (response.success) {
+                                $('#editUserModal').modal('hide');
+                                $('#editUserForm')[0].reset();
+                                $('.form-control').removeClass('is-invalid');
+
+                                // SweetAlert Success
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: 'Success!',
+                                    text: response.message,
+                                    showConfirmButton: false,
+                                    timer: 1500
+                                }).then(() => {
+                                    location.reload();
+                                });
+                            }
+                        },
+                        error: function(xhr) {
+                            submitBtn.prop('disabled', false).html(originalText);
+
+                            if (xhr.status === 422) {
+                                var errors = xhr.responseJSON.errors;
+                                $('.form-control').removeClass('is-invalid');
+                                $.each(errors, function(key, value) {
+                                    $('#edit_' + key).addClass('is-invalid')
+                                        .siblings('.invalid-feedback').text(value[0]);
+                                });
+                                toastr.error('Please check the form for errors');
+                            } else if (xhr.status === 403) {
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'Permission Denied',
+                                    text: xhr.responseJSON.message
+                                });
+                            } else {
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'Oops...',
+                                    text: xhr.responseJSON.message ||
+                                        'An error occurred'
+                                });
+                            }
+                        }
+                    });
+                });
+
+                // Toggle Status Button Click
+                $(document).on('click', '.toggle-status', function() {
+                    var userId = $(this).data('id');
+                    var userName = $(this).data('name');
+                    var currentStatus = $(this).data('status');
+                    var newStatus = currentStatus === 'active' ? 'inactive' : 'active';
+
+                    var actionText = currentStatus === 'active' ? 'deactivate' : 'activate';
+                    var confirmText = currentStatus === 'active' ? 'Deactivate' : 'Activate';
+
+                    Swal.fire({
+                        title: `${confirmText} User?`,
+                        html: `Are you sure you want to ${actionText} <strong>${userName}</strong>?`,
+                        icon: 'question',
+                        showCancelButton: true,
+                        confirmButtonColor: currentStatus === 'active' ? '#dc3545' : '#28a745',
+                        cancelButtonColor: '#6c757d',
+                        confirmButtonText: `Yes, ${actionText}!`,
+                        cancelButtonText: 'Cancel'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            // Show loading
                             Swal.fire({
-                                title: 'Enter Your Password',
-                                html: `
-                                    <p class="mb-3">Please enter your admin password to confirm deletion:</p>
-                                    <input type="password" id="admin_password" class="swal2-input" placeholder="Your admin password" autocomplete="current-password">
-                                    <div class="text-danger small mt-2" id="password_error"></div>
-                                `,
-                                showCancelButton: true,
-                                confirmButtonText: 'Confirm Delete',
-                                cancelButtonText: 'Cancel',
-                                focusConfirm: false,
-                                showLoaderOnConfirm: true,
-                                preConfirm: () => {
-                                    const password = Swal.getPopup()
-                                        .querySelector('#admin_password')
-                                        .value;
+                                title: 'Processing...',
+                                html: 'Please wait',
+                                allowOutsideClick: false,
+                                didOpen: () => {
+                                    Swal.showLoading();
+                                }
+                            });
 
-                                    if (!password) {
-                                        Swal.showValidationMessage(
-                                            'Password is required');
-                                        return false;
-                                    }
-
-                                    return $.ajax({
-                                        url: "{{ route('admin.users.destroy', ':id') }}"
-                                            .replace(':id', userId),
-                                        type: 'DELETE',
-                                        data: {
-                                            _token: '{{ csrf_token() }}',
-                                            admin_password: password
-                                        }
-                                    }).then(response => {
-                                        return response;
-                                    }).catch(error => {
-                                        Swal.showValidationMessage(
-                                            `Request failed: ${error.responseJSON?.message || 'Server error'}`
-                                        );
-                                    });
+                            $.ajax({
+                                url: "{{ route('admin.users.toggle-status', ':id') }}"
+                                    .replace(
+                                        ':id', userId),
+                                type: 'POST',
+                                data: {
+                                    _token: '{{ csrf_token() }}',
+                                    status: newStatus
                                 },
-                                allowOutsideClick: () => !Swal.isLoading()
-                            }).then((result) => {
-                                if (result.isConfirmed) {
-                                    if (result.value.success) {
+                                success: function(response) {
+                                    if (response.success) {
                                         Swal.fire({
                                             icon: 'success',
-                                            title: 'Deleted!',
-                                            text: result.value.message,
+                                            title: 'Status Changed!',
+                                            text: response.message,
                                             showConfirmButton: false,
                                             timer: 1500
                                         }).then(() => {
                                             location.reload();
                                         });
-                                    } else {
-                                        Swal.fire({
-                                            icon: 'error',
-                                            title: 'Failed!',
-                                            text: result.value
-                                                .message ||
-                                                'Failed to delete user'
-                                        });
                                     }
+                                },
+                                error: function(xhr) {
+                                    Swal.fire({
+                                        icon: 'error',
+                                        title: 'Failed!',
+                                        text: xhr.responseJSON?.message ||
+                                            'An error occurred'
+                                    });
                                 }
                             });
-                        });
-                    }
+                        }
+                    });
                 });
-            });
+            @endif
+
+            // Delete User Button Click dengan Password Verification (SuperAdmin Only)
+            @if (auth()->user()->canCreateDeleteUsers())
+                $(document).on('click', '.delete-user', function() {
+                    var userId = $(this).data('id');
+                    var userName = $(this).data('name');
+
+                    Swal.fire({
+                        title: 'Delete User?',
+                        html: `You are about to delete user <strong>${userName}</strong>.<br>This action cannot be undone!`,
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonColor: '#d33',
+                        cancelButtonColor: '#3085d6',
+                        confirmButtonText: 'Delete User',
+                        cancelButtonText: 'Cancel',
+                        showLoaderOnConfirm: true,
+                        preConfirm: () => {
+                            return new Promise((resolve) => {
+                                Swal.fire({
+                                    title: 'Enter Your Password',
+                                    html: `
+                                    <p class="mb-3">Please enter your SuperAdmin password to confirm deletion:</p>
+                                    <input type="password" id="admin_password" class="swal2-input" placeholder="Your SuperAdmin password" autocomplete="current-password">
+                                    <div class="text-danger small mt-2" id="password_error"></div>
+                                `,
+                                    showCancelButton: true,
+                                    confirmButtonText: 'Confirm Delete',
+                                    cancelButtonText: 'Cancel',
+                                    focusConfirm: false,
+                                    showLoaderOnConfirm: true,
+                                    preConfirm: () => {
+                                        const password = Swal.getPopup()
+                                            .querySelector(
+                                                '#admin_password')
+                                            .value;
+
+                                        if (!password) {
+                                            Swal.showValidationMessage(
+                                                'Password is required');
+                                            return false;
+                                        }
+
+                                        return $.ajax({
+                                            url: "{{ route('admin.users.destroy', ':id') }}"
+                                                .replace(':id',
+                                                    userId),
+                                            type: 'DELETE',
+                                            data: {
+                                                _token: '{{ csrf_token() }}',
+                                                admin_password: password
+                                            }
+                                        }).then(response => {
+                                            return response;
+                                        }).catch(error => {
+                                            Swal.showValidationMessage(
+                                                `Request failed: ${error.responseJSON?.message || 'Server error'}`
+                                            );
+                                        });
+                                    },
+                                    allowOutsideClick: () => !Swal.isLoading()
+                                }).then((result) => {
+                                    if (result.isConfirmed) {
+                                        if (result.value.success) {
+                                            Swal.fire({
+                                                icon: 'success',
+                                                title: 'Deleted!',
+                                                text: result.value
+                                                    .message,
+                                                showConfirmButton: false,
+                                                timer: 1500
+                                            }).then(() => {
+                                                location.reload();
+                                            });
+                                        } else {
+                                            Swal.fire({
+                                                icon: 'error',
+                                                title: 'Failed!',
+                                                text: result.value
+                                                    .message ||
+                                                    'Failed to delete user'
+                                            });
+                                        }
+                                    }
+                                });
+                            });
+                        }
+                    });
+                });
+            @endif
 
             // Reset form when modal is closed
             $('#addUserModal, #editUserModal').on('hidden.bs.modal', function() {
                 $(this).find('form')[0].reset();
                 $('.form-control').removeClass('is-invalid');
                 $('.invalid-feedback').text('');
+                // Re-enable all options
+                $('#edit_role option').prop('disabled', false);
             });
         });
     </script>

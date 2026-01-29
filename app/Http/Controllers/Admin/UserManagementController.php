@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
 
 class UserManagementController extends Controller
 {
@@ -51,6 +52,9 @@ class UserManagementController extends Controller
             });
         }
 
+        // Exclude current user from list
+        $query->where('id', '!=', Auth::id());
+
         $users = $query->get();
         $departments = Department::active()->get();
 
@@ -69,21 +73,29 @@ class UserManagementController extends Controller
             'pending_users' => User::where('status', 'pending')->count(),
             'pending_technicians' => User::where('role', 'technician')->where('status', 'pending')->count(),
             'inactive_users' => User::where('status', 'inactive')->count(),
-            'admin_manager_count' => User::whereIn('role', ['admin', 'manager', 'gm', 'om'])->count(),
+            'admin_superadmin_count' => User::whereIn('role', ['superadmin', 'admin'])->count(),
         ];
     }
 
     /**
-     * Store a newly created user
+     * Store a newly created user (SuperAdmin Only)
      */
     public function store(Request $request)
     {
+        // Check if user has permission to create users
+        if (!Auth::user()->canCreateDeleteUsers()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You do not have permission to create users. Only SuperAdmin can create users.'
+            ], 403);
+        }
+
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
             'phone' => 'nullable|string|max:20',
             'password' => 'required|string|min:8|confirmed',
-            'role' => 'required|in:admin,manager,gm,om,technician,user',
+            'role' => 'required|in:superadmin,admin,gm,om,technician,user',
             'status' => 'required|in:active,inactive,pending',
             'department_id' => 'nullable|exists:departments,id',
             'profile_picture' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
@@ -116,7 +128,7 @@ class UserManagementController extends Controller
             ActivityLog::create([
                 'user_id' => auth()->id(),
                 'action' => 'user_created',
-                'description' => 'User created: ' . $user->name,
+                'description' => 'User created: ' . $user->name . ' by ' . Auth::user()->name,
                 'ip_address' => request()->ip(),
                 'user_agent' => request()->userAgent(),
             ]);
@@ -148,16 +160,40 @@ class UserManagementController extends Controller
     }
 
     /**
-     * Update the specified user
+     * Update the specified user (SuperAdmin & Admin)
      */
     public function update(Request $request, User $user)
     {
+        // Check if user has permission to edit users
+        if (!Auth::user()->canEditUsers()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You do not have permission to edit users.'
+            ], 403);
+        }
+
+        // Admin cannot edit superadmin
+        if (Auth::user()->isAdmin() && $user->isSuperAdmin()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Admin cannot edit SuperAdmin user.'
+            ], 403);
+        }
+
+        // Admin cannot change role to superadmin
+        if (Auth::user()->isAdmin() && $request->role === 'superadmin') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Admin cannot assign SuperAdmin role.'
+            ], 403);
+        }
+
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
             'email' => ['required', 'string', 'email', 'max:255', Rule::unique('users')->ignore($user->id)],
             'phone' => 'nullable|string|max:20',
             'password' => 'nullable|string|min:8|confirmed',
-            'role' => 'required|in:admin,manager,gm,om,technician,user',
+            'role' => 'required|in:superadmin,admin,gm,om,technician,user',
             'status' => 'required|in:active,inactive,pending',
             'department_id' => 'nullable|exists:departments,id',
             'profile_picture' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
@@ -201,7 +237,7 @@ class UserManagementController extends Controller
                 'user_id' => auth()->id(),
                 'ticket_id' => null,
                 'action' => 'user_updated',
-                'description' => 'User updated: ' . $user->name,
+                'description' => 'User updated: ' . $user->name . ' by ' . Auth::user()->name,
                 'old_values' => json_encode($oldData),
                 'new_values' => json_encode($user->toArray()),
                 'ip_address' => request()->ip(),
@@ -235,16 +271,32 @@ class UserManagementController extends Controller
     }
 
     /**
-     * Toggle user status (with department auto-assign from registration)
+     * Toggle user status (SuperAdmin & Admin)
      */
     public function toggleStatus(Request $request, User $user)
     {
+        // Check if user has permission to edit users
+        if (!Auth::user()->canEditUsers()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You do not have permission to edit users.'
+            ], 403);
+        }
+
         try {
             // Prevent changing own status
             if ($user->id === auth()->id()) {
                 return response()->json([
                     'success' => false,
                     'message' => 'You cannot change your own status!'
+                ], 403);
+            }
+
+            // Admin cannot change superadmin status
+            if (Auth::user()->isAdmin() && $user->isSuperAdmin()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Admin cannot change SuperAdmin status.'
                 ], 403);
             }
 
@@ -286,7 +338,7 @@ class UserManagementController extends Controller
                 'user_id' => auth()->id(),
                 'ticket_id' => null,
                 'action' => 'user_status_changed',
-                'description' => 'User status changed: ' . $user->name . ' from ' . $oldStatus . ' to ' . $newStatus,
+                'description' => 'User status changed: ' . $user->name . ' from ' . $oldStatus . ' to ' . $newStatus . ' by ' . Auth::user()->name,
                 'old_values' => json_encode(['status' => $oldStatus]),
                 'new_values' => json_encode(['status' => $newStatus]),
                 'ip_address' => request()->ip(),
@@ -310,10 +362,18 @@ class UserManagementController extends Controller
     }
 
     /**
-     * Remove the specified user
+     * Remove the specified user (SuperAdmin Only)
      */
     public function destroy(Request $request, User $user)
     {
+        // Check if user has permission to delete users
+        if (!Auth::user()->canCreateDeleteUsers()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You do not have permission to delete users. Only SuperAdmin can delete users.'
+            ], 403);
+        }
+
         DB::beginTransaction();
         try {
             // 1. Cek apakah user mencoba menghapus akun sendiri
@@ -324,19 +384,19 @@ class UserManagementController extends Controller
                 ], 403);
             }
 
-            // 2. Verifikasi password admin
+            // 2. Verifikasi password superadmin
             if (!$request->has('admin_password')) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Admin password is required to delete user.'
+                    'message' => 'SuperAdmin password is required to delete user.'
                 ], 422);
             }
 
-            // 3. Validasi password admin
-            if (!Hash::check($request->admin_password, auth()->user()->password)) {
+            // 3. Validasi password superadmin
+            if (!Hash::check($request->admin_password, Auth::user()->password)) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Invalid admin password. Please try again.'
+                    'message' => 'Invalid SuperAdmin password. Please try again.'
                 ], 422);
             }
 
@@ -351,7 +411,7 @@ class UserManagementController extends Controller
             ActivityLog::create([
                 'user_id' => auth()->id(),
                 'action' => 'user_deleted',
-                'description' => 'User deleted: ' . $userName,
+                'description' => 'User deleted: ' . $userName . ' by ' . Auth::user()->name,
                 'ip_address' => request()->ip(),
                 'user_agent' => request()->userAgent(),
             ]);
@@ -374,4 +434,55 @@ class UserManagementController extends Controller
         }
     }
 
+    /**
+     * Show the specified user (SuperAdmin & Admin)
+     */
+    public function show(User $user)
+    {
+        // Check if user has permission to view users
+        if (!Auth::user()->canEditUsers()) {
+            abort(403, 'You do not have permission to view user details.');
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => $user->load('department')
+        ]);
+    }
+
+    /**
+     * Get user details for edit (SuperAdmin & Admin)
+     */
+    public function getUserDetails(User $user)
+    {
+        // Check if user has permission to edit users
+        if (!Auth::user()->canEditUsers()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You do not have permission to edit users.'
+            ], 403);
+        }
+
+        // Admin cannot edit superadmin
+        if (Auth::user()->isAdmin() && $user->isSuperAdmin()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Admin cannot edit SuperAdmin user.'
+            ], 403);
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'phone' => $user->phone,
+                'role' => $user->role,
+                'status' => $user->status,
+                'department_id' => $user->department_id,
+                'profile_picture_url' => $user->profile_picture_url,
+            ]
+        ]);
+    }
 }

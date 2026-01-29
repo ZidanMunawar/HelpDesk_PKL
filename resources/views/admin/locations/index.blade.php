@@ -20,7 +20,7 @@
     <link rel="stylesheet" href="{{ asset('assets/vendor/sweetalert2/dist/sweetalert2.min.css') }}">
 
     <style>
-        /* Custom DataTable Styling - Larger Size (Konsisten dengan Department) */
+        /* Custom DataTable Styling */
         #locationsTable_wrapper .dataTables_length,
         #locationsTable_wrapper .dataTables_filter,
         #locationsTable_wrapper .dataTables_info,
@@ -110,15 +110,6 @@
             background: #f8f9fa;
             color: #6e6e6e !important;
             border-color: #f0f1f5;
-        }
-
-        #locationsTable_wrapper .dataTables_paginate .paginate_button.previous,
-        #locationsTable_wrapper .dataTables_paginate .paginate_button.next {
-            padding: 8px 12px;
-        }
-
-        #locationsTable_wrapper .dataTables_paginate .paginate_button i {
-            font-size: 16px;
         }
 
         /* Table Styling */
@@ -214,6 +205,16 @@
             color: #212529;
         }
 
+        .badge-primary {
+            background-color: #007bff;
+            color: white;
+        }
+
+        .badge-secondary {
+            background-color: #6c757d;
+            color: white;
+        }
+
         /* Location Type Badges */
         .badge-area {
             background-color: #6c757d;
@@ -240,7 +241,7 @@
             color: white;
         }
 
-        /* Button Action Styling (Sama dengan Department) */
+        /* Button Action Styling */
         .btn-xs.sharp {
             width: 32px;
             height: 32px;
@@ -261,6 +262,13 @@
 
         .d-flex .btn-xs.sharp:last-child {
             margin-right: 0;
+        }
+
+        /* Floor select styling */
+        #add_floor_number,
+        #edit_floor_number {
+            padding: 10px;
+            font-size: 14px;
         }
 
         /* Responsive adjustments */
@@ -285,25 +293,6 @@
             #locationsTable tbody td {
                 padding: 8px 5px;
             }
-        }
-
-        /* Modal adjustments */
-        .modal-footer .btn {
-            padding: 8px 16px;
-            font-size: 14px;
-        }
-
-        .modal-footer .btn i {
-            font-size: 14px;
-        }
-
-        .form-label {
-            font-weight: 500;
-            color: #333;
-        }
-
-        .text-muted {
-            color: #6c757d !important;
         }
     </style>
 @endpush
@@ -346,8 +335,21 @@
                             <!-- Floor Number -->
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">Floor Number</label>
-                                <input type="text" class="form-control" name="floor_number" id="add_floor_number"
-                                    placeholder="e.g., 1, 2, L1, Basement">
+                                <select class="form-control" name="floor_number" id="add_floor_number">
+                                    <option value="">Select Floor</option>
+                                    <option value="G">Ground Floor (G)</option>
+                                    <option value="1">1st Floor</option>
+                                    <option value="2">2nd Floor</option>
+                                    <option value="3">3rd Floor</option>
+                                    <option value="3A">3A Floor</option>
+                                    <option value="4">4th Floor</option>
+                                    <option value="5">5th Floor</option>
+                                    <option value="6">6th Floor</option>
+                                    <option value="7">7th Floor</option>
+                                    <option value="8">8th Floor</option>
+                                    <option value="9">9th Floor</option>
+                                    <option value="10">10th Floor</option>
+                                </select>
                                 <small class="text-muted">Optional - for all location types</small>
                                 <div class="invalid-feedback"></div>
                             </div>
@@ -418,8 +420,21 @@
                             <!-- Floor Number -->
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">Floor Number</label>
-                                <input type="text" class="form-control" id="edit_floor_number" name="floor_number"
-                                    placeholder="e.g., 1, 2, L1, Basement">
+                                <select class="form-control" id="edit_floor_number" name="floor_number">
+                                    <option value="">Select Floor</option>
+                                    <option value="G">Ground Floor (G)</option>
+                                    <option value="1">1st Floor</option>
+                                    <option value="2">2nd Floor</option>
+                                    <option value="3">3rd Floor</option>
+                                    <option value="3A">3A Floor</option>
+                                    <option value="4">4th Floor</option>
+                                    <option value="5">5th Floor</option>
+                                    <option value="6">6th Floor</option>
+                                    <option value="7">7th Floor</option>
+                                    <option value="8">8th Floor</option>
+                                    <option value="9">9th Floor</option>
+                                    <option value="10">10th Floor</option>
+                                </select>
                                 <small class="text-muted">Optional - for all location types</small>
                                 <div class="invalid-feedback"></div>
                             </div>
@@ -668,8 +683,10 @@
                         if (xhr.status === 422) {
                             var errors = xhr.responseJSON.errors;
                             $('.form-control').removeClass('is-invalid');
+                            $('.invalid-feedback').text('');
                             $.each(errors, function(key, value) {
-                                $('[name="' + key + '"]').addClass('is-invalid')
+                                var $input = $('[name="' + key + '"]');
+                                $input.addClass('is-invalid')
                                     .siblings('.invalid-feedback').text(value[0]);
                             });
                             toastr.error('Please check the form for errors');
@@ -696,11 +713,12 @@
                 $('#edit_location_id').val(id);
                 $('#edit_name').val(name);
                 $('#edit_location_type').val(locationType);
-                $('#edit_floor_number').val(floorNumber);
+                $('#edit_floor_number').val(floorNumber || '');
                 $('#edit_description').val(description);
                 $('#edit_status').val(status);
 
                 $('.form-control').removeClass('is-invalid');
+                $('.invalid-feedback').text('');
                 $('#editLocationModal').modal('show');
             });
 
@@ -743,6 +761,7 @@
                         if (xhr.status === 422) {
                             var errors = xhr.responseJSON.errors;
                             $('.form-control').removeClass('is-invalid');
+                            $('.invalid-feedback').text('');
                             $.each(errors, function(key, value) {
                                 $('#edit_' + key).addClass('is-invalid')
                                     .siblings('.invalid-feedback').text(value[0]);
@@ -796,7 +815,8 @@
                                 .replace(':id', locationId),
                             type: 'POST',
                             data: {
-                                _token: '{{ csrf_token() }}'
+                                _token: '{{ csrf_token() }}',
+                                _method: 'PATCH'
                             },
                             success: function(response) {
                                 if (response.success) {
@@ -868,6 +888,13 @@
                                     }).then(() => {
                                         location.reload();
                                     });
+                                } else {
+                                    Swal.fire({
+                                        icon: 'warning',
+                                        title: 'Cannot Delete',
+                                        text: response.message ||
+                                            'This location cannot be deleted.'
+                                    });
                                 }
                             },
                             error: function(xhr) {
@@ -888,6 +915,15 @@
                 $(this).find('form')[0].reset();
                 $('.form-control').removeClass('is-invalid');
                 $('.invalid-feedback').text('');
+            });
+
+            // Auto-focus on first input when modal opens
+            $('#addLocationModal').on('shown.bs.modal', function() {
+                $(this).find('input[name="name"]').focus();
+            });
+
+            $('#editLocationModal').on('shown.bs.modal', function() {
+                $(this).find('#edit_name').focus();
             });
         });
     </script>

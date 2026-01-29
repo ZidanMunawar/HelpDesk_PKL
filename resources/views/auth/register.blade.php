@@ -16,6 +16,9 @@
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
+    <!-- Bootstrap 5 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
     <!-- Styles -->
     <link href="{{ asset('assets/css/style.css') }}" rel="stylesheet">
     <link
@@ -29,31 +32,7 @@
             box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
         }
 
-        .captcha-container {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-top: 8px;
-        }
-
-        .captcha-img {
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            padding: 5px;
-        }
-
-        .btn-reload {
-            background: none;
-            border: none;
-            color: #ff8000;
-            cursor: pointer;
-            font-size: 18px;
-        }
-
-        .btn-reload:hover {
-            color: #000000;
-        }
-
+        /* Input groups */
         .input-group .form-control,
         .input-group .input-group-text {
             border: 1px solid #ced4da !important;
@@ -68,8 +47,71 @@
             background-color: #f8f9fa;
         }
 
-        .input-group> :not(:first-child):not(.dropdown-menu) {
-            margin-left: -1px;
+        /* Captcha Container Side by Side */
+        .captcha-side-container {
+            display: flex;
+            align-items: stretch;
+            gap: 15px;
+            margin: 15px 0;
+        }
+
+        .captcha-input-side {
+            flex: 1;
+        }
+
+        .captcha-image-side {
+            flex: 0 0 auto;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .captcha-img {
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            background-color: #f8f9fa;
+            padding: 5px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+        }
+
+        .captcha-img:hover {
+            border-color: #86b7fe;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn-reload {
+            background: linear-gradient(135deg, #ff8000, #ffaa00);
+            border: none;
+            border-radius: 6px;
+            width: 100%;
+            padding: 8px 12px;
+            color: white;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 4px rgba(255, 128, 0, 0.2);
+        }
+
+        .btn-reload:hover {
+            background: linear-gradient(135deg, #ffaa00, #ff8000);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(255, 128, 0, 0.3);
+        }
+
+        .btn-reload:active {
+            transform: translateY(0);
+            box-shadow: 0 1px 2px rgba(255, 128, 0, 0.2);
+        }
+
+        .btn-reload i {
+            font-size: 12px;
         }
 
         /* Password Strength Indicator */
@@ -107,9 +149,79 @@
             margin-top: 3px;
         }
 
-        /* Department Select Hidden by Default */
-        #department-container {
-            display: none;
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .captcha-side-container {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .captcha-image-side {
+                flex-direction: row;
+                justify-content: space-between;
+                width: 100%;
+            }
+
+            .captcha-img {
+                flex: 1;
+            }
+
+            .btn-reload {
+                width: auto;
+                min-width: 100px;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .captcha-image-side {
+                flex-direction: column;
+            }
+
+            .btn-reload {
+                width: 100%;
+            }
+        }
+
+        /* Animations */
+        @keyframes shake {
+
+            0%,
+            100% {
+                transform: translateX(0);
+            }
+
+            25% {
+                transform: translateX(-5px);
+            }
+
+            75% {
+                transform: translateX(5px);
+            }
+        }
+
+        .invalid-captcha {
+            animation: shake 0.5s ease-in-out;
+        }
+
+        /* Loading animation */
+        .loading-spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid #ffffff;
+            border-top: 2px solid transparent;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
         }
     </style>
 </head>
@@ -130,6 +242,14 @@
                                         </a>
                                     </div>
                                     <h4 class="text-center mb-4 text-black">Create your account</h4>
+
+                                    <!-- Success Message -->
+                                    @if (session('success'))
+                                        <div class="alert alert-success alert-dismissible fade show">
+                                            <i class="fas fa-check-circle me-2"></i> {{ session('success') }}
+                                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                                        </div>
+                                    @endif
 
                                     <!-- Error Messages -->
                                     @if ($errors->any())
@@ -194,7 +314,6 @@
                                         @endif
                                     @endif
 
-
                                     <form method="POST" action="{{ route('register') }}" id="register-form">
                                         @csrf
 
@@ -208,7 +327,7 @@
                                                 <input type="text"
                                                     class="form-control @error('name') is-invalid @enderror border-start-0"
                                                     name="name" value="{{ old('name') }}"
-                                                    placeholder="Masukkan nama lengkap" required>
+                                                    placeholder="Enter your full name" required>
                                             </div>
                                             @error('name')
                                                 <span class="invalid-feedback d-block">
@@ -227,7 +346,7 @@
                                                 <input type="email"
                                                     class="form-control @error('email') is-invalid @enderror border-start-0"
                                                     name="email" value="{{ old('email') }}"
-                                                    placeholder="Masukkan email" required>
+                                                    placeholder="Enter your email" required>
                                             </div>
                                             @error('email')
                                                 <span class="invalid-feedback d-block">
@@ -245,48 +364,10 @@
                                                 </span>
                                                 <input type="text"
                                                     class="form-control @error('phone') is-invalid @enderror border-start-0"
-                                                    name="phone" value="{{ old('phone') }}" placeholder="Opsional"
+                                                    name="phone" value="{{ old('phone') }}" placeholder="Optional"
                                                     maxlength="15">
                                             </div>
                                             @error('phone')
-                                                <span class="invalid-feedback d-block">
-                                                    <strong>{{ $message }}</strong>
-                                                </span>
-                                            @enderror
-                                        </div>
-
-                                        <!-- Checkbox: Saya Teknisi -->
-                                        <div class="form-group mt-3">
-                                            <div class="form-check custom-checkbox">
-                                                <input type="checkbox" class="form-check-input" id="is_technician"
-                                                    name="is_technician" value="1"
-                                                    {{ old('is_technician') ? 'checked' : '' }}>
-                                                <label class="form-check-label text-black" for="is_technician">
-                                                    <strong>Saya adalah Teknisi</strong>
-                                                </label>
-                                            </div>
-                                        </div>
-
-                                        <!-- Department Select (Hidden by default) -->
-                                        <div class="form-group mt-3" id="department-container">
-                                            <label class="mb-1 text-black"><strong>Pilih Department</strong></label>
-                                            <div class="input-group">
-                                                <span class="input-group-text bg-white border-end-0">
-                                                    <i class="fas fa-building text-muted"></i>
-                                                </span>
-                                                <select
-                                                    class="form-control @error('department_id') is-invalid @enderror border-start-0"
-                                                    name="department_id" id="department_id">
-                                                    <option value="">-- Pilih Department --</option>
-                                                    @foreach ($departments as $dept)
-                                                        <option value="{{ $dept->id }}"
-                                                            {{ old('department_id') == $dept->id ? 'selected' : '' }}>
-                                                            {{ $dept->name }}
-                                                        </option>
-                                                    @endforeach
-                                                </select>
-                                            </div>
-                                            @error('department_id')
                                                 <span class="invalid-feedback d-block">
                                                     <strong>{{ $message }}</strong>
                                                 </span>
@@ -303,7 +384,7 @@
                                                 <input type="password"
                                                     class="form-control @error('password') is-invalid @enderror border-start-0"
                                                     name="password" id="password"
-                                                    placeholder="Buat password kuat (min 8 karakter)" required>
+                                                    placeholder="Create strong password (min 8 characters)" required>
                                                 <button class="btn btn-outline-secondary border-start-0"
                                                     type="button" id="toggle-password">
                                                     <i class="fas fa-eye"></i>
@@ -330,7 +411,7 @@
                                                 </span>
                                                 <input type="password" class="form-control"
                                                     name="password_confirmation" id="password-confirm"
-                                                    placeholder="Ulangi password" required>
+                                                    placeholder="Repeat password" required>
                                                 <button class="btn btn-outline-secondary border-start-0"
                                                     type="button" id="toggle-password-confirm">
                                                     <i class="fas fa-eye"></i>
@@ -340,25 +421,38 @@
 
                                         <!-- Captcha -->
                                         <div class="form-group mt-3">
-                                            <label class="mb-1 text-black"><strong>Captcha</strong></label>
-                                            <input type="text"
-                                                class="form-control @error('captcha') is-invalid @enderror"
-                                                name="captcha" placeholder="Ketik kode captcha" required
-                                                autocomplete="off">
-                                            <div class="captcha-container">
-                                                <div class="captcha-img d-inline-block">
-                                                    {!! captcha_img() !!}
+                                            <label class="mb-1 text-black"><strong>Captcha
+                                                    Verification</strong></label>
+
+                                            <div class="captcha-side-container">
+                                                <!-- Input Captcha (Kiri) -->
+                                                <div class="captcha-input-side">
+                                                    <div class="input-group">
+                                                        <span class="input-group-text bg-white border-end-0">
+                                                            <i class="fas fa-shield-alt text-muted"></i>
+                                                        </span>
+                                                        <input type="text"
+                                                            class="form-control @error('captcha') is-invalid @enderror border-start-0"
+                                                            name="captcha" id="captcha-input"
+                                                            placeholder="Type the code" required autocomplete="off">
+                                                    </div>
+                                                    @error('captcha')
+                                                        <span class="invalid-feedback d-block mt-1">
+                                                            <strong>{{ $message }}</strong>
+                                                        </span>
+                                                    @enderror
                                                 </div>
-                                                <button type="button" class="btn-reload ms-2" id="reload-captcha"
-                                                    style="vertical-align: top; padding: 6px 10px;">
-                                                    ↻
-                                                </button>
+
+                                                <!-- Gambar Captcha (Kanan) -->
+                                                <div class="captcha-image-side">
+                                                    <div class="captcha-img d-inline-block" id="captcha-image">
+                                                        {!! captcha_img() !!}
+                                                    </div>
+                                                    <button type="button" class="btn-reload" id="reload-captcha">
+                                                        <i class="fas fa-redo-alt"></i> Reload
+                                                    </button>
+                                                </div>
                                             </div>
-                                            @error('captcha')
-                                                <span class="invalid-feedback d-block mt-1">
-                                                    <strong>{{ $message }}</strong>
-                                                </span>
-                                            @enderror
                                         </div>
 
                                         <!-- Submit -->
@@ -367,68 +461,6 @@
                                                 class="btn bg-primary text-white btn-block w-100">Sign Up</button>
                                         </div>
                                     </form>
-                                    <!-- Success Message -->
-                                    @if (session('success'))
-                                        <div class="alert alert-success alert-dismissible fade show">
-                                            <i class="fas fa-check-circle me-2"></i> {{ session('success') }}
-                                            <button type="button" class="btn-close"
-                                                data-bs-dismiss="alert"></button>
-                                        </div>
-                                    @endif
-
-                                    {{-- <!-- Error Messages -->
-                                    @if ($errors->any())
-                                        <div class="alert alert-danger alert-dismissible fade show">
-                                            <ul class="mb-0">
-                                                @foreach ($errors->all() as $error)
-                                                    <li>{{ $error }}</li>
-                                                @endforeach
-                                            </ul>
-                                            <button type="button" class="btn-close"
-                                                data-bs-dismiss="alert"></button>
-                                        </div>
-
-                                        <!-- CHECK IF EMAIL ERROR = UNVERIFIED ACCOUNT EXISTS -->
-                                        @if ($errors->has('email'))
-                                            @php
-                                                $unverifiedUser = \App\Models\User::where('email', old('email'))
-                                                    ->whereNull('email_verified_at')
-                                                    ->first();
-                                            @endphp
-
-                                            @if ($unverifiedUser)
-                                                <div class="alert alert-warning alert-dismissible fade show">
-                                                    <h6 class="mb-2">
-                                                        <i class="fas fa-exclamation-triangle me-2"></i>Unverified
-                                                        Account Detected
-                                                    </h6>
-                                                    <p class="mb-3 small">
-                                                        We found an unverified account with
-                                                        <strong>{{ $unverifiedUser->email }}</strong> created on
-                                                        <strong>{{ $unverifiedUser->created_at->format('d M Y H:i') }}</strong>.
-                                                        <br>
-                                                        You can reset this account to register again with the same
-                                                        email.
-                                                    </p>
-
-                                                    <form method="POST"
-                                                        action="{{ route('auth.reset-unverified') }}"
-                                                        class="d-inline"
-                                                        onsubmit="return confirm('Are you sure you want to delete the previous unverified account?');">
-                                                        @csrf
-                                                        <input type="hidden" name="email"
-                                                            value="{{ $unverifiedUser->email }}">
-                                                        <button type="submit" class="btn btn-warning btn-sm">
-                                                            <i class="fas fa-sync-alt me-1"></i> Reset & Register Again
-                                                        </button>
-                                                    </form>
-
-                                                    <button type="button" class="btn-close"
-                                                        data-bs-dismiss="alert"></button>
-                                                </div>
-                                            @endif
-                                        @endif
-                                    @endif --}}
 
                                     <div class="new-account mt-3 text-center">
                                         <p class="text-black">Already have an account?
@@ -444,19 +476,60 @@
         </div>
     </div>
 
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
     <!-- Scripts -->
     <script src="{{ asset('assets/vendor/global/global.min.js') }}"></script>
     <script src="{{ asset('assets/js/custom.min.js') }}"></script>
 
     <script>
-        // ========== Reload Captcha ==========
-        document.getElementById('reload-captcha').addEventListener('click', function() {
+        // ========== Reload Captcha with Animation ==========
+        const reloadBtn = document.getElementById('reload-captcha');
+        const captchaImage = document.getElementById('captcha-image');
+        const captchaInput = document.getElementById('captcha-input');
+        const originalBtnText = reloadBtn.innerHTML;
+
+        reloadBtn.addEventListener('click', function() {
+            // Add loading animation to button
+            reloadBtn.innerHTML = '<span class="loading-spinner"></span> Loading...';
+            reloadBtn.disabled = true;
+
             fetch('{{ route('reload.captcha') }}')
                 .then(response => response.json())
                 .then(data => {
-                    document.querySelector('.captcha-img').innerHTML = data.captcha;
+                    // Update captcha with fade effect
+                    captchaImage.style.opacity = '0.5';
+                    setTimeout(() => {
+                        captchaImage.innerHTML = data.captcha;
+                        captchaImage.style.opacity = '1';
+
+                        // Reset button
+                        reloadBtn.innerHTML = originalBtnText;
+                        reloadBtn.disabled = false;
+
+                        // Clear input
+                        captchaInput.value = '';
+                        captchaInput.focus();
+
+                        // Add success animation
+                        captchaImage.style.borderColor = '#28a745';
+                        setTimeout(() => {
+                            captchaImage.style.borderColor = '#e9ecef';
+                        }, 1000);
+                    }, 200);
                 })
-                .catch(err => console.error('Reload captcha error:', err));
+                .catch(err => {
+                    console.error('Failed to reload captcha:', err);
+                    reloadBtn.innerHTML = originalBtnText;
+                    reloadBtn.disabled = false;
+
+                    // Add error animation
+                    captchaImage.style.borderColor = '#dc3545';
+                    setTimeout(() => {
+                        captchaImage.style.borderColor = '#e9ecef';
+                    }, 1000);
+                });
         });
 
         // ========== Toggle Password Visibility ==========
@@ -483,28 +556,6 @@
                     '<i class="fas fa-eye"></i>' :
                     '<i class="fas fa-eye-slash"></i>';
             });
-        }
-
-        // ========== Show/Hide Department Dropdown ==========
-        const isTechnicianCheckbox = document.getElementById('is_technician');
-        const departmentContainer = document.getElementById('department-container');
-        const departmentSelect = document.getElementById('department_id');
-
-        isTechnicianCheckbox.addEventListener('change', function() {
-            if (this.checked) {
-                departmentContainer.style.display = 'block';
-                departmentSelect.required = true;
-            } else {
-                departmentContainer.style.display = 'none';
-                departmentSelect.required = false;
-                departmentSelect.value = '';
-            }
-        });
-
-        // Check on page load (for old() values)
-        if (isTechnicianCheckbox.checked) {
-            departmentContainer.style.display = 'block';
-            departmentSelect.required = true;
         }
 
         // ========== Password Strength Indicator ==========
@@ -571,6 +622,24 @@
                 feedback: feedback
             };
         }
+
+        // ========== Auto focus captcha input when page loads if there's error ==========
+        @if ($errors->has('captcha'))
+            document.addEventListener('DOMContentLoaded', function() {
+                setTimeout(() => {
+                    const captchaInput = document.getElementById('captcha-input');
+                    if (captchaInput) {
+                        captchaInput.focus();
+                        captchaInput.classList.add('invalid-captcha');
+
+                        // Remove animation class after animation completes
+                        setTimeout(() => {
+                            captchaInput.classList.remove('invalid-captcha');
+                        }, 500);
+                    }
+                }, 300);
+            });
+        @endif
     </script>
 </body>
 

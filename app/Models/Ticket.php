@@ -3,9 +3,10 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Ticket extends Model
 {
@@ -23,10 +24,11 @@ class Ticket extends Model
         'user_id',
         'assigned_to',
         'status',
+        'current_stage',
         'approval_status',
         'due_date',
         'resolved_at',
-        'closed_at',
+        'closed_at'
     ];
 
     protected $casts = [
@@ -158,19 +160,19 @@ class Ticket extends Model
         return $this->belongsTo(User::class, 'assigned_to');
     }
 
-    public function attachments()
-    {
-        return $this->hasMany(TicketAttachment::class);
-    }
+    // public function attachments()
+    // {
+    //     return $this->hasMany(TicketAttachment::class);
+    // }
 
-    public function comments()
-    {
-        return $this->hasMany(TicketComment::class);
-    }
-    public function activities()
-    {
-        return $this->hasMany(ActivityLog::class)->orderBy('created_at', 'asc');
-    }
+    // public function comments()
+    // {
+    //     return $this->hasMany(TicketComment::class);
+    // }
+    // public function activities()
+    // {
+    //     return $this->hasMany(ActivityLog::class)->orderBy('created_at', 'asc');
+    // }
     public function notifications()
     {
         return $this->hasMany(Notification::class);
@@ -225,4 +227,95 @@ class Ticket extends Model
 
         return $badges[$this->status] ?? '<span class="badge badge-secondary">' . ucfirst($this->status) . '</span>';
     }
+    // ==================== RELATIONSHIPS ====================
+
+    // Tambahkan ini di dalam class Ticket
+
+    /**
+     * Signatures for this ticket
+     */
+    // public function signatures()
+    // {
+    //     return $this->hasMany(Signature::class);
+    // }
+
+    /**
+     * Voucher requests for this ticket
+     */
+    // public function voucherRequests()
+    // {
+    //     return $this->hasMany(VoucherRequest::class);
+    // }
+
+    /**
+     * Ticket approvals
+     */
+    public function ticketApprovals()
+    {
+        return $this->hasOne(TicketApproval::class);
+    }
+
+    /**
+     * Activity logs for this ticket
+     */
+    // public function activities()
+    // {
+    //     return $this->hasMany(ActivityLog::class);
+    // }
+
+    /**
+     * Ticket events
+     */
+    public function ticketEvents()
+    {
+        return $this->hasMany(TicketEvent::class);
+    }
+    /**
+     * Get the ticket approval record.
+     */
+    public function approval()
+    {
+        return $this->hasOne(TicketApproval::class, 'ticket_id');
+    }
+
+    /**
+     * Get the signatures for the ticket.
+     */
+    public function signatures()
+    {
+        return $this->hasMany(Signature::class);
+    }
+
+    /**
+     * Get the voucher requests for the ticket.
+     */
+    public function voucherRequests()
+    {
+        return $this->hasMany(VoucherRequest::class);
+    }
+
+    /**
+     * Get the activities for the ticket.
+     */
+    public function activities()
+    {
+        return $this->hasMany(ActivityLog::class)->whereNotNull('ticket_id');
+    }
+
+    /**
+     * Get the comments for the ticket.
+     */
+    public function comments()
+    {
+        return $this->hasMany(TicketComment::class);
+    }
+
+    /**
+     * Get the attachments for the ticket.
+     */
+    public function attachments()
+    {
+        return $this->hasMany(TicketAttachment::class);
+    }
+
 }

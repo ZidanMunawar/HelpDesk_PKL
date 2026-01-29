@@ -57,4 +57,5 @@ class Category extends Model
     {
         return $this->tickets()->whereNotIn('status', ['closed', 'cancelled'])->count();
     }
+
 }

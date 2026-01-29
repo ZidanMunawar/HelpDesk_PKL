@@ -1,8 +1,8 @@
 @extends('layouts.main')
 
-@section('title', 'All Tickets | ' . config('app.name'))
+@section('title', 'Tickets | ' . config('app.name'))
 
-@section('page-title', 'All Tickets')
+@section('page-title', 'Tickets')
 
 @section('breadcrumb')
     @php
@@ -96,10 +96,9 @@
         }
 
         .filter-link.active {
-            background: var(--primary);
-            color: rgb(255, 119, 0);
+            background: #ff6200;
+            color: white;
             font-weight: 500;
-            border-left: 3px solid rgba(255, 255, 255, 0.3);
         }
 
         .filter-link.active:hover {
@@ -161,9 +160,9 @@
 
         .ticket-number {
             font-size: 12px;
-            color: var(--primary);
+            color: #ff6200;
             font-weight: 600;
-            background: #e8f4ff;
+            background: #fff3e0;
             padding: 2px 8px;
             border-radius: 4px;
             display: inline-block;
@@ -277,9 +276,24 @@
             color: #1565c0;
         }
 
+        .status-received {
+            background: #e3f2fd;
+            color: #1565c0;
+        }
+
+        .status-pending_om {
+            background: #fff3cd;
+            color: #856404;
+        }
+
         .status-in_progress {
             background: #fff8e1;
             color: #ff8f00;
+        }
+
+        .status-pending_vr {
+            background: #e7f3ff;
+            color: #0056b3;
         }
 
         .status-pending {
@@ -287,9 +301,14 @@
             color: #ef6c00;
         }
 
-        .status-resolved {
+        .status-completed {
             background: #e8f5e9;
             color: #2e7d32;
+        }
+
+        .status-pending_gm {
+            background: #fff3e0;
+            color: #ef6c00;
         }
 
         .status-closed {
@@ -375,19 +394,25 @@
 
         /* Buttons - USING BOOTSTRAP DEFAULT */
         .btn-new-ticket {
-            background: #070342;
+            background: #ff6200;
             border: none;
             padding: 8px 16px;
             font-size: 13px;
             font-weight: 500;
             border-radius: 6px;
             transition: all 0.3s ease;
+            color: white;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
         }
 
         .btn-new-ticket:hover {
-            background: #ff6200;
+            background: #ff7b00;
             transform: translateY(-1px);
             box-shadow: 0 4px 8px rgba(255, 98, 0, 0.2);
+            color: white;
         }
 
         .btn-create-ticket {
@@ -401,7 +426,7 @@
             display: inline-flex;
             align-items: center;
             gap: 6px;
-            color: rgb(255, 255, 255);
+            color: white;
             text-decoration: none;
         }
 
@@ -434,7 +459,7 @@
 
         /* Search - FIXED */
         .search-container {
-            background: #080055;
+            background: #fff;
             border-radius: 8px;
             padding: 12px;
             margin-bottom: 12px;
@@ -479,8 +504,7 @@
         }
 
         .search-btn:hover {
-            background: #ff6200;
-            color: white;
+            background: #ff7b00;
             transform: translateY(-1px);
         }
 
@@ -488,7 +512,7 @@
         .pagination-container {
             margin-top: 15px;
             padding: 12px;
-            border-top: 1px solid #05024a;
+            border-top: 1px solid #eee;
             background: #f9f9f9;
             border-radius: 0 0 12px 12px;
         }
@@ -496,22 +520,46 @@
         .pagination .page-link {
             font-size: 12px;
             padding: 5px 10px;
-            border-color: #616161;
-            color: #ff7402;
+            border-color: #ddd;
+            color: #666;
             min-width: 32px;
             text-align: center;
         }
 
         .pagination .page-item.active .page-link {
-            background: #ff7402;
-            border-color: var(--primary);
+            background: #ff6200;
+            border-color: #ff6200;
             color: white;
         }
 
         .pagination .page-link:hover {
-            background: #ff6200;
-            border-color: #ff6200;
+            background: #ff7b00;
+            border-color: #ff7b00;
             color: white;
+        }
+
+        /* Ticket Info Modal */
+        .ticket-info-item {
+            border-bottom: 1px solid #f0f0f0;
+            padding-bottom: 10px;
+            margin-bottom: 10px;
+        }
+
+        .ticket-info-item:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+        }
+
+        .ticket-info-item strong {
+            display: block;
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .ticket-info-item div {
+            font-size: 14px;
+            color: #333;
         }
 
         /* CRITICAL Android/Mobile Optimizations */
@@ -706,9 +754,16 @@
             <div class="sidebar-filters">
                 <!-- New Ticket Button - FIXED (Bootstrap Button) -->
                 <div class="p-3 border-bottom">
-                    <a href="{{ route('tickets.create') }}" class="btn btn-primary btn-block btn-new-ticket">
-                        <i class="fas fa-plus me-2"></i> New Ticket
-                    </a>
+                    @if (in_array(auth()->user()->role, ['admin_eng', 'user']))
+                        <a href="{{ route('tickets.create') }}" class="btn btn-primary btn-block btn-new-ticket">
+                            <i class="fas fa-plus me-2"></i> New Ticket
+                        </a>
+                    @else
+                        <div class="alert alert-info py-2 mb-0" style="font-size: 12px;">
+                            <i class="fas fa-info-circle me-1"></i>
+                            Only Admin Eng and Users can create tickets
+                        </div>
+                    @endif
                 </div>
 
                 <!-- Status Filters -->
@@ -723,44 +778,134 @@
                             <span>All Tickets</span>
                             <span class="badge bg-secondary">{{ $statusCounts['all'] }}</span>
                         </a>
-                        <a href="{{ route('tickets.index', ['status' => 'open']) }}"
-                            class="filter-link {{ request('status') == 'open' ? 'active' : '' }}">
-                            <i class="fas fa-folder-open"></i>
-                            <span>Open</span>
-                            <span class="badge bg-primary">{{ $statusCounts['open'] }}</span>
-                        </a>
-                        <a href="{{ route('tickets.index', ['status' => 'in_progress']) }}"
-                            class="filter-link {{ request('status') == 'in_progress' ? 'active' : '' }}">
-                            <i class="fas fa-spinner"></i>
-                            <span>In Progress</span>
-                            <span class="badge bg-info">{{ $statusCounts['in_progress'] }}</span>
-                        </a>
-                        <a href="{{ route('tickets.index', ['status' => 'pending']) }}"
-                            class="filter-link {{ request('status') == 'pending' ? 'active' : '' }}">
-                            <i class="fas fa-clock"></i>
-                            <span>Pending</span>
-                            <span class="badge bg-warning">{{ $statusCounts['pending'] }}</span>
-                        </a>
-                        <a href="{{ route('tickets.index', ['status' => 'resolved']) }}"
-                            class="filter-link {{ request('status') == 'resolved' ? 'active' : '' }}">
-                            <i class="fas fa-check-circle"></i>
-                            <span>Resolved</span>
-                            <span class="badge bg-success">{{ $statusCounts['resolved'] }}</span>
-                        </a>
-                        <a href="{{ route('tickets.index', ['status' => 'closed']) }}"
-                            class="filter-link {{ request('status') == 'closed' ? 'active' : '' }}">
-                            <i class="fas fa-times-circle"></i>
-                            <span>Closed</span>
-                            <span class="badge bg-dark">{{ $statusCounts['closed'] }}</span>
-                        </a>
-                        <a href="{{ route('tickets.index', ['status' => 'cancelled']) }}"
-                            class="filter-link {{ request('status') == 'cancelled' ? 'active' : '' }}">
-                            <i class="fas fa-ban"></i>
-                            <span>Cancelled</span>
-                            <span class="badge bg-danger">{{ $statusCounts['cancelled'] }}</span>
-                        </a>
+
+                        <!-- ==================== STATUS UNTUK USER ROLE ==================== -->
+                        @if (auth()->user()->role === 'user')
+                            <!-- Untuk USER: Hide pending_om dan pending_gm -->
+                            <a href="{{ route('tickets.index', ['status' => 'open']) }}"
+                                class="filter-link {{ request('status') == 'open' ? 'active' : '' }}">
+                                <i class="fas fa-folder-open"></i>
+                                <span>Open</span>
+                                <span class="badge bg-primary">{{ $statusCounts['open'] ?? 0 }}</span>
+                            </a>
+                            <a href="{{ route('tickets.index', ['status' => 'received']) }}"
+                                class="filter-link {{ request('status') == 'received' ? 'active' : '' }}">
+                                <i class="fas fa-inbox"></i>
+                                <span>Received</span>
+                                <span class="badge bg-info">{{ $statusCounts['received'] ?? 0 }}</span>
+                            </a>
+                            <a href="{{ route('tickets.index', ['status' => 'in_progress']) }}"
+                                class="filter-link {{ request('status') == 'in_progress' ? 'active' : '' }}">
+                                <i class="fas fa-spinner"></i>
+                                <span>In Progress</span>
+                                <span class="badge bg-info">{{ $statusCounts['in_progress'] ?? 0 }}</span>
+                            </a>
+                            <a href="{{ route('tickets.index', ['status' => 'pending_vr']) }}"
+                                class="filter-link {{ request('status') == 'pending_vr' ? 'active' : '' }}">
+                                <i class="fas fa-file-invoice-dollar"></i>
+                                <span>Pending VR</span>
+                                <span class="badge bg-warning">{{ $statusCounts['pending_vr'] ?? 0 }}</span>
+                            </a>
+                            <a href="{{ route('tickets.index', ['status' => 'completed']) }}"
+                                class="filter-link {{ request('status') == 'completed' ? 'active' : '' }}">
+                                <i class="fas fa-check-circle"></i>
+                                <span>Completed</span>
+                                <span class="badge bg-success">{{ $statusCounts['completed'] ?? 0 }}</span>
+                            </a>
+                            <a href="{{ route('tickets.index', ['status' => 'closed']) }}"
+                                class="filter-link {{ request('status') == 'closed' ? 'active' : '' }}">
+                                <i class="fas fa-times-circle"></i>
+                                <span>Closed</span>
+                                <span class="badge bg-dark">{{ $statusCounts['closed'] ?? 0 }}</span>
+                            </a>
+                            <a href="{{ route('tickets.index', ['status' => 'cancelled']) }}"
+                                class="filter-link {{ request('status') == 'cancelled' ? 'active' : '' }}">
+                                <i class="fas fa-ban"></i>
+                                <span>Cancelled</span>
+                                <span class="badge bg-danger">{{ $statusCounts['cancelled'] ?? 0 }}</span>
+                            </a>
+                        @else
+                            <!-- Untuk ADMIN/MANAGER/TECHNICIAN/OM/GM: Show semua status -->
+                            <a href="{{ route('tickets.index', ['status' => 'open']) }}"
+                                class="filter-link {{ request('status') == 'open' ? 'active' : '' }}">
+                                <i class="fas fa-folder-open"></i>
+                                <span>Open</span>
+                                <span class="badge bg-primary">{{ $statusCounts['open'] ?? 0 }}</span>
+                            </a>
+                            <a href="{{ route('tickets.index', ['status' => 'received']) }}"
+                                class="filter-link {{ request('status') == 'received' ? 'active' : '' }}">
+                                <i class="fas fa-inbox"></i>
+                                <span>Received</span>
+                                <span class="badge bg-info">{{ $statusCounts['received'] ?? 0 }}</span>
+                            </a>
+                            <a href="{{ route('tickets.index', ['status' => 'pending_om']) }}"
+                                class="filter-link {{ request('status') == 'pending_om' ? 'active' : '' }}">
+                                <i class="fas fa-clock"></i>
+                                <span>Pending OM</span>
+                                <span class="badge bg-warning">{{ $statusCounts['pending_om'] ?? 0 }}</span>
+                            </a>
+                            <a href="{{ route('tickets.index', ['status' => 'in_progress']) }}"
+                                class="filter-link {{ request('status') == 'in_progress' ? 'active' : '' }}">
+                                <i class="fas fa-spinner"></i>
+                                <span>In Progress</span>
+                                <span class="badge bg-info">{{ $statusCounts['in_progress'] ?? 0 }}</span>
+                            </a>
+                            <a href="{{ route('tickets.index', ['status' => 'pending_vr']) }}"
+                                class="filter-link {{ request('status') == 'pending_vr' ? 'active' : '' }}">
+                                <i class="fas fa-file-invoice-dollar"></i>
+                                <span>Pending VR</span>
+                                <span class="badge bg-warning">{{ $statusCounts['pending_vr'] ?? 0 }}</span>
+                            </a>
+                            <a href="{{ route('tickets.index', ['status' => 'completed']) }}"
+                                class="filter-link {{ request('status') == 'completed' ? 'active' : '' }}">
+                                <i class="fas fa-check-circle"></i>
+                                <span>Completed</span>
+                                <span class="badge bg-success">{{ $statusCounts['completed'] ?? 0 }}</span>
+                            </a>
+                            <a href="{{ route('tickets.index', ['status' => 'pending_gm']) }}"
+                                class="filter-link {{ request('status') == 'pending_gm' ? 'active' : '' }}">
+                                <i class="fas fa-user-tie"></i>
+                                <span>Pending GM</span>
+                                <span class="badge bg-warning">{{ $statusCounts['pending_gm'] ?? 0 }}</span>
+                            </a>
+                            <a href="{{ route('tickets.index', ['status' => 'closed']) }}"
+                                class="filter-link {{ request('status') == 'closed' ? 'active' : '' }}">
+                                <i class="fas fa-times-circle"></i>
+                                <span>Closed</span>
+                                <span class="badge bg-dark">{{ $statusCounts['closed'] ?? 0 }}</span>
+                            </a>
+                            <a href="{{ route('tickets.index', ['status' => 'cancelled']) }}"
+                                class="filter-link {{ request('status') == 'cancelled' ? 'active' : '' }}">
+                                <i class="fas fa-ban"></i>
+                                <span>Cancelled</span>
+                                <span class="badge bg-danger">{{ $statusCounts['cancelled'] ?? 0 }}</span>
+                            </a>
+                        @endif
                     </div>
                 </div>
+
+                <!-- My Tickets Filter - HANYA UNTUK USER -->
+                @if (auth()->user()->role === 'user')
+                    <div class="filter-section-header collapsed" data-toggle="filter-section"
+                        data-target="my-tickets-filter">
+                        <span>My Tickets</span>
+                        <i class="fas fa-chevron-up"></i>
+                    </div>
+                    <div class="filter-section-content collapsed" id="my-tickets-filter">
+                        <div>
+                            <a href="{{ route('tickets.index', ['my_tickets' => '1']) }}"
+                                class="filter-link {{ request('my_tickets') == '1' ? 'active' : '' }}">
+                                <i class="fas fa-user"></i>
+                                <span>My Tickets Only</span>
+                            </a>
+                            <a href="{{ route('tickets.index') }}"
+                                class="filter-link {{ !request('my_tickets') ? 'active' : '' }}">
+                                <i class="fas fa-users"></i>
+                                <span>All Tickets</span>
+                            </a>
+                        </div>
+                    </div>
+                @endif
 
                 <!-- Approval Status Filters -->
                 <div class="filter-section-header collapsed" data-toggle="filter-section" data-target="approval-filter">
@@ -843,7 +988,8 @@
                 </div>
 
                 <!-- Department Filters -->
-                <div class="filter-section-header collapsed" data-toggle="filter-section" data-target="department-filter">
+                <div class="filter-section-header collapsed" data-toggle="filter-section"
+                    data-target="department-filter">
                     <span>Departments</span>
                     <i class="fas fa-chevron-up"></i>
                 </div>
@@ -888,18 +1034,37 @@
                     <!-- Ticket List -->
                     <div class="px-2 px-md-3">
                         @forelse($tickets as $ticket)
-                            <div class="ticket-card"
-                                onclick="window.location='{{ route('tickets.show', $ticket->id) }}'">
+                            <div class="ticket-card" onclick="viewTicket({{ $ticket->id }})">
                                 <div class="ticket-header">
                                     <div class="ticket-number">#{{ $ticket->ticket_number }}</div>
                                     <div class="d-flex align-items-center gap-2">
-                                        <span class="approval-badge approval-{{ $ticket->approval_status }}">
-                                            <i
-                                                class="fas {{ $ticket->approval_status == 'approved' ? 'fa-check-circle' : ($ticket->approval_status == 'rejected' ? 'fa-times-circle' : 'fa-clock') }}"></i>
-                                            {{ str_replace('_', ' ', $ticket->approval_status) }}
-                                        </span>
-                                        <span class="status-badge status-{{ $ticket->status }}">
-                                            {{ str_replace('_', ' ', $ticket->status) }}
+                                        @if (auth()->user()->role !== 'user')
+                                            <!-- Approval badge hanya untuk NON-USER -->
+                                            <span class="approval-badge approval-{{ $ticket->approval_status }}">
+                                                <i
+                                                    class="fas {{ $ticket->approval_status == 'approved' ? 'fa-check-circle' : ($ticket->approval_status == 'rejected' ? 'fa-times-circle' : 'fa-clock') }}"></i>
+                                                {{ str_replace('_', ' ', $ticket->approval_status) }}
+                                            </span>
+                                        @endif
+
+                                        <!-- Status badge dengan mapping untuk USER -->
+                                        @php
+                                            $displayStatus = $ticket->status;
+                                            if (auth()->user()->role === 'user') {
+                                                // User: map pending_om dan pending_gm
+                                                if ($displayStatus === 'pending_om') {
+                                                    $displayStatus = 'in_progress';
+                                                } elseif ($displayStatus === 'pending_gm') {
+                                                    $displayStatus = 'completed';
+                                                }
+                                            }
+                                        @endphp
+                                        <span class="status-badge status-{{ $displayStatus }}">
+                                            @if (auth()->user()->role === 'user' && in_array($ticket->status, ['pending_om', 'pending_gm']))
+                                                {{ str_replace('_', ' ', $displayStatus) }}
+                                            @else
+                                                {{ str_replace('_', ' ', $ticket->status) }}
+                                            @endif
                                         </span>
                                     </div>
                                 </div>
@@ -909,7 +1074,7 @@
                                 </div>
 
                                 <div class="ticket-meta">
-                                    <!-- User Information (Only in All Tickets) -->
+                                    <!-- User Information -->
                                     <div class="ticket-meta-item">
                                         <i class="fas fa-user"></i>
                                         <span class="ticket-meta-text" title="{{ $ticket->user->name }}">
@@ -956,13 +1121,6 @@
                                 </div>
 
                                 <div class="ticket-footer">
-                                    @if ($ticket->estimated_cost)
-                                        <span class="badge-sm badge-cost" title="Estimated Cost">
-                                            <i class="fas fa-money-bill-wave"></i>
-                                            Rp{{ number_format($ticket->estimated_cost, 0, ',', '.') }}
-                                        </span>
-                                    @endif
-
                                     @if ($ticket->assigned_to)
                                         <span class="badge-sm badge-assigned" title="Assigned To">
                                             <i class="fas fa-user-tag"></i>
@@ -973,9 +1131,9 @@
                                     @if ($ticket->due_date)
                                         <span class="badge-sm badge-date" title="Due Date">
                                             <i class="fas fa-calendar-alt"></i>
-                                            {{ $ticket->due_date->format('M d, Y') }}
-                                            @if ($ticket->isOverdue())
-                                                <i class="fas fa-exclamation-triangle"></i>
+                                            {{ \Carbon\Carbon::parse($ticket->due_date)->format('M d, Y') }}
+                                            @if ($ticket->due_date < now())
+                                                <i class="fas fa-exclamation-triangle text-danger"></i>
                                             @endif
                                         </span>
                                     @endif
@@ -1006,10 +1164,12 @@
                                             Clear Filters
                                         </a>
                                     @endif
-                                    <a href="{{ route('tickets.create') }}" class="btn-create-ticket">
-                                        <i class="fas fa-plus"></i>
-                                        Create New Ticket
-                                    </a>
+                                    @if (in_array(auth()->user()->role, ['admin_eng', 'user']))
+                                        <a href="{{ route('tickets.create') }}" class="btn-create-ticket">
+                                            <i class="fas fa-plus"></i>
+                                            Create New Ticket
+                                        </a>
+                                    @endif
                                 </div>
                             </div>
                         @endforelse
@@ -1027,13 +1187,159 @@
             </div>
         </div>
     </div>
+
+    <!-- Modal untuk User saat akses ticket orang lain -->
+    <div class="modal fade" id="ticketInfoModal" tabindex="-1" aria-labelledby="ticketInfoModalLabel"
+        aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="ticketInfoModalLabel">Ticket Information</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="ticket-info-content">
+                        <!-- Content akan diisi oleh JavaScript -->
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
 @endsection
 
 @push('scripts')
     <script src="{{ asset('assets/vendor/toastr/js/toastr.min.js') }}"></script>
     <script src="{{ asset('assets/vendor/sweetalert2/dist/sweetalert2.min.js') }}"></script>
-
     <script>
+        // Helper untuk status badge color
+        function getStatusBadgeColor(status) {
+            const colors = {
+                'open': 'primary',
+                'received': 'info',
+                'pending_om': 'warning',
+                'in_progress': 'info',
+                'pending_vr': 'warning',
+                'completed': 'success',
+                'pending_gm': 'warning',
+                'closed': 'dark',
+                'cancelled': 'danger',
+                'pending': 'warning',
+                'resolved': 'success'
+            };
+
+            // Normalize status
+            const normalizedStatus = status.toLowerCase().replace(/ /g, '_');
+            return colors[normalizedStatus] || 'secondary';
+        }
+
+        // Helper untuk status display name dengan mapping untuk USER
+        function getStatusDisplayName(status, isUser = false) {
+            // Jika user dan status pending_om/pending_gm, map ke yang lain
+            if (isUser) {
+                if (status === 'pending_om' || status === 'pending_om') {
+                    return 'In Progress';
+                } else if (status === 'pending_gm' || status === 'pending_gm') {
+                    return 'Completed';
+                }
+            }
+
+            const displayNames = {
+                'open': 'Open',
+                'received': 'Received',
+                'pending_om': 'Pending OM',
+                'in_progress': 'In Progress',
+                'pending_vr': 'Pending VR',
+                'completed': 'Completed',
+                'pending_gm': 'Pending GM',
+                'closed': 'Closed',
+                'cancelled': 'Cancelled'
+            };
+
+            // Normalize status
+            const normalizedStatus = status.toLowerCase().replace(/ /g, '_');
+            return displayNames[normalizedStatus] || status;
+        }
+
+        // Fungsi view ticket dengan permission check menggunakan API endpoint
+        function viewTicket(ticketId) {
+            const checkAccessUrl = `{{ route('tickets.check-access', ':id') }}`.replace(':id', ticketId);
+
+            fetch(checkAccessUrl, {
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.type === 'modal_info') {
+                        showTicketInfoModal(data.ticket_info);
+                    } else if (data.type === 'redirect') {
+                        window.location.href = data.url;
+                    } else {
+                        // Fallback ke URL langsung
+                        window.location.href = `{{ route('tickets.show', ':id') }}`.replace(':id', ticketId);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error checking access:', error);
+                    // Fallback: direct redirect
+                    window.location.href = `{{ route('tickets.show', ':id') }}`.replace(':id', ticketId);
+                });
+        }
+
+        // Fungsi tampilkan modal info ticket
+        function showTicketInfoModal(ticketInfo) {
+            const isUser = {{ auth()->user()->role === 'user' ? 'true' : 'false' }};
+            const displayStatus = getStatusDisplayName(ticketInfo.status, isUser);
+
+            const modalContent = `
+                <div class="ticket-info-item">
+                    <strong>Ticket Number:</strong>
+                    <div>#${ticketInfo.number}</div>
+                </div>
+                <div class="ticket-info-item">
+                    <strong>Title:</strong>
+                    <div>${ticketInfo.title}</div>
+                </div>
+                <div class="ticket-info-item">
+                    <strong>Status:</strong>
+                    <div>
+                        <span class="badge bg-${getStatusBadgeColor(ticketInfo.status)}">
+                            ${displayStatus}
+                        </span>
+                    </div>
+                </div>
+                <div class="ticket-info-item">
+                    <strong>Created By:</strong>
+                    <div>${ticketInfo.created_by}</div>
+                </div>
+                <div class="ticket-info-item">
+                    <strong>Department:</strong>
+                    <div>${ticketInfo.department}</div>
+                </div>
+                <div class="ticket-info-item">
+                    <strong>Category:</strong>
+                    <div>${ticketInfo.category}</div>
+                </div>
+                <div class="ticket-info-item">
+                    <strong>Created At:</strong>
+                    <div>${ticketInfo.created_at}</div>
+                </div>
+                <div class="alert alert-warning mt-3 mb-0">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <strong>Access Restricted:</strong> ${ticketInfo.reason}
+                </div>
+            `;
+
+            document.querySelector('.ticket-info-content').innerHTML = modalContent;
+            const modal = new bootstrap.Modal(document.getElementById('ticketInfoModal'));
+            modal.show();
+        }
+
         $(document).ready(function() {
             // Toastr configuration
             toastr.options = {
@@ -1043,14 +1349,13 @@
                 "timeOut": "3000"
             };
 
-            // Filter section toggle - SMOOTH
+            // Filter section toggle
             $('[data-toggle="filter-section"]').on('click', function(e) {
                 e.stopPropagation();
                 const target = $(this).data('target');
                 const $content = $('#' + target);
                 const $icon = $(this).find('i');
 
-                // Smooth transition
                 if ($content.hasClass('collapsed')) {
                     $content.removeClass('collapsed');
                     $(this).removeClass('collapsed');
@@ -1067,7 +1372,6 @@
                 const href = $(this).attr('href');
                 if (href && href !== 'javascript:void(0)') {
                     e.preventDefault();
-                    // Smooth navigation without loader
                     window.location.href = href;
                 }
             });
@@ -1080,22 +1384,9 @@
                 }
             });
 
-            // Performance optimization for mobile scrolling
-            let ticking = false;
-            $(window).on('scroll', function() {
-                if (!ticking) {
-                    window.requestAnimationFrame(function() {
-                        // Optimize during scroll
-                        ticking = false;
-                    });
-                    ticking = true;
-                }
-            });
-
-            // Mobile optimizations on load
+            // Optimize for mobile
             function optimizeForMobile() {
                 if ($(window).width() < 768) {
-                    // Collapse all sections on mobile except status
                     $('.filter-section-header').not('[data-target="status-filter"]').addClass('collapsed');
                     $('.filter-section-content').not('#status-filter').addClass('collapsed');
                     $('.filter-section-header').not('[data-target="status-filter"]').find('i')
@@ -1103,25 +1394,13 @@
                 }
             }
 
-            // Initial optimization
             optimizeForMobile();
 
-            // Debounced resize handler
             let resizeTimer;
             $(window).on('resize', function() {
                 clearTimeout(resizeTimer);
                 resizeTimer = setTimeout(optimizeForMobile, 100);
             });
-
-            // Preload hover states for better UX
-            $('.ticket-card, .filter-link, .btn').hover(
-                function() {
-                    $(this).addClass('hover-ready');
-                },
-                function() {
-                    $(this).removeClass('hover-ready');
-                }
-            );
         });
     </script>
 @endpush

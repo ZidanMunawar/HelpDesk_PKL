@@ -89,7 +89,7 @@ class AuthController extends Controller
                     ->with('warning', 'Please verify your email address before continuing. Check your inbox or click resend.');
             }
 
-            // Check user status
+            // Check user status - SEMUA USER (kecuali superadmin) HARUS DITUNGGU APPROVAL ADMIN
             if (!$user->isActive()) {
                 Auth::logout();
 
@@ -98,17 +98,13 @@ class AuthController extends Controller
                     'user_id' => $user->id,
                     'ticket_id' => null,
                     'action' => 'login_failed',
-                    'description' => $user->name . ' (' . $user->role . ') login failed - Account inactive/pending',
+                    'description' => $user->name . ' (' . $user->role . ') login failed - Account pending admin approval',
                     'ip_address' => $request->ip(),
                     'user_agent' => $request->userAgent(),
                 ]);
 
-                $message = $user->role === 'technician'
-                    ? 'Your technician account is pending approval from admin. Please wait for approval email.'
-                    : 'Your account is not active. Please contact administrator.';
-
                 return redirect()->route('login')
-                    ->with('error', $message);
+                    ->with('error', 'Your account is pending approval from admin. Please wait for approval email.');
             }
 
             // Login success
@@ -135,10 +131,8 @@ class AuthController extends Controller
      */
     public function showRegistrationForm()
     {
-        // Get active departments for technician dropdown
-        $departments = Department::active()->orderBy('name')->get();
-
-        return view('auth.register', compact('departments'));
+        // Hapus departemen dari form registrasi
+        return view('auth.register');
     }
 
     /**
@@ -206,17 +200,14 @@ class AuthController extends Controller
         // ==== VALIDATION ====
         $rules = [
             'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users,email', // Normal unique check
+            'email' => 'required|string|email|max:255|unique:users,email',
             'phone' => 'nullable|string|max:20',
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
             'captcha' => 'required|captcha',
-            'is_technician' => 'nullable|boolean',
-            'department_id' => 'required_if:is_technician,1|nullable|exists:departments,id',
         ];
 
         $messages = [
             'captcha.captcha' => 'Invalid captcha code.',
-            'department_id.required_if' => 'Please select a department if you are a technician.',
             'email.unique' => 'This email is already registered.',
         ];
 
@@ -229,16 +220,14 @@ class AuthController extends Controller
         }
 
         // ==== CREATE NEW USER ====
-        $isTechnician = $request->has('is_technician') && $request->is_technician == 1;
-
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
             'phone' => $request->phone,
             'password' => Hash::make($request->password),
-            'role' => $isTechnician ? 'technician' : 'user',
-            'department_id' => $isTechnician ? $request->department_id : null,
-            'status' => $isTechnician ? 'pending' : 'active',
+            'role' => 'user', // SEMUA YANG REGISTER DEFAULT ROLE 'user'
+            'department_id' => null, // Tidak ada department untuk registrasi
+            'status' => 'pending', // SEMUA USER BARU STATUS 'pending' MENUNGGU APPROVAL ADMIN
             'email_verified_at' => null,
         ]);
 
@@ -247,7 +236,7 @@ class AuthController extends Controller
             'user_id' => $user->id,
             'ticket_id' => null,
             'action' => 'user_registered',
-            'description' => 'New user registered: ' . $user->name . ' (' . $user->role . ', Status: ' . $user->status . ')',
+            'description' => 'New user registered: ' . $user->name . ' (Role: ' . $user->role . ', Status: ' . $user->status . ')',
             'ip_address' => $request->ip(),
             'user_agent' => $request->userAgent(),
         ]);
@@ -257,14 +246,9 @@ class AuthController extends Controller
 
         \Log::info('New user registered: ' . $user->email . ' (Role: ' . $user->role . ', Status: ' . $user->status . ')');
 
-        // Success message
-        if ($isTechnician) {
-            return redirect()->route('login')
-                ->with('success', 'Registration successful! Please check your email and click the verification link. After verification, wait for admin approval.');
-        } else {
-            return redirect()->route('login')
-                ->with('success', 'Registration successful! Please check your email and click the verification link to activate your account.');
-        }
+        // Success message - SEMUA USER MENUNGGU APPROVAL ADMIN
+        return redirect()->route('login')
+            ->with('success', 'Registration successful! Please check your email and click the verification link. After verification, wait for admin approval to activate your account.');
     }
 
     /**

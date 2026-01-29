@@ -18,9 +18,10 @@ class Signature extends Model
         'ticket_id',
         'user_id',
         'signature_type',
+        'stage',
         'signature_path',
         'signed_at',
-        'ip_address',
+        'ip_address'
     ];
 
     /**

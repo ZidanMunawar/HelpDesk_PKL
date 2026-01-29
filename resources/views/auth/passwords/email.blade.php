@@ -7,8 +7,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Forgot Password | {{ config('app.name') }}</title>
 
+    <!-- CSRF Token -->
     <meta name="csrf-token" content="{{ csrf_token() }}">
+
+    <!-- Favicon -->
     <link rel="icon" href="{{ asset('assets/images/favicon.ico') }}" type="image/x-icon">
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+    <!-- Bootstrap 5 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Styles -->
     <link href="{{ asset('assets/css/style.css') }}" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@100;200;300;400;500;600;700;800;900&display=swap"
         rel="stylesheet">
@@ -20,38 +31,161 @@
             box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
         }
 
+        /* Input groups */
         .input-group .form-control,
         .input-group .input-group-text {
             border: 1px solid #ced4da !important;
+        }
+
+        .input-group .form-control:focus {
+            border-color: #86b7fe !important;
+            box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25) !important;
         }
 
         .input-group .input-group-text {
             background-color: #f8f9fa;
         }
 
-        .captcha-container {
+        /* Captcha Container Side by Side */
+        .captcha-side-container {
             display: flex;
+            align-items: stretch;
+            gap: 15px;
+            margin: 15px 0;
+        }
+
+        .captcha-input-side {
+            flex: 1;
+        }
+
+        .captcha-image-side {
+            flex: 0 0 auto;
+            display: flex;
+            flex-direction: column;
             align-items: center;
             gap: 10px;
-            margin-top: 10px;
         }
 
         .captcha-img {
-            border: 1px solid #000000;
-            border-radius: 4px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            background-color: #f8f9fa;
             padding: 5px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+        }
+
+        .captcha-img:hover {
+            border-color: #86b7fe;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         }
 
         .btn-reload {
-            background: none;
+            background: linear-gradient(135deg, #ff8000, #ffaa00);
             border: none;
-            color: #ff8000;
+            border-radius: 6px;
+            width: 100%;
+            padding: 8px 12px;
+            color: white;
             cursor: pointer;
-            font-size: 18px;
+            font-size: 14px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 4px rgba(255, 128, 0, 0.2);
         }
 
         .btn-reload:hover {
-            color: #000000;
+            background: linear-gradient(135deg, #ffaa00, #ff8000);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(255, 128, 0, 0.3);
+        }
+
+        .btn-reload:active {
+            transform: translateY(0);
+            box-shadow: 0 1px 2px rgba(255, 128, 0, 0.2);
+        }
+
+        .btn-reload i {
+            font-size: 12px;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .captcha-side-container {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .captcha-image-side {
+                flex-direction: row;
+                justify-content: space-between;
+                width: 100%;
+            }
+
+            .captcha-img {
+                flex: 1;
+            }
+
+            .btn-reload {
+                width: auto;
+                min-width: 100px;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .captcha-image-side {
+                flex-direction: column;
+            }
+
+            .btn-reload {
+                width: 100%;
+            }
+        }
+
+        /* Animations */
+        @keyframes shake {
+
+            0%,
+            100% {
+                transform: translateX(0);
+            }
+
+            25% {
+                transform: translateX(-5px);
+            }
+
+            75% {
+                transform: translateX(5px);
+            }
+        }
+
+        .invalid-captcha {
+            animation: shake 0.5s ease-in-out;
+        }
+
+        /* Loading animation */
+        .loading-spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid #ffffff;
+            border-top: 2px solid transparent;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
         }
     </style>
 </head>
@@ -119,24 +253,37 @@
 
                                         <!-- Captcha -->
                                         <div class="form-group mt-3">
-                                            <label class="mb-1 text-black"><strong>Captcha</strong></label>
-                                            <div class="input-group">
-                                                <input type="text"
-                                                    class="form-control @error('captcha') is-invalid @enderror"
-                                                    name="captcha" placeholder="Enter captcha code" required
-                                                    autocomplete="off">
-                                            </div>
-                                            <div class="captcha-container">
-                                                <div class="captcha-img d-inline-block">
-                                                    {!! captcha_img() !!}
+                                            <label class="mb-1 text-black"><strong>Captcha Verification</strong></label>
+
+                                            <div class="captcha-side-container">
+                                                <!-- Input Captcha (Kiri) -->
+                                                <div class="captcha-input-side">
+                                                    <div class="input-group">
+                                                        <span class="input-group-text bg-white border-end-0">
+                                                            <i class="fas fa-shield-alt text-muted"></i>
+                                                        </span>
+                                                        <input type="text"
+                                                            class="form-control @error('captcha') is-invalid @enderror border-start-0"
+                                                            name="captcha" id="captcha-input"
+                                                            placeholder="Type the code" required autocomplete="off">
+                                                    </div>
+                                                    @error('captcha')
+                                                        <span class="invalid-feedback d-block mt-1">
+                                                            <strong>{{ $message }}</strong>
+                                                        </span>
+                                                    @enderror
                                                 </div>
-                                                <button type="button" class="btn-reload" id="reload-captcha">↻</button>
+
+                                                <!-- Gambar Captcha (Kanan) -->
+                                                <div class="captcha-image-side">
+                                                    <div class="captcha-img d-inline-block" id="captcha-image">
+                                                        {!! captcha_img() !!}
+                                                    </div>
+                                                    <button type="button" class="btn-reload" id="reload-captcha">
+                                                        <i class="fas fa-redo-alt"></i> Reload
+                                                    </button>
+                                                </div>
                                             </div>
-                                            @error('captcha')
-                                                <span class="invalid-feedback d-block mt-1">
-                                                    <strong>{{ $message }}</strong>
-                                                </span>
-                                            @enderror
                                         </div>
 
                                         <!-- Submit -->
@@ -161,19 +308,79 @@
         </div>
     </div>
 
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Scripts -->
     <script src="{{ asset('assets/vendor/global/global.min.js') }}"></script>
     <script src="{{ asset('assets/js/custom.min.js') }}"></script>
 
     <script>
-        // Reload Captcha
-        document.getElementById('reload-captcha').addEventListener('click', function() {
+        // ========== Reload Captcha with Animation ==========
+        const reloadBtn = document.getElementById('reload-captcha');
+        const captchaImage = document.getElementById('captcha-image');
+        const captchaInput = document.getElementById('captcha-input');
+        const originalBtnText = reloadBtn.innerHTML;
+
+        reloadBtn.addEventListener('click', function() {
+            // Add loading animation to button
+            reloadBtn.innerHTML = '<span class="loading-spinner"></span> Loading...';
+            reloadBtn.disabled = true;
+
             fetch('{{ route('reload.captcha') }}')
                 .then(response => response.json())
                 .then(data => {
-                    document.querySelector('.captcha-img').innerHTML = data.captcha;
+                    // Update captcha with fade effect
+                    captchaImage.style.opacity = '0.5';
+                    setTimeout(() => {
+                        captchaImage.innerHTML = data.captcha;
+                        captchaImage.style.opacity = '1';
+
+                        // Reset button
+                        reloadBtn.innerHTML = originalBtnText;
+                        reloadBtn.disabled = false;
+
+                        // Clear input
+                        captchaInput.value = '';
+                        captchaInput.focus();
+
+                        // Add success animation
+                        captchaImage.style.borderColor = '#28a745';
+                        setTimeout(() => {
+                            captchaImage.style.borderColor = '#e9ecef';
+                        }, 1000);
+                    }, 200);
                 })
-                .catch(err => console.error('Failed to reload captcha:', err));
+                .catch(err => {
+                    console.error('Failed to reload captcha:', err);
+                    reloadBtn.innerHTML = originalBtnText;
+                    reloadBtn.disabled = false;
+
+                    // Add error animation
+                    captchaImage.style.borderColor = '#dc3545';
+                    setTimeout(() => {
+                        captchaImage.style.borderColor = '#e9ecef';
+                    }, 1000);
+                });
         });
+
+        // ========== Auto focus captcha input when page loads if there's error ==========
+        @if ($errors->has('captcha'))
+            document.addEventListener('DOMContentLoaded', function() {
+                setTimeout(() => {
+                    const captchaInput = document.getElementById('captcha-input');
+                    if (captchaInput) {
+                        captchaInput.focus();
+                        captchaInput.classList.add('invalid-captcha');
+
+                        // Remove animation class after animation completes
+                        setTimeout(() => {
+                            captchaInput.classList.remove('invalid-captcha');
+                        }, 500);
+                    }
+                }, 300);
+            });
+        @endif
     </script>
 </body>
 

@@ -19,6 +19,7 @@ class Location extends Model
         'name',
         'location_type',
         'floor_number',
+        'hotel',
         'description',
         'status',
     ];
@@ -31,6 +32,7 @@ class Location extends Model
     protected $casts = [
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
+        'deleted_at' => 'datetime',
     ];
 
     /**
@@ -47,6 +49,14 @@ class Location extends Model
     public function scopeOfType($query, $type)
     {
         return $query->where('location_type', $type);
+    }
+
+    /**
+     * Scope for hotel filter
+     */
+    public function scopeOfHotel($query, $hotel)
+    {
+        return $query->where('hotel', $hotel);
     }
 
     /**
@@ -87,12 +97,66 @@ class Location extends Model
     public function getTypeBadgeColorAttribute()
     {
         $colors = [
-            'floor' => 'primary',
-            'room' => 'info',
-            'area' => 'warning',
-            'facility' => 'success',
+            'area' => 'secondary',
+            'floor' => 'info',
+            'room' => 'success',
+            'facility' => 'warning',
+            'department' => 'primary',
         ];
 
-        return $colors[$this->location_type] ?? 'secondary';
+        return $colors[$this->location_type] ?? 'dark';
+    }
+
+    /**
+     * Get status badge color
+     */
+    public function getStatusBadgeColorAttribute()
+    {
+        $colors = [
+            'active' => 'success',
+            'inactive' => 'danger',
+        ];
+
+        return $colors[$this->status] ?? 'secondary';
+    }
+
+    /**
+     * Get floor display name
+     */
+    public function getFloorDisplayAttribute()
+    {
+        if (!$this->floor_number) {
+            return '-';
+        }
+
+        $floorNames = [
+            'GF' => 'Ground Floor',
+            'M' => 'Mezzanine',
+            '3A' => '3A Floor',
+            '4' => '4th Floor',
+            '5' => '5th Floor',
+            '6' => '6th Floor',
+            '7' => '7th Floor',
+            '8' => '8th Floor',
+            '9' => '9th Floor',
+        ];
+
+        return $floorNames[$this->floor_number] ?? 'Floor ' . $this->floor_number;
+    }
+
+    /**
+     * Get hotel display name
+     */
+    public function getHotelDisplayAttribute()
+    {
+        return $this->hotel === 'harris' ? 'Harris Hotel' : 'Pop Hotel';
+    }
+
+    /**
+     * Get hotel badge color
+     */
+    public function getHotelBadgeColorAttribute()
+    {
+        return $this->hotel === 'harris' ? 'primary' : 'success';
     }
 }

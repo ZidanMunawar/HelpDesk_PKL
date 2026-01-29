@@ -21,13 +21,17 @@ class User extends Authenticatable implements MustVerifyEmail
     protected $fillable = [
         'name',
         'email',
-        'password',
         'phone',
         'profile_picture',
+        'signature_path',
+        'has_signature',
+        'signature_updated_at',
         'role',
         'department_id',
         'status',
         'email_verified_at',
+        'password',
+        'remember_token'
     ];
 
     /**
@@ -56,19 +60,19 @@ class User extends Authenticatable implements MustVerifyEmail
     // ==================== ROLE CHECKS ====================
 
     /**
+     * Check if user is superadmin
+     */
+    public function isSuperAdmin(): bool
+    {
+        return $this->role === 'superadmin';
+    }
+
+    /**
      * Check if user is admin
      */
     public function isAdmin(): bool
     {
         return $this->role === 'admin';
-    }
-
-    /**
-     * Check if user is manager
-     */
-    public function isManager(): bool
-    {
-        return $this->role === 'manager';
     }
 
     /**
@@ -108,7 +112,7 @@ class User extends Authenticatable implements MustVerifyEmail
      */
     public function canApprove(): bool
     {
-        return in_array($this->role, ['admin', 'manager', 'gm', 'om']);
+        return in_array($this->role, ['superadmin', 'admin', 'gm', 'om']);
     }
 
     /**
@@ -116,7 +120,7 @@ class User extends Authenticatable implements MustVerifyEmail
      */
     public function canManageTickets(): bool
     {
-        return $this->role === 'admin';
+        return in_array($this->role, ['superadmin', 'admin']);
     }
 
     /**
@@ -124,7 +128,7 @@ class User extends Authenticatable implements MustVerifyEmail
      */
     public function canManageMasterData(): bool
     {
-        return $this->role === 'admin';
+        return $this->isSuperAdmin() || $this->isAdmin();
     }
 
     /**
@@ -132,7 +136,7 @@ class User extends Authenticatable implements MustVerifyEmail
      */
     public function canViewAllTickets(): bool
     {
-        return in_array($this->role, ['admin', 'manager', 'gm', 'om']);
+        return in_array($this->role, ['superadmin', 'admin', 'gm', 'om']);
     }
 
     /**
@@ -141,6 +145,31 @@ class User extends Authenticatable implements MustVerifyEmail
     public function hasDepartment(): bool
     {
         return !is_null($this->department_id);
+    }
+
+    /**
+     * Check if user can manage users
+     */
+    public function canManageUsers(): bool
+    {
+        // Only superadmin can fully manage users
+        return $this->isSuperAdmin();
+    }
+
+    /**
+     * Check if user can create/delete users
+     */
+    public function canCreateDeleteUsers(): bool
+    {
+        return $this->isSuperAdmin();
+    }
+
+    /**
+     * Check if user can edit users (limited)
+     */
+    public function canEditUsers(): bool
+    {
+        return $this->isSuperAdmin() || $this->isAdmin();
     }
 
     // ==================== STATUS CHECKS ====================
@@ -172,6 +201,22 @@ class User extends Authenticatable implements MustVerifyEmail
     // ==================== SCOPES ====================
 
     /**
+     * Scope for superadmin users
+     */
+    public function scopeSuperAdmins($query)
+    {
+        return $query->where('role', 'superadmin');
+    }
+
+    /**
+     * Scope for admin users
+     */
+    public function scopeAdmins($query)
+    {
+        return $query->where('role', 'admin');
+    }
+
+    /**
      * Scope for active users
      */
     public function scopeActive($query)
@@ -196,22 +241,28 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /**
-     * Scope for admin users
+     * Scope for GM users
      */
-    public function scopeAdmins($query)
+    public function scopeGMs($query)
     {
-        return $query->where('role', 'admin');
+        return $query->where('role', 'gm');
     }
 
     /**
-     * Scope for manager users (Manager, GM, OM)
+     * Scope for OM users
      */
-    public function scopeManagers($query)
+    public function scopeOMs($query)
     {
-        return $query->whereIn('role', ['manager', 'gm', 'om']);
+        return $query->where('role', 'om');
     }
 
-
+    /**
+     * Scope for technicians
+     */
+    public function scopeTechnicians($query)
+    {
+        return $query->where('role', 'technician');
+    }
 
     /**
      * Scope for regular users
@@ -337,38 +388,6 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /**
-     * Ticket approvals (as manager approver)
-     */
-    public function managerApprovals()
-    {
-        return $this->hasMany(TicketApproval::class, 'manager_approved_by');
-    }
-
-    /**
-     * Ticket approvals (as GM approver)
-     */
-    public function gmApprovals()
-    {
-        return $this->hasMany(TicketApproval::class, 'gm_approved_by');
-    }
-
-    /**
-     * Ticket approvals (as OM approver)
-     */
-    public function omApprovals()
-    {
-        return $this->hasMany(TicketApproval::class, 'om_approved_by');
-    }
-
-    /**
-     * Ticket approvals (as admin checker)
-     */
-    public function adminApprovals()
-    {
-        return $this->hasMany(TicketApproval::class, 'admin_checked_by');
-    }
-
-    /**
      * Voucher requests created by user
      */
     public function voucherRequests()
@@ -405,8 +424,8 @@ class User extends Authenticatable implements MustVerifyEmail
     public function getRoleNameAttribute()
     {
         $roleNames = [
+            'superadmin' => 'Super Administrator',
             'admin' => 'Administrator',
-            'manager' => 'Manager',
             'gm' => 'General Manager',
             'om' => 'Operational Manager',
             'technician' => 'Technician',
@@ -422,8 +441,8 @@ class User extends Authenticatable implements MustVerifyEmail
     public function getRoleBadgeColorAttribute()
     {
         $colors = [
+            'superadmin' => 'dark',
             'admin' => 'danger',
-            'manager' => 'warning',
             'gm' => 'info',
             'om' => 'primary',
             'technician' => 'success',
@@ -482,29 +501,29 @@ class User extends Authenticatable implements MustVerifyEmail
     /**
      * Get user initials (for avatar)
      */
-    public function getInitialsAttribute()
-    {
-        $words = explode(' ', $this->name);
+    // public function getInitialsAttribute()
+    // {
+    //     $words = explode(' ', $this->name);
 
-        if (count($words) >= 2) {
-            return strtoupper(substr($words[0], 0, 1) . substr($words[1], 0, 1));
-        }
+    //     if (count($words) >= 2) {
+    //         return strtoupper(substr($words[0], 0, 1) . substr($words[1], 0, 1));
+    //     }
 
-        return strtoupper(substr($this->name, 0, 2));
-    }
+    //     return strtoupper(substr($this->name, 0, 2));
+    // }
 
     /**
      * Check if user can edit ticket
      */
     public function canEditTicket($ticket): bool
     {
-        // Admin can edit any ticket
-        if ($this->isAdmin()) {
+        // Superadmin & Admin can edit any ticket
+        if ($this->isSuperAdmin() || $this->isAdmin()) {
             return true;
         }
 
-        // User can edit their own ticket if status is pending_approval
-        if ($ticket->user_id === $this->id && $ticket->isPendingApproval()) {
+        // User can edit their own ticket if status is pending
+        if ($ticket->user_id === $this->id && $ticket->isOpen()) {
             return true;
         }
 
@@ -521,7 +540,7 @@ class User extends Authenticatable implements MustVerifyEmail
      */
     public function canDeleteTicket(): bool
     {
-        return $this->isAdmin();
+        return $this->isSuperAdmin() || $this->isAdmin();
     }
 
     /**
@@ -529,7 +548,7 @@ class User extends Authenticatable implements MustVerifyEmail
      */
     public function canAssignTechnician(): bool
     {
-        return $this->isAdmin();
+        return $this->isSuperAdmin() || $this->isAdmin();
     }
 
     /**
@@ -537,7 +556,7 @@ class User extends Authenticatable implements MustVerifyEmail
      */
     public function canCreateVoucherRequest(): bool
     {
-        return $this->isAdmin();
+        return $this->isSuperAdmin() || $this->isAdmin();
     }
 
     /**
@@ -545,7 +564,7 @@ class User extends Authenticatable implements MustVerifyEmail
      */
     public function canApproveVoucherRequest(): bool
     {
-        return in_array($this->role, ['admin', 'manager', 'gm', 'om']);
+        return in_array($this->role, ['superadmin', 'admin', 'gm', 'om']);
     }
 
     /**
@@ -557,15 +576,12 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /**
-     * Send email verification notification
+     * Check if user has completed registration (has department)
      */
-    public function sendEmailVerificationNotification()
+    public function hasCompletedRegistration(): bool
     {
-        // Custom email verification logic jika perlu
-        parent::sendEmailVerificationNotification();
+        return !is_null($this->department_id);
     }
-
-    // ==================== STATISTICS METHODS ====================
 
     /**
      * Get total tickets created by user
@@ -581,43 +597,17 @@ class User extends Authenticatable implements MustVerifyEmail
     public function getTotalTicketsResolvedAttribute()
     {
         return $this->assignedTickets()
-            ->where('status', 'resolved')
+            ->whereIn('status', ['closed', 'resolved'])
             ->count();
     }
 
-    /**
-     * Get total tickets closed (for technician)
-     */
-    public function getTotalTicketsClosedAttribute()
-    {
-        return $this->assignedTickets()
-            ->where('status', 'closed')
-            ->count();
-    }
-    /**
-     * Scope for technicians
-     */
-    public function scopeTechnicians($query)
-    {
-        return $query->where('role', 'technician');
-    }
-
-
-
-    /**
-     * Check if user has completed registration (has department)
-     */
-    public function hasCompletedRegistration(): bool
-    {
-        return !is_null($this->department_id);
-    }
     /**
      * Get average resolution time (for technician) in hours
      */
     public function getAverageResolutionTimeAttribute()
     {
         $tickets = $this->assignedTickets()
-            ->whereNotNull('resolved_at')
+            ->whereNotNull('completed_at')
             ->get();
 
         if ($tickets->count() === 0) {
@@ -626,7 +616,9 @@ class User extends Authenticatable implements MustVerifyEmail
 
         $totalMinutes = 0;
         foreach ($tickets as $ticket) {
-            $totalMinutes += $ticket->created_at->diffInMinutes($ticket->resolved_at);
+            if ($ticket->created_at && $ticket->completed_at) {
+                $totalMinutes += $ticket->created_at->diffInMinutes($ticket->completed_at);
+            }
         }
 
         return round($totalMinutes / $tickets->count() / 60, 2); // Convert to hours
@@ -635,19 +627,42 @@ class User extends Authenticatable implements MustVerifyEmail
     /**
      * Get performance rating (for technician) - Simple calculation
      */
-    public function getPerformanceRatingAttribute()
-    {
-        $resolved = $this->total_tickets_resolved;
-        $avgTime = $this->average_resolution_time;
+    // Di dalam class User, tambahkan method:
 
-        if ($resolved === 0) {
-            return 0;
+    /**
+     * Generate color from user name for avatar
+     */
+    public function getAvatarColorAttribute()
+    {
+        $colors = [
+            '#ff6200', // Orange
+            '#007bff', // Blue
+            '#28a745', // Green
+            '#6c757d', // Gray
+            '#6610f2', // Purple
+            '#dc3545', // Red
+            '#fd7e14', // Orange
+            '#20c997', // Teal
+            '#17a2b8', // Cyan
+            '#e83e8c', // Pink
+        ];
+
+        // Use name to consistently get same color
+        $index = crc32($this->name) % count($colors);
+        return $colors[$index];
+    }
+
+    /**
+     * Get initials for avatar
+     */
+    public function getInitialsAttribute()
+    {
+        $words = explode(' ', $this->name);
+
+        if (count($words) >= 2) {
+            return strtoupper(substr($words[0], 0, 1) . substr($words[1], 0, 1));
         }
 
-        // Simple rating: more resolved tickets + faster time = better
-        // Max 5 stars
-        $rating = min(5, ($resolved / 10) + (24 / max($avgTime, 1)));
-
-        return round($rating, 1);
+        return strtoupper(substr($this->name, 0, 2));
     }
 }

@@ -14,40 +14,47 @@ class TicketApproval extends Model
      *
      * @var array
      */
+
+
     protected $fillable = [
         'ticket_id',
-        'manager_approved',
-        'manager_approved_by',
-        'manager_approved_at',
-        'gm_approved',
-        'gm_approved_by',
-        'gm_approved_at',
+        'admin_eng_received',
+        'admin_eng_received_by',
+        'admin_eng_received_at',
         'om_approved',
         'om_approved_by',
         'om_approved_at',
+        'user_checked',
+        'user_checked_by',
+        'user_checked_at',
+        'gm_approved',
+        'gm_approved_by',
+        'gm_approved_at',
         'admin_check',
+        'needs_vr',
+        'vr_reason',
+        'vr_created_at',
+        'vr_created_by',
         'admin_checked_by',
         'admin_checked_at',
         'rejection_reason',
-        'status',
+        'rejection_note',
+        'status'
     ];
 
-    /**
-     * The attributes that should be cast.
-     *
-     * @var array
-     */
     protected $casts = [
-        'manager_approved' => 'boolean',
-        'manager_approved_at' => 'datetime',
-        'gm_approved' => 'boolean',
-        'gm_approved_at' => 'datetime',
+        'admin_eng_received' => 'boolean',
         'om_approved' => 'boolean',
-        'om_approved_at' => 'datetime',
+        'user_checked' => 'boolean',
+        'gm_approved' => 'boolean',
         'admin_check' => 'boolean',
+        'needs_vr' => 'boolean',
+        'admin_eng_received_at' => 'datetime',
+        'om_approved_at' => 'datetime',
+        'user_checked_at' => 'datetime',
+        'gm_approved_at' => 'datetime',
         'admin_checked_at' => 'datetime',
-        'created_at' => 'datetime',
-        'updated_at' => 'datetime',
+        'vr_created_at' => 'datetime',
     ];
 
     // ==================== RELATIONSHIPS ====================
@@ -297,3 +304,4 @@ class TicketApproval extends Model
         return '<span class="badge badge-' . $this->status_badge_color . '">' . ucfirst($this->status) . '</span>';
     }
 }
+
