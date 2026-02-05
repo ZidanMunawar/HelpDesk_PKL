@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Support\Str;
 use App\Models\Ticket;
 use App\Models\TicketComment;
 use App\Models\ActivityLog;
@@ -101,7 +102,9 @@ class TicketDetailController extends Controller
                 return $ticket->assigned_to === $user->id || $ticket->user_id === $user->id;
 
             case 'manager':
-                return $ticket->department_id === $user->department_id;
+                // Manager bisa lihat ticket miliknya sendiri ATAU ticket user di department yang sama
+                return $ticket->user_id === $user->id ||
+                    $ticket->department_id === $user->department_id;
 
             default:
                 return false;
@@ -468,7 +471,7 @@ class TicketDetailController extends Controller
 
         $request->validate([
             'signature_data' => 'required|string',
-            'completion_notes' => 'nullable|string'
+            'completion_notes' => 'required|string|min:10'
         ]);
 
         $ticket = Ticket::findOrFail($id);
@@ -516,10 +519,8 @@ class TicketDetailController extends Controller
             ]);
 
             // Add completion comment
-            $comment = "Work completed by technician.";
-            if ($request->completion_notes) {
-                $comment .= "\nNotes: " . $request->completion_notes;
-            }
+            $comment = "Work completed by technician.\n";
+            $comment .= "Completion Notes: " . $request->completion_notes;
 
             TicketComment::create([
                 'ticket_id' => $ticket->id,
@@ -528,12 +529,12 @@ class TicketDetailController extends Controller
                 'is_internal' => 0,
             ]);
 
-            // Log activity
+            // Log activity khusus untuk follow-up
             ActivityLog::create([
                 'user_id' => $user->id,
                 'ticket_id' => $ticket->id,
-                'action' => 'completed',
-                'description' => 'Work completed by technician',
+                'action' => 'completion_note',
+                'description' => 'Technician added completion notes: ' . Str::limit($request->completion_notes, 100),
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->userAgent(),
             ]);
@@ -1894,4 +1895,5 @@ class TicketDetailController extends Controller
             Log::error('Notification creation failed: ' . $e->getMessage());
         }
     }
+
 }

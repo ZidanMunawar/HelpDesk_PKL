@@ -10,6 +10,7 @@
         "vite": "^6.4.1"
     },
     "dependencies": {
+        "puppeteer": "^24.36.1",
         "signature_pad": "^5.1.3"
     }
 }

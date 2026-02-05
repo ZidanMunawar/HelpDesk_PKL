@@ -41,8 +41,8 @@
         }
 
         /* ============================================
-                                                                                       TICKET HEADER
-                                                                                    ============================================ */
+                                                                                                                                                                                                                                                       TICKET HEADER
+                                                                                                                                                                                                                                                    ============================================ */
         .ticket-header-container {
             background: white;
             border: 2px solid var(--primary-color);
@@ -104,9 +104,30 @@
             font-weight: 500;
         }
 
+        /* Tambahkan di CSS */
+        .required::after {
+            content: " *";
+            color: #dc3545;
+        }
+
+        .form-text {
+            font-size: 12px;
+            color: #6c757d;
+        }
+
+        .signature-container {
+            min-height: 160px;
+            position: relative;
+        }
+
+        .signature-container canvas {
+            cursor: crosshair;
+            touch-action: none;
+        }
+
         /* ============================================
-                                                                                       STATUS & PRIORITY BADGES
-                                                                                    ============================================ */
+                                                                                                                                                                                                                                                       STATUS & PRIORITY BADGES
+                                                                                                                                                                                                                                                    ============================================ */
         .status-badge {
             padding: 6px 15px;
             border-radius: 20px;
@@ -187,8 +208,8 @@
         }
 
         /* ============================================
-                                                                                       CURRENT STAGE INFO
-                                                                                    ============================================ */
+                                                                                                                                                                                                                                                       CURRENT STAGE INFO
+                                                                                                                                                                                                                                                    ============================================ */
         .stage-info {
             background: linear-gradient(135deg, #ff6200, #ff7b00);
             color: white;
@@ -232,8 +253,8 @@
         }
 
         /* ============================================
-                                                                                       ACTION BUTTONS
-                                                                                    ============================================ */
+                                                                                                                                                                                                                                                       ACTION BUTTONS
+                                                                                                                                                                                                                                                    ============================================ */
         .action-buttons {
             display: flex;
             flex-wrap: wrap;
@@ -341,8 +362,8 @@
         }
 
         /* ============================================
-                                                                                       TICKET BODY - DENGAN JUDUL TICKET
-                                                                                    ============================================ */
+                                                                                                                                                                                                                                                       TICKET BODY - DENGAN JUDUL TICKET
+                                                                                                                                                                                                                                                    ============================================ */
         .ticket-body {
             background: white;
             border: 1px solid #e0e0e0;
@@ -407,8 +428,8 @@
         }
 
         /* ============================================
-                                                                                       ATTACHMENTS
-                                                                                    ============================================ */
+                                                                                                                                                                                                                                                       ATTACHMENTS
+                                                                                                                                                                                                                                                    ============================================ */
         .attachments-section {
             margin-top: 25px;
         }
@@ -467,8 +488,8 @@
         }
 
         /* ============================================
-                                                                                       SIGNATURES SECTION
-                                                                                    ============================================ */
+                                                                                                                                                                                                                                                       SIGNATURES SECTION
+                                                                                                                                                                                                                                                    ============================================ */
         .signatures-section {
             background: white;
             border: 1px solid #e0e0e0;
@@ -539,8 +560,8 @@
         }
 
         /* ============================================
-                                                                                       APPROVAL STATUS
-                                                                                    ============================================ */
+                                                                                                                                                                                                                                                       APPROVAL STATUS
+                                                                                                                                                                                                                                                    ============================================ */
         .approval-status {
             background: white;
             border: 1px solid #e0e0e0;
@@ -588,56 +609,69 @@
         }
 
         /* ============================================
-                                                                                       DUE DATE WIDGET
-                                                                                    ============================================ */
-        .due-date-widget {
+                                                                                                                                                                                                                                                       DUE DATE WIDGET
+                                                                /* Tambahkan di CSS section */
+        .due-date-compact {
             background: linear-gradient(135deg, #ff6200, #ff7b00);
             color: white;
-            padding: 15px;
             border-radius: 8px;
-            margin-bottom: 20px;
+            margin-bottom: 15px;
+            padding: 12px;
             display: flex;
-            align-items: center;
-            justify-content: space-between;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            flex-direction: column;
+            gap: 8px;
+            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
         }
 
-        .due-date-content {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-
-        .due-date-icon {
-            font-size: 24px;
-        }
-
-        .due-date-text h6 {
-            margin: 0;
-            font-weight: 600;
-        }
-
-        .due-date-text p {
-            margin: 0;
-            font-size: 14px;
-            opacity: 0.9;
-        }
-
-        .due-date-value {
-            font-size: 16px;
-            font-weight: 700;
-            background: rgba(255, 255, 255, 0.2);
-            padding: 5px 15px;
-            border-radius: 20px;
-        }
-
-        .due-date-overdue {
+        .due-date-compact.overdue {
             background: linear-gradient(135deg, #dc3545, #c82333) !important;
         }
 
+        .due-date-compact.completed {
+            background: linear-gradient(135deg, #28a745, #20c997) !important;
+        }
+
+        .due-date-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .due-date-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .due-date-label i {
+            font-size: 16px;
+        }
+
+        .due-date-status {
+            font-size: 11px;
+            padding: 3px 8px;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.2);
+            font-weight: 600;
+        }
+
+        .due-date-value {
+            text-align: center;
+            font-size: 15px;
+            font-weight: 700;
+            padding: 8px;
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 6px;
+            letter-spacing: 0.5px;
+        }
+
+
+
         /* ============================================
-                                                                                       COMMENTS SECTION - DENGAN TOGGLE
-                                                                                    ============================================ */
+                                                                                                                                                                                                                                                       COMMENTS SECTION - DENGAN TOGGLE
+                                                                                                                                                                                                                                                    ============================================ */
         .comments-section {
             background: white;
             border: 1px solid #e0e0e0;
@@ -765,8 +799,8 @@
         }
 
         /* ============================================
-                                                                                       COMMENT FORM (akan disembunyikan jika status tertentu)
-                                                                                    ============================================ */
+                                                                                                                                                                                                                                                       COMMENT FORM (akan disembunyikan jika status tertentu)
+                                                                                                                                                                                                                                                    ============================================ */
         .comment-form-section {
             background: white;
             border: 1px solid #e0e0e0;
@@ -786,8 +820,8 @@
         }
 
         /* ============================================
-                                                                                       ACTIVITY SECTION - WITH TOGGLE
-                                                                                    ============================================ */
+                                                                                                                                                                                                                                                       ACTIVITY SECTION - WITH TOGGLE
+                                                                                                                                                                                                                                                    ============================================ */
         .activity-section {
             background: #f8f9fa;
             border: 1px solid #e0e0e0;
@@ -930,8 +964,8 @@
         }
 
         /* ============================================
-                                                                                       VOUCHER INFO
-                                                                                    ============================================ */
+                                                                                                                                                                                                                                                       VOUCHER INFO
+                                                                                                                                                                                                                                                    ============================================ */
         .voucher-alert {
             background: #fff8e1;
             border: 1px solid #ffe082;
@@ -942,8 +976,8 @@
         }
 
         /* ============================================
-                                                                                       MODAL STYLES
-                                                                                    ============================================ */
+                                                                                                                                                                                                                                                       MODAL STYLES
+                                                                                                                                                                                                                                                    ============================================ */
         .modal-signature-canvas {
             border: 2px dashed #ddd;
             border-radius: 6px;
@@ -960,8 +994,8 @@
         }
 
         /* ============================================
-                                                                                       MOBILE RESPONSIVE IMPROVEMENTS
-                                                                                    ============================================ */
+                                                                                                                                                                                                                                                       MOBILE RESPONSIVE IMPROVEMENTS
+                                                                                                                                                                                                                                                    ============================================ */
 
         /* DESKTOP: Grid normal */
         @media (min-width: 993px) {
@@ -1221,25 +1255,27 @@
                 padding: 12px;
             }
 
-            /* Due Date Widget */
-            .due-date-widget {
-                flex-direction: column;
-                text-align: center;
-                padding: 15px;
-                gap: 10px;
+            .due-date-compact {
+                padding: 10px;
+                gap: 6px;
             }
 
-            .due-date-content {
-                flex-direction: column;
-                gap: 10px;
-                margin-bottom: 10px;
+            .due-date-label {
+                font-size: 13px;
+            }
+
+            .due-date-label i {
+                font-size: 14px;
+            }
+
+            .due-date-status {
+                font-size: 10px;
+                padding: 2px 6px;
             }
 
             .due-date-value {
-                width: 100%;
-                text-align: center;
-                padding: 8px 15px;
-                font-size: 14px;
+                font-size: 13px;
+                padding: 6px;
             }
 
             /* Ticket Body */
@@ -1473,6 +1509,19 @@
                 font-size: 9px;
                 padding: 3px 6px;
             }
+
+            .due-date-compact {
+                padding: 8px;
+            }
+
+            .due-date-label {
+                font-size: 12px;
+            }
+
+            .due-date-value {
+                font-size: 12px;
+                padding: 5px;
+            }
         }
 
         /* Mobile sangat kecil (≤ 400px) */
@@ -1576,8 +1625,8 @@
         }
 
         /* ============================================
-                                                                                       PRINT STYLES
-                                                                                    ============================================ */
+                                                                                                                                                                                                                                                       PRINT STYLES
+                                                                                                                                                                                                                                                    ============================================ */
         @media print {
             .no-print {
                 display: none !important;
@@ -1627,8 +1676,8 @@
         }
 
         /* ============================================
-                                                                                       UTILITY CLASSES
-                                                                                    ============================================ */
+                                                                                                                                                                                                                                                       UTILITY CLASSES
+                                                                                                                                                                                                                                                    ============================================ */
         .text-orange {
             color: var(--primary-color) !important;
         }
@@ -1752,6 +1801,23 @@
 
 @section('content')
     @php
+
+        function getDisplayStage($actualStage)
+        {
+            // Mapping: actual stage → display stage (agar tampil berurutan 1-9)
+            $stageMapping = [
+                1 => 1, // Requested
+                2 => 2, // Received
+                3 => 3, // OM Approval
+                4 => 4, // In Progress
+                5 => 4, // VR (ditampilkan sebagai stage 4 juga)
+                6 => 5, // Completed
+                7 => 6, // User Check Done
+                8 => 7, // GM Approval
+                9 => 8, // Closed
+            ];
+            return $stageMapping[$actualStage] ?? $actualStage;
+        }
         // Helper function untuk warna avatar
         function stringToColorPHP($str)
         {
@@ -1776,17 +1842,19 @@
             $stages = [
                 1 => 'Requested by User (Open)',
                 2 => 'Received by Admin Engineering',
-                3 => 'Waiting OM Approval',
+                3 => 'OM Approval',
                 4 => 'In Progress / Technician Working',
-                5 => 'Waiting VR Approval',
+                5 => 'Waiting VR Approval', // Tetap ada tapi display stage 4
                 6 => 'Completed by Technician',
-                7 => 'User Check Done - Waiting GM', // Stage 7
-                8 => 'GM Approved - Ready for Closure', // Stage 8
-                9 => 'Closed by Admin', // Stage 9
+                7 => 'User Check Done - Waiting GM',
+                8 => 'GM Approved - Ready for Closure',
+                9 => 'Closed by Admin',
             ];
             return $stages[$stage] ?? 'Unknown Stage';
         }
 
+        // Get display stage untuk progress bar
+        $displayStage = getDisplayStage($ticket->current_stage);
         // Get current user
         $user = auth()->user();
         $hasSignature = !empty($user->signature_path) && Storage::disk('public')->exists($user->signature_path);
@@ -1852,11 +1920,64 @@
         $availableActions[] = 'back';
 
         // Check VR status
-        $hasVR = $ticket->voucherRequests->count() > 0;
+        // $hasVR = $ticket->voucherRequests->count() > 0;
         $needsVR = $ticket->approval->needs_vr ?? false;
+        // ================== LOGIKA VR ==================
+        $hasVR = $ticket->voucherRequests->count() > 0;
+        $hasPaidVR = false;
+        $hasPendingOrApprovedVR = false;
 
+        foreach ($ticket->voucherRequests as $vr) {
+            if ($vr->status === 'paid') {
+                $hasPaidVR = true;
+            }
+            if (in_array($vr->status, ['pending', 'admin_approved', 'om_approved', 'gm_approved', 'paid'])) {
+                $hasPendingOrApprovedVR = true;
+            }
+        }
+
+        // Kapan tombol "Need VR" harus ditampilkan?
+        // Hanya tampil jika:
+        // 1. Ticket status = in_progress
+        // 2. Belum ada VR sama sekali, ATAU
+        // 3. Ada VR tapi sudah rejected (boleh request baru)
+        $canShowNeedVRButton = false;
+
+        if ($userRole === 'technician' && $ticket->assigned_to == $user->id) {
+            if ($ticket->status === 'in_progress') {
+                if (!$hasVR) {
+                    $canShowNeedVRButton = true;
+                } else {
+                    // Cek apakah semua VR sudah rejected
+                    $allVRRejected = true;
+                    foreach ($ticket->voucherRequests as $vr) {
+                        if ($vr->status !== 'rejected') {
+                            $allVRRejected = false;
+                            break;
+                        }
+                    }
+                    $canShowNeedVRButton = $allVRRejected;
+                }
+            }
+        }
         // Check if due date is overdue
         $isOverdue = $ticket->due_date && $ticket->due_date < now();
+        function getStatusDisplay($status)
+        {
+            $statusMap = [
+                'open' => 'Open',
+                'received' => 'Received',
+                'pending_om' => 'OM Approval',
+                'in_progress' => 'In Progress',
+                'pending_vr' => 'VR Approval',
+                'completed' => 'Completed',
+                'pending_gm' => 'GM Approval',
+                'ready_for_closure' => 'Ready for Closure',
+                'closed' => 'Closed',
+                'cancelled' => 'Cancelled',
+            ];
+            return $statusMap[$status] ?? str_replace('_', ' ', $status);
+        }
     @endphp
 
     <div class="row">
@@ -1868,11 +1989,11 @@
                     <div class="mb-4">
                         <h6 class="mb-3"><i class="fas fa-project-diagram me-2"></i> Current Step</h6>
                         <div class="stage-info">
-                            <div class="stage-label">STEP {{ $ticket->current_stage }}</div>
+                            <div class="stage-label">STEP {{ $displayStage }}</div>
                             <div class="stage-name">{{ getStageName($ticket->current_stage) }}</div>
                             <div class="stage-progress">
                                 @for ($i = 1; $i <= 8; $i++)
-                                    <div class="stage-dot {{ $i <= $ticket->current_stage ? 'active' : '' }}"></div>
+                                    <div class="stage-dot {{ $i <= $displayStage ? 'active' : '' }}"></div>
                                 @endfor
                             </div>
                         </div>
@@ -1963,9 +2084,8 @@
                                     <i class="fas fa-check-double me-2"></i> Mark Complete
                                 </a>
                             @endif
-
                             <!-- HANYA TECHNICIAN YANG BISA REQUEST VR -->
-                            @if (in_array('need_vr', $availableActions))
+                            @if ($canShowNeedVRButton)
                                 <a href="#" class="list-group-item list-group-item-action" onclick="openVRModal()">
                                     <i class="fas fa-file-invoice-dollar me-2"></i> Need VR
                                 </a>
@@ -2029,11 +2149,11 @@
                                     <small class="d-block text-muted">Permanent deletion</small>
                                 </a>
                             @endif
-
+                            {{--
                             <!-- PRINT -->
                             <a href="#" class="list-group-item list-group-item-action" onclick="window.print()">
                                 <i class="fas fa-print me-2"></i> Print Ticket
-                            </a>
+                            </a> --}}
 
                             <!-- CANCEL -->
                             @if (in_array('cancel', $availableActions))
@@ -2107,15 +2227,24 @@
 
             <!-- Due Date Widget -->
             @if ($ticket->due_date)
-                <div class="due-date-widget {{ $isOverdue ? 'due-date-overdue' : '' }}">
-                    <div class="due-date-content">
-                        <div class="due-date-icon">
+                @php
+                    $isOverdue =
+                        $ticket->due_date < now() && !in_array($ticket->status, ['completed', 'closed', 'cancelled']);
+                    $isCompletedOrClosed = in_array($ticket->status, ['completed', 'closed']);
+                @endphp
+                <div class="due-date-compact {{ $isOverdue ? 'overdue' : ($isCompletedOrClosed ? 'completed' : '') }}">
+                    <div class="due-date-header">
+                        <div class="due-date-label">
                             <i class="fas fa-calendar-check"></i>
+                            <span>DUE DATE</span>
                         </div>
-                        <div class="due-date-text">
-                            <h6>DUE DATE</h6>
-                            <p>{{ $isOverdue ? 'OVERDUE!' : 'Deadline for completion' }}</p>
-                        </div>
+                        @if ($isOverdue)
+                            <span class="due-date-status">OVERDUE</span>
+                        @elseif($isCompletedOrClosed)
+                            <span class="due-date-status">COMPLETED</span>
+                        @else
+                            <span class="due-date-status">ACTIVE</span>
+                        @endif
                     </div>
                     <div class="due-date-value">
                         {{ \Carbon\Carbon::parse($ticket->due_date)->format('d M Y, H:i') }}
@@ -2251,11 +2380,17 @@
                     </button>
                 @endif
 
-                <!-- PRINT BUTTON -->
-                <button class="btn-action btn-secondary" onclick="window.print()">
-                    <i class="fas fa-print"></i><span> Print</span>
-                </button>
-
+                {{-- Tambahkan tombol di Action Buttons --}}
+                @if (in_array($user->role, ['superadmin', 'admin_eng', 'om', 'gm']) ||
+                        $ticket->user_id == $user->id ||
+                        $ticket->assigned_to == $user->id)
+                    <button class="btn-action btn-info" onclick="generateReport()">
+                        <i class="fas fa-file-pdf"></i><span> Generate Report</span>
+                    </button>
+                    <button class="btn-action btn-secondary" onclick="viewReportModal()">
+                        <i class="fas fa-eye"></i><span> View Report</span>
+                    </button>
+                @endif
                 <!-- BACK TO LIST -->
                 <a href="{{ route('tickets.index') }}" class="btn-action btn-outline-secondary">
                     <i class="fas fa-arrow-left"></i><span> Back to List</span>
@@ -2330,9 +2465,8 @@
                             <span class="info-label">STATUS:</span>
                             <span class="info-value">
                                 <span class="status-badge status-{{ $ticket->status }}">
-                                    {{ str_replace('_', ' ', $ticket->status) }}
+                                    {{ getStatusDisplay($ticket->status) }}
                                 </span>
-                            </span>
                         </div>
                     </div>
                 </div>
@@ -2675,10 +2809,13 @@
                         ]);
 
                         // Role yang boleh comment
+                        // Check if user can comment (termasuk manager)
                         $canComment =
-                            in_array(auth()->user()->role, ['user', 'admin_eng', 'technician']) ||
+                            in_array(auth()->user()->role, ['user', 'admin_eng', 'technician', 'manager']) ||
                             $ticket->user_id == auth()->id() ||
-                            $ticket->assigned_to == auth()->id();
+                            $ticket->assigned_to == auth()->id() ||
+                            (auth()->user()->role == 'manager' &&
+                                $ticket->department_id == auth()->user()->department_id);
                     @endphp
 
                     @if ($allowComments && $canComment)
@@ -2754,8 +2891,8 @@
     </div>
 
     <!-- ============================================
-                                                                                                                                                                                                                                                                                                                                                                                                   MODALS
-                                                                                                                                                                                                                                                                                                                                                                                                ============================================ -->
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   MODALS
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                ============================================ -->
 
     <!-- New Signature Modal (Password Verification) -->
     <div class="modal fade" id="newSignatureModal" tabindex="-1">
@@ -3010,49 +3147,52 @@
     </div>
 
     <!-- Complete Modal - HANYA TECHNICIAN -->
-    <div class="modal fade" id="completeModal" tabindex="-1">
-        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg">
+    <div class="modal fade" id="completeModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
             <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">
-                        <i class="fas fa-check-double me-2"></i> Mark as Complete
-                    </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title"><i class="fas fa-check-double me-2"></i>Mark Work as Complete</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
                 </div>
-                <form id="completeForm">
+                <form id="completeForm" method="POST" action="{{ route('tickets.complete', $ticket->id) }}">
                     @csrf
                     <div class="modal-body">
                         <div class="mb-3">
-                            <label class="form-label">Completion Notes (Optional)</label>
-                            <textarea name="completion_notes" class="form-control" rows="3"
-                                placeholder="Describe what was done, parts replaced, etc."></textarea>
+                            <label for="completion_notes" class="form-label required">
+                                <i class="fas fa-sticky-note me-1"></i>Completion Notes
+                                <small class="text-muted">(This will appear in follow-up section)</small>
+                            </label>
+                            <textarea name="completion_notes" id="completion_notes" class="form-control" rows="4"
+                                placeholder="Describe what work was done, parts replaced, etc." required></textarea>
+                            <div class="form-text">
+                                This note is required and will be visible in the report's follow-up section.
+                                If left empty, Admin Engineering must fill it later.
+                            </div>
                         </div>
 
                         <div class="mb-3">
-                            <label class="form-label">Your Signature *</label>
-                            <div class="signature-canvas-container border rounded mb-3">
-                                <canvas id="completeSignatureCanvas" class="modal-signature-canvas"></canvas>
+                            <label class="form-label required">
+                                <i class="fas fa-signature me-1"></i>Signature
+                            </label>
+                            <div class="signature-container border rounded p-2 bg-light">
+                                <canvas id="completeSignatureCanvas" width="500" height="150" class="w-100 border"
+                                    style="background: white;"></canvas>
                             </div>
-                            <div class="signature-actions">
-                                <button type="button" class="btn btn-outline-secondary btn-sm"
-                                    onclick="clearCompleteSignature()">
-                                    <i class="fas fa-eraser me-1"></i> Clear
-                                </button>
-                                <button type="button" class="btn btn-outline-secondary btn-sm"
-                                    onclick="undoCompleteSignature()">
-                                    <i class="fas fa-undo me-1"></i> Undo
+                            <div class="mt-2">
+                                <button type="button" class="btn btn-sm btn-outline-secondary"
+                                    onclick="clearSignature('complete')">
+                                    <i class="fas fa-eraser me-1"></i>Clear
                                 </button>
                             </div>
-                        </div>
-
-                        <div class="alert alert-info">
-                            <i class="fas fa-info-circle me-2"></i>
-                            By signing, you confirm that the work has been completed according to specifications.
+                            <input type="hidden" name="signature_data" id="completeSignatureData">
                         </div>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
-                        <button type="submit" class="btn btn-success">Mark Complete</button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-check-double me-1"></i>Submit Completion
+                        </button>
                     </div>
                 </form>
             </div>
@@ -3353,6 +3493,44 @@
             </div>
         </div>
     </div>
+
+    {{-- Tambahkan di bagian bawah sebelum @endsection --}}
+
+    <!-- Report Preview Modal -->
+    <div class="modal fade" id="reportPreviewModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title">
+                        <i class="fas fa-file-pdf me-2"></i>Report Preview - {{ $ticket->ticket_number }}
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-0">
+                    <div class="report-preview-container">
+                        <iframe id="reportPreviewFrame" src="{{ route('tickets.report.view', $ticket->id) }}"
+                            style="width: 100%; height: 70vh; border: none;"></iframe>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-1"></i> Close
+                    </button>
+                    {{-- <a href="{{ route('tickets.report.generate', $ticket->id) }}" class="btn btn-primary">
+                        <i class="fas fa-download me-1"></i> Download PDF
+                    </a> --}}
+                    <button type="button" class="btn btn-success" onclick="printReport()">
+                        <i class="fas fa-print me-1"></i> Print Report
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+
+
 @endsection
 
 @push('scripts')
@@ -3525,18 +3703,24 @@
             });
 
             // Complete Form
-            $('#completeForm').on('submit', function(e) {
-                e.preventDefault();
+            $('#completeForm').submit(function(e) {
+                const notes = $('#completion_notes').val().trim();
+                const signature = $('#completeSignatureData').val();
 
-                const formData = new FormData(this);
-
-                if (!completeSignaturePad || completeSignaturePad.isEmpty()) {
-                    toastr.error('Please draw your signature');
-                    return;
+                if (!notes) {
+                    e.preventDefault();
+                    toastr.error('Please fill in completion notes', 'Required Field');
+                    $('#completion_notes').focus();
+                    return false;
                 }
-                formData.append('signature_data', completeSignaturePad.toDataURL());
 
-                submitForm('{{ route('tickets.complete', $ticket->id) }}', formData, '#completeModal');
+                if (!signature) {
+                    e.preventDefault();
+                    toastr.error('Please provide your signature', 'Required Field');
+                    return false;
+                }
+
+                return true;
             });
 
             // VR Form
@@ -4320,6 +4504,50 @@
             checkScreenSize();
             $(window).on('resize', checkScreenSize);
         });
+
+        function generateReport() {
+            Swal.fire({
+                title: 'Download PDF Report',
+                text: "Download detailed PDF report for this ticket?",
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#17a2b8',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Download PDF',
+                cancelButtonText: 'Cancel',
+                reverseButtons: true
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // Show loading
+                    Swal.fire({
+                        title: 'Generating Report',
+                        text: 'Please wait while we generate the PDF...',
+                        allowOutsideClick: false,
+                        didOpen: () => {
+                            Swal.showLoading();
+                        }
+                    });
+
+                    // Download PDF
+                    window.location.href = '{{ route('tickets.report.download', $ticket->id) }}';
+
+                    // Close loading after 2 seconds
+                    setTimeout(() => {
+                        Swal.close();
+                    }, 2000);
+                }
+            });
+        }
+
+
+        function viewReportModal() {
+            $('#reportPreviewModal').modal('show');
+        }
+
+        function printReport() {
+            const iframe = document.getElementById('reportPreviewFrame');
+            iframe.contentWindow.print();
+        }
     </script>
 @endpush
 

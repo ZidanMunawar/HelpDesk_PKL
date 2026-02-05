@@ -7,9 +7,12 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\VoucherController;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\ActivityLogController;
 use App\Http\Controllers\Admin\AdminController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\TicketDetailController;
 use App\Http\Controllers\TicketFilterController;
+use App\Http\Controllers\TicketReportController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\LocationController;
 use App\Http\Controllers\Admin\PriorityController;
@@ -191,84 +194,64 @@ Route::middleware(['auth', 'active'])->group(function () {
         Route::post('/verify-password', [TicketDetailController::class, 'verifyPassword'])->name('verify-password');
         // VR Routes (akan dibuat controller terpisah)
 
+        // ======= TAMBAHKAN REPORT ROUTES DI DALAM GROUP =======
+        Route::get('/{ticket}/report', [TicketReportController::class, 'viewReport'])->name('report.view');
+        Route::get('/{ticket}/report/download', [TicketReportController::class, 'generateReport'])->name('report.download');
+        // ======================================================
+
     });
+    // Reports Routes
+    Route::prefix('reports')->name('reports.')->middleware(['auth'])->group(function () {
+        Route::get('/ticket/{ticket}/pdf', [TicketReportController::class, 'generateReport'])->name('ticket.pdf');
+        Route::get('/ticket/{ticket}/pdf-with-attachments', [TicketReportController::class, 'generateReportWithAttachments'])->name('ticket.pdf-with-attachments');
+        Route::get('/ticket/{ticket}/download', [TicketReportController::class, 'downloadReport'])->name('ticket.download');
+    });
+    // Tambahkan routes ini
     Route::prefix('vouchers')->name('vouchers.')->group(function () {
-        // Main VR Listing
         Route::get('/', [VoucherController::class, 'index'])->name('index');
 
-        // Create VR via Modal
-        Route::get('/create-modal/{ticket_id}', [VoucherController::class, 'createModal'])->name('create-modal');
+        Route::get('/create-modal/{ticketId?}', [VoucherController::class, 'createModal'])->name('create-modal');
+        Route::post('/search-tickets', [VoucherController::class, 'searchTickets'])->name('search-tickets');
+        Route::get('/find-ticket/{ticketNumber}', [VoucherController::class, 'findTicketByNumber'])->name('find-ticket');
+        Route::post('/', [VoucherController::class, 'store'])->name('store');
 
-        // Store VR (via AJAX)
-        Route::post('/{ticket_id}/store', [VoucherController::class, 'store'])->name('store');
-
-        // View VR Details Modal
         Route::get('/{vr}/show-modal', [VoucherController::class, 'showModal'])->name('show-modal');
-
-        // Approve/Reject VR
         Route::post('/{vr}/approve', [VoucherController::class, 'approve'])->name('approve');
-
-        // Mark as Paid
-        Route::post('/{vr}/mark-as-paid', [VoucherController::class, 'markAsPaid'])->name('mark-as-paid');
-
-        // Delete VR
+        Route::post('/{vr}/reject', [VoucherController::class, 'reject'])->name('reject');
+        Route::post('/{vr}/mark-paid', [VoucherController::class, 'markPaid'])->name('mark-paid');
         Route::delete('/{vr}', [VoucherController::class, 'destroy'])->name('destroy');
+        Route::get('/{vr}/print', [VoucherController::class, 'print'])->name('print');
+
+        Route::post('/verify-password', [VoucherController::class, 'verifyPassword'])->name('verify-password');
+    });
+    // Notification Routes
+    Route::middleware(['auth'])->group(function () {
+        Route::prefix('notifications')->group(function () {
+            Route::get('/', [NotificationController::class, 'index'])->name('notifications.index');
+            Route::get('/filter', [NotificationController::class, 'filter'])->name('notifications.filter');
+            Route::get('/unread-count', [NotificationController::class, 'getUnreadCount'])->name('notifications.unread-count');
+            Route::get('/latest', [NotificationController::class, 'getLatest'])->name('notifications.latest');
+            Route::post('/mark-read', [NotificationController::class, 'ajaxMarkAsRead'])->name('notifications.ajax-mark-read');
+            Route::get('/mark-as-read/{id}', [NotificationController::class, 'markAsRead'])->name('notifications.mark-as-read');
+            Route::post('/mark-all-read', [NotificationController::class, 'markAllAsRead'])->name('notifications.mark-all-read');
+            Route::delete('/{id}', [NotificationController::class, 'destroy'])->name('notifications.destroy');
+            Route::delete('/clear-all', [NotificationController::class, 'clearAll'])->name('notifications.clear-all');
+        });
     });
 
-    // API routes untuk VR support
-    Route::middleware(['auth'])->group(function () {
-        Route::get('/api/tickets/find-by-number/{ticketNumber}', function ($ticketNumber) {
-            $ticket = \App\Models\Ticket::where('ticket_number', $ticketNumber)->first();
-
-            if (!$ticket) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Ticket not found'
-                ], 404);
-            }
-
-            return response()->json([
-                'success' => true,
-                'ticket_id' => $ticket->id,
-                'ticket_number' => $ticket->ticket_number
-            ]);
-        });
-
-        Route::get('/api/tickets/my-recent-tickets', function () {
-            $user = auth()->user();
-
-            $tickets = \App\Models\Ticket::where('user_id', $user->id)
-                ->whereHas('approval', function ($q) {
-                    $q->where('needs_vr', true);
-                })
-                ->where('status', 'pending_vr')
-                ->orderBy('created_at', 'desc')
-                ->limit(10)
-                ->get(['id', 'ticket_number', 'title']);
-
-            return response()->json([
-                'success' => true,
-                'tickets' => $tickets
-            ]);
-        });
-
-        Route::get('/api/tickets/pending-vr-tickets', function () {
-            $tickets = \App\Models\Ticket::whereHas('approval', function ($q) {
-                $q->where('needs_vr', true);
-            })
-                ->where('status', 'pending_vr')
-                ->orderBy('created_at', 'desc')
-                ->limit(10)
-                ->get(['id', 'ticket_number', 'title', 'user_id']);
-
-            return response()->json([
-                'success' => true,
-                'tickets' => $tickets
-            ]);
-        });
+});
+// Activity Log Routes (SuperAdmin & Admin Eng only)
+Route::middleware(['auth'])->group(function () {
+    Route::prefix('activity-logs')->group(function () {
+        Route::get('/', [ActivityLogController::class, 'index'])->name('activity-logs.index');
+        Route::get('/export', [ActivityLogController::class, 'export'])->name('activity-logs.export');
+        Route::get('/{id}', [ActivityLogController::class, 'show'])->name('activity-logs.show');
+        Route::post('/clear-old', [ActivityLogController::class, 'clearOldLogs'])->name('activity-logs.clear-old');
+        Route::delete('/{id}', [ActivityLogController::class, 'destroy'])->name('activity-logs.destroy');
+        Route::get('/ticket/{ticketId}/activities', [ActivityLogController::class, 'getTicketActivities'])->name('activity-logs.ticket-activities');
+        Route::get('/statistics', [ActivityLogController::class, 'getStatistics'])->name('activity-logs.statistics');
     });
 });
-
 // ================================
 // ADMIN ROUTES (For SuperAdmin & Admin)
 // ================================
