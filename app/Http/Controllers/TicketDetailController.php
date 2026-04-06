@@ -2,25 +2,24 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Support\Str;
-use App\Models\Ticket;
-use App\Models\TicketComment;
+use App\Http\Controllers\Controller;
+use App\Mail\TicketNotification;
 use App\Models\ActivityLog;
-use App\Models\User;
-use App\Models\Signature;
-use App\Models\TicketApproval;
-use App\Models\Notification;
 use App\Models\Department;
+use App\Models\Notification;
+use App\Models\Signature;
+use App\Models\Ticket;
+use App\Models\TicketApproval;
+use App\Models\TicketComment;
+use App\Models\User;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Validation\ValidationException;
-use Illuminate\Support\Facades\RateLimiter;
-use App\Mail\TicketNotification;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class TicketDetailController extends Controller
 {
@@ -102,13 +101,36 @@ class TicketDetailController extends Controller
                 return $ticket->assigned_to === $user->id || $ticket->user_id === $user->id;
 
             case 'manager':
-                // Manager bisa lihat ticket miliknya sendiri ATAU ticket user di department yang sama
                 return $ticket->user_id === $user->id ||
                     $ticket->department_id === $user->department_id;
 
             default:
                 return false;
         }
+    }
+
+    /**
+     * Check if user can comment on ticket
+     */
+    private function canComment($user, $ticket)
+    {
+        if ($user->role === 'admin_eng') {
+            return true;
+        }
+
+        if ($user->role === 'manager' && $ticket->department_id === $user->department_id) {
+            return true;
+        }
+
+        if ($ticket->user_id === $user->id) {
+            return true;
+        }
+
+        if ($user->role === 'technician' && $ticket->assigned_to === $user->id) {
+            return true;
+        }
+
+        return false;
     }
 
     /**
@@ -123,7 +145,6 @@ class TicketDetailController extends Controller
 
         $user = Auth::user();
 
-        // Hanya AdminEng, OM, GM yang bisa ganti signature
         if (!in_array($user->role, ['admin_eng', 'om', 'gm'])) {
             return response()->json([
                 'success' => false,
@@ -131,7 +152,6 @@ class TicketDetailController extends Controller
             ], 403);
         }
 
-        // Verifikasi password
         if (!Hash::check($request->current_password, $user->password)) {
             return response()->json([
                 'success' => false,
@@ -139,7 +159,6 @@ class TicketDetailController extends Controller
             ], 422);
         }
 
-        // Cek apakah user sudah punya signature
         $hasSignature = !empty($user->signature_path) && Storage::disk('public')->exists($user->signature_path);
 
         return response()->json([
@@ -156,7 +175,7 @@ class TicketDetailController extends Controller
     private function verifyPasswordForNewSignature($request)
     {
         if (!$request->has('current_password')) {
-            return true; // Tidak perlu verifikasi jika tidak minta ganti
+            return true;
         }
 
         $user = Auth::user();
@@ -165,6 +184,7 @@ class TicketDetailController extends Controller
 
     /**
      * Admin Engineering receive ticket - DENGAN OPSI SIGNATURE BARU
+     * PERUBAHAN: Tambah notifikasi ke User bahwa ticket diterima
      */
     public function receiveTicket(Request $request, $id)
     {
@@ -180,7 +200,7 @@ class TicketDetailController extends Controller
         $request->validate([
             'signature_data' => 'required|string',
             'save_signature' => 'nullable|boolean',
-            'current_password' => 'nullable|string' // Untuk verifikasi jika ganti signature
+            'current_password' => 'nullable|string'
         ]);
 
         $ticket = Ticket::findOrFail($id);
@@ -192,7 +212,6 @@ class TicketDetailController extends Controller
             ], 403);
         }
 
-        // Verifikasi password jika ingin ganti signature yang sudah ada
         if ($request->has('current_password') && !$this->verifyPasswordForNewSignature($request)) {
             return response()->json([
                 'success' => false,
@@ -202,17 +221,14 @@ class TicketDetailController extends Controller
 
         DB::beginTransaction();
         try {
-            // Save signature
             $signaturePath = $this->saveSignature(
                 $request->signature_data,
                 $ticket->ticket_number,
                 $user->id,
-                2 // Stage 2: Received
+                2
             );
 
-            // Save to user profile if requested (HANYA ADMIN_ENG)
             if ($request->has('save_signature') && $request->boolean('save_signature')) {
-                // Hapus signature lama jika ada
                 if ($user->signature_path) {
                     Storage::disk('public')->delete($user->signature_path);
                 }
@@ -224,33 +240,28 @@ class TicketDetailController extends Controller
                 ]);
             }
 
-            // Create signature record
             Signature::create([
                 'ticket_id' => $ticket->id,
                 'user_id' => $user->id,
                 'signature_type' => 'approver',
-                'stage' => 2, // Received stage
+                'stage' => 2,
                 'signature_path' => $signaturePath,
                 'signed_at' => now(),
                 'ip_address' => $request->ip(),
             ]);
 
-            // PERBAIKAN: Update ticket status ke received
             $ticket->update([
-                'status' => 'received', // Status: received
-                'current_stage' => 2, // Stage 2: Received by Admin
+                'status' => 'received',
+                'current_stage' => 2,
             ]);
 
-            // Update ticket approvals
             $approval = TicketApproval::firstOrCreate(['ticket_id' => $ticket->id]);
             $approval->update([
                 'admin_eng_received' => true,
                 'admin_eng_received_by' => $user->id,
                 'admin_eng_received_at' => now(),
-                'status' => 'pending'
             ]);
 
-            // Log activity
             ActivityLog::create([
                 'user_id' => $user->id,
                 'ticket_id' => $ticket->id,
@@ -260,38 +271,39 @@ class TicketDetailController extends Controller
                 'user_agent' => $request->userAgent(),
             ]);
 
-            // Send notification to OM
-            $omUsers = User::where('role', 'om')->where('status', 'active')->get();
-            foreach ($omUsers as $omUser) {
-                $this->sendNotification(
-                    $omUser,
-                    $ticket,
-                    'Ticket Needs OM Approval',
-                    'Ticket #' . $ticket->ticket_number . ' needs your approval',
-                    'approval'
-                );
-            }
+            // ✅ PERUBAHAN: Notifikasi ke User bahwa ticket diterima
+            $this->sendNotification(
+                $ticket->user,
+                $ticket,
+                'MR Received by Engineering',
+                'Your maintenance request #' . $ticket->ticket_number . ' has been received by the Engineering Department and is being processed.',
+                'info'
+            );
 
             DB::commit();
 
             return response()->json([
                 'success' => true,
-                'message' => 'Ticket received successfully',
+                'message' => 'MR received successfully',
                 'redirect' => route('tickets.show', $ticket->id)
             ]);
 
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Receive ticket error: ' . $e->getMessage());
+            Log::error('Receive MR error: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to receive ticket: ' . $e->getMessage()
+                'message' => 'Failed to receive MR: ' . $e->getMessage()
             ], 500);
         }
     }
 
     /**
      * OM Approve/Reject ticket - DENGAN OPSI SIGNATURE BARU
+     * PERUBAHAN:
+     * - Hapus notifikasi ke user saat approve
+     * - Tambah notifikasi ke Admin Eng saat reject
+     * - User dapat notifikasi umum saat reject
      */
     public function omAction(Request $request, $id)
     {
@@ -321,7 +333,6 @@ class TicketDetailController extends Controller
             ], 403);
         }
 
-        // Verifikasi password jika ingin ganti signature yang sudah ada
         if ($request->has('current_password') && !$this->verifyPasswordForNewSignature($request)) {
             return response()->json([
                 'success' => false,
@@ -332,22 +343,19 @@ class TicketDetailController extends Controller
         DB::beginTransaction();
         try {
             if ($request->action === 'reject') {
-                // Handle rejection
                 $ticket->update([
                     'status' => 'cancelled',
-                    'current_stage' => 1, // Kembali ke stage 1
+                    'current_stage' => 1,
                     'approval_status' => 'rejected',
                     'closed_at' => now(),
                 ]);
 
                 $approval = TicketApproval::firstOrCreate(['ticket_id' => $ticket->id]);
                 $approval->update([
-                    'status' => 'rejected',
                     'rejection_reason' => $request->rejection_reason,
                     'rejection_note' => 'Rejected by OM: ' . $request->rejection_reason
                 ]);
 
-                // Log activity
                 ActivityLog::create([
                     'user_id' => $user->id,
                     'ticket_id' => $ticket->id,
@@ -357,27 +365,36 @@ class TicketDetailController extends Controller
                     'user_agent' => $request->userAgent(),
                 ]);
 
-                // Notify user
+                // ✅ PERUBAHAN: Notifikasi ke Admin Eng bahwa OM menolak
+                $adminEngUsers = User::where('role', 'admin_eng')->where('status', 'active')->get();
+                foreach ($adminEngUsers as $adminUser) {
+                    $this->sendNotification(
+                        $adminUser,
+                        $ticket,
+                        'MR Rejected by OM',
+                        'MR #' . $ticket->ticket_number . ' was rejected by OM. Reason: ' . $request->rejection_reason,
+                        'rejection'
+                    );
+                }
+
+                // ✅ PERUBAHAN: Notifikasi umum ke user (tidak detail)
                 $this->sendNotification(
                     $ticket->user,
                     $ticket,
-                    'Ticket Rejected by OM',
-                    'Your ticket #' . $ticket->ticket_number . ' was rejected by OM. Reason: ' . $request->rejection_reason,
+                    'Your Maintenance Request Has Been Rejected',
+                    'Your MR #' . $ticket->ticket_number . ' has been rejected. Please contact support for more information.',
                     'rejection'
                 );
 
             } else {
-                // Handle approval
                 $signaturePath = $this->saveSignature(
                     $request->signature_data,
                     $ticket->ticket_number,
                     $user->id,
-                    3 // Stage 3: OM Approval
+                    3
                 );
 
-                // Save to user profile if requested (HANYA OM)
                 if ($request->has('save_signature') && $request->boolean('save_signature')) {
-                    // Hapus signature lama jika ada
                     if ($user->signature_path) {
                         Storage::disk('public')->delete($user->signature_path);
                     }
@@ -389,7 +406,6 @@ class TicketDetailController extends Controller
                     ]);
                 }
 
-                // Create signature record
                 Signature::create([
                     'ticket_id' => $ticket->id,
                     'user_id' => $user->id,
@@ -400,13 +416,11 @@ class TicketDetailController extends Controller
                     'ip_address' => $request->ip(),
                 ]);
 
-                // PERBAIKAN: Set status pending_om dan stage 3
                 $ticket->update([
-                    'status' => 'pending_om', // Status: waiting for OM approval
-                    'current_stage' => 3, // Stage 3: OM Approval
+                    'status' => 'pending_om',
+                    'current_stage' => 3,
                 ]);
 
-                // Update ticket approvals
                 $approval = TicketApproval::firstOrCreate(['ticket_id' => $ticket->id]);
                 $approval->update([
                     'om_approved' => true,
@@ -414,7 +428,6 @@ class TicketDetailController extends Controller
                     'om_approved_at' => now(),
                 ]);
 
-                // Log activity
                 ActivityLog::create([
                     'user_id' => $user->id,
                     'ticket_id' => $ticket->id,
@@ -424,17 +437,19 @@ class TicketDetailController extends Controller
                     'user_agent' => $request->userAgent(),
                 ]);
 
-                // Notify Admin Engineering
+                // ✅ Notifikasi ke Admin Eng (tetap dipertahankan)
                 $adminEngUsers = User::where('role', 'admin_eng')->where('status', 'active')->get();
                 foreach ($adminEngUsers as $adminUser) {
                     $this->sendNotification(
                         $adminUser,
                         $ticket,
-                        'Ticket Approved by OM',
-                        'Ticket #' . $ticket->ticket_number . ' has been approved by OM and is ready for assignment',
+                        'MR Approved by OM',
+                        'MR #' . $ticket->ticket_number . ' has been approved by OM and is ready for technician assignment.',
                         'assignment'
                     );
                 }
+
+                // ❌ HAPUS: Tidak ada notifikasi ke user untuk OM Approve
             }
 
             DB::commit();
@@ -456,7 +471,8 @@ class TicketDetailController extends Controller
     }
 
     /**
-     * Technician complete work
+     * Technician complete work - DENGAN FOLLOW-UP
+     * PERUBAHAN: User tetap dapat notifikasi baik dengan atau tanpa follow-up
      */
     public function technicianComplete(Request $request, $id)
     {
@@ -471,7 +487,8 @@ class TicketDetailController extends Controller
 
         $request->validate([
             'signature_data' => 'required|string',
-            'completion_notes' => 'required|string|min:10'
+            'completion_notes' => 'required|string|min:10',
+            'is_followup' => 'nullable|boolean'
         ]);
 
         $ticket = Ticket::findOrFail($id);
@@ -492,15 +509,13 @@ class TicketDetailController extends Controller
 
         DB::beginTransaction();
         try {
-            // Save signature
             $signaturePath = $this->saveSignature(
                 $request->signature_data,
                 $ticket->ticket_number,
                 $user->id,
-                6 // Stage 6: Completed by technician
+                6
             );
 
-            // Create signature record
             Signature::create([
                 'ticket_id' => $ticket->id,
                 'user_id' => $user->id,
@@ -511,41 +526,67 @@ class TicketDetailController extends Controller
                 'ip_address' => $request->ip(),
             ]);
 
-            // PERBAIKAN: Update ticket status ke completed
             $ticket->update([
-                'status' => 'completed', // Status: completed
-                'current_stage' => 6, // Stage 6: Completed
+                'status' => 'completed',
+                'current_stage' => 6,
                 'resolved_at' => now(),
             ]);
 
-            // Add completion comment
             $comment = "Work completed by technician.\n";
             $comment .= "Completion Notes: " . $request->completion_notes;
+
+            $isFollowUp = $request->boolean('is_followup', true);
 
             TicketComment::create([
                 'ticket_id' => $ticket->id,
                 'user_id' => $user->id,
                 'comment' => $comment,
                 'is_internal' => 0,
+                'is_followup' => $isFollowUp,
             ]);
 
-            // Log activity khusus untuk follow-up
-            ActivityLog::create([
-                'user_id' => $user->id,
-                'ticket_id' => $ticket->id,
-                'action' => 'completion_note',
-                'description' => 'Technician added completion notes: ' . Str::limit($request->completion_notes, 100),
-                'ip_address' => $request->ip(),
-                'user_agent' => $request->userAgent(),
-            ]);
+            if (!$isFollowUp) {
+                $approval = TicketApproval::firstOrCreate(['ticket_id' => $ticket->id]);
+                $approval->update([
+                    'needs_admin_followup' => true,
+                ]);
 
-            // Notify reporter untuk checking
-            $reporter = $ticket->user;
+                ActivityLog::create([
+                    'user_id' => $user->id,
+                    'ticket_id' => $ticket->id,
+                    'action' => 'completion_notes_skipped',
+                    'description' => 'Technician skipped follow-up notes, admin needs to add',
+                    'ip_address' => $request->ip(),
+                    'user_agent' => $request->userAgent(),
+                ]);
+
+                $adminEngUsers = User::where('role', 'admin_eng')->where('status', 'active')->get();
+                foreach ($adminEngUsers as $adminUser) {
+                    $this->sendNotification(
+                        $adminUser,
+                        $ticket,
+                        'Follow-up Notes Required',
+                        'Technician completed MR #' . $ticket->ticket_number . ' without follow-up notes. Please add them.',
+                        'warning'
+                    );
+                }
+            } else {
+                ActivityLog::create([
+                    'user_id' => $user->id,
+                    'ticket_id' => $ticket->id,
+                    'action' => 'completion_note',
+                    'description' => 'Technician added follow-up notes: ' . Str::limit($request->completion_notes, 100),
+                    'ip_address' => $request->ip(),
+                    'user_agent' => $request->userAgent(),
+                ]);
+            }
+
+            // ✅ PERUBAHAN: User tetap mendapat notifikasi work completed (baik dengan atau tanpa follow-up)
             $this->sendNotification(
-                $reporter,
+                $ticket->user,
                 $ticket,
                 'Work Completed - Please Check',
-                'The work on ticket #' . $ticket->ticket_number . ' has been completed. Please check and confirm.',
+                'The work on your MR #' . $ticket->ticket_number . ' has been completed. Please check and confirm the result.',
                 'check'
             );
 
@@ -553,7 +594,7 @@ class TicketDetailController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Work marked as completed. Reporter has been notified to check.',
+                'message' => 'Work marked as completed.' . (!$isFollowUp ? ' Admin will add follow-up notes.' : ''),
                 'redirect' => route('tickets.show', $ticket->id)
             ]);
 
@@ -563,6 +604,80 @@ class TicketDetailController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to complete work: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Admin add follow-up notes
+     */
+    public function addFollowUpNotes(Request $request, $id)
+    {
+        $user = Auth::user();
+
+        if (!in_array($user->role, ['admin_eng', 'superadmin'])) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Only Admin Engineering can add follow-up notes'
+            ], 403);
+        }
+
+        $request->validate([
+            'follow_up_notes' => 'required|string|min:10'
+        ]);
+
+        $ticket = Ticket::findOrFail($id);
+
+        DB::beginTransaction();
+        try {
+            TicketComment::create([
+                'ticket_id' => $ticket->id,
+                'user_id' => $user->id,
+                'comment' => "Admin Follow-up Notes:\n" . $request->follow_up_notes,
+                'is_internal' => 0,
+                'is_followup' => true,
+            ]);
+
+            $approval = TicketApproval::firstOrCreate(['ticket_id' => $ticket->id]);
+            $approval->update([
+                'needs_admin_followup' => false,
+                'admin_followup_added_at' => now(),
+                'admin_followup_added_by' => $user->id,
+            ]);
+
+            ActivityLog::create([
+                'user_id' => $user->id,
+                'ticket_id' => $ticket->id,
+                'action' => 'admin_followup_added',
+                'description' => 'Admin added follow-up notes',
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->userAgent(),
+            ]);
+
+            if ($ticket->assigned_to) {
+                $this->sendNotification(
+                    User::find($ticket->assigned_to),
+                    $ticket,
+                    'Follow-up Notes Added',
+                    'Admin has added follow-up notes to MR #' . $ticket->ticket_number,
+                    'info'
+                );
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Follow-up notes added successfully',
+                'redirect' => route('tickets.show', $ticket->id)
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Add follow-up notes error: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to add follow-up notes: ' . $e->getMessage()
             ], 500);
         }
     }
@@ -605,20 +720,19 @@ class TicketDetailController extends Controller
 
         DB::beginTransaction();
         try {
-            // PERBAIKAN: Update ticket status ke pending_vr
             $ticket->update([
-                'status' => 'pending_vr', // Status: pending VR
-                'current_stage' => 5, // Stage 5: Waiting VR
+                'status' => 'pending_vr',
+                'current_stage' => 5,
             ]);
 
-            // Update ticket approvals
             $approval = TicketApproval::firstOrCreate(['ticket_id' => $ticket->id]);
             $approval->update([
                 'needs_vr' => true,
-                'vr_reason' => $request->vr_reason
+                'vr_reason' => $request->vr_reason,
+                'vr_created_by' => $user->id,
+                'vr_created_at' => now(),
             ]);
 
-            // Add VR request comment
             TicketComment::create([
                 'ticket_id' => $ticket->id,
                 'user_id' => $user->id,
@@ -626,9 +740,9 @@ class TicketDetailController extends Controller
                     ($request->estimated_cost ? "\nEstimated Cost: " . number_format($request->estimated_cost, 2) : "") .
                     ($request->required_items ? "\nRequired Items: " . $request->required_items : ""),
                 'is_internal' => 0,
+                'is_followup' => true,
             ]);
 
-            // Log activity
             ActivityLog::create([
                 'user_id' => $user->id,
                 'ticket_id' => $ticket->id,
@@ -638,14 +752,13 @@ class TicketDetailController extends Controller
                 'user_agent' => $request->userAgent(),
             ]);
 
-            // Notify Admin Engineering
             $adminEngUsers = User::where('role', 'admin_eng')->where('status', 'active')->get();
             foreach ($adminEngUsers as $adminUser) {
                 $this->sendNotification(
                     $adminUser,
                     $ticket,
-                    'VR Requested by Technician',
-                    'Ticket #' . $ticket->ticket_number . ' requires VR. Reason: ' . $request->vr_reason,
+                    'PR Requested by Technician',
+                    'MR #' . $ticket->ticket_number . ' requires PR. Reason: ' . $request->vr_reason,
                     'vr_request'
                 );
             }
@@ -654,7 +767,7 @@ class TicketDetailController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'VR request submitted. Admin Engineering has been notified.',
+                'message' => 'PR request submitted. Admin Engineering has been notified.',
                 'redirect' => route('tickets.show', $ticket->id)
             ]);
 
@@ -669,34 +782,28 @@ class TicketDetailController extends Controller
     }
 
     /**
-     * User check completion
+     * User/Manager check completion
+     * PERUBAHAN: Tambah notifikasi ke Admin Eng saat reject
      */
     public function userCheck(Request $request, $id)
     {
         $user = Auth::user();
         $ticket = Ticket::findOrFail($id);
 
-        // PERBAIKAN: Bolehkan user ATAU admin_eng yang create ticket
-        if ($user->role === 'user') {
-            // User biasa hanya bisa check ticket miliknya sendiri
-            if ($ticket->user_id !== $user->id) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'This is not your ticket'
-                ], 403);
-            }
-        } elseif ($user->role === 'admin_eng') {
-            // Admin_eng hanya bisa check jika dia yang create ticket
-            if ($ticket->user_id !== $user->id) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Only the reporter can check completion'
-                ], 403);
-            }
-        } else {
+        $canCheck = false;
+
+        if ($user->role === 'user' && $ticket->user_id === $user->id) {
+            $canCheck = true;
+        } elseif ($user->role === 'admin_eng' && $ticket->user_id === $user->id) {
+            $canCheck = true;
+        } elseif ($user->role === 'manager' && $ticket->department_id === $user->department_id) {
+            $canCheck = true;
+        }
+
+        if (!$canCheck) {
             return response()->json([
                 'success' => false,
-                'message' => 'Only reporter (user or admin_eng) can check completion'
+                'message' => 'You are not authorized to check this ticket'
             ], 403);
         }
 
@@ -716,27 +823,23 @@ class TicketDetailController extends Controller
         DB::beginTransaction();
         try {
             if ($request->action === 'reject') {
-                // User/Admin rejects the completion
                 $ticket->update([
                     'status' => 'in_progress',
-                    'current_stage' => 4, // Kembali ke stage 4: In Progress
+                    'current_stage' => 4,
                 ]);
 
-                // Remove technician's completion signature
                 Signature::where('ticket_id', $ticket->id)
                     ->where('stage', 6)
                     ->where('signature_type', 'technician')
                     ->delete();
 
-                // Add comment
                 TicketComment::create([
                     'ticket_id' => $ticket->id,
                     'user_id' => $user->id,
-                    'comment' => "Completion rejected by reporter. Reason: " . $request->rejection_reason,
+                    'comment' => "Completion rejected by " . $user->name . ". Reason: " . $request->rejection_reason,
                     'is_internal' => 0,
                 ]);
 
-                // Log activity
                 ActivityLog::create([
                     'user_id' => $user->id,
                     'ticket_id' => $ticket->id,
@@ -746,28 +849,42 @@ class TicketDetailController extends Controller
                     'user_agent' => $request->userAgent(),
                 ]);
 
-                // Notify technician
                 if ($ticket->assigned_to) {
                     $technician = User::find($ticket->assigned_to);
                     $this->sendNotification(
                         $technician,
                         $ticket,
-                        'Completion Rejected by Reporter',
-                        'Your completion on ticket #' . $ticket->ticket_number . ' was rejected. Reason: ' . $request->rejection_reason,
+                        'Completion Rejected',
+                        'Your work on MR #' . $ticket->ticket_number . ' has been rejected. Reason: ' . $request->rejection_reason,
+                        'rejection'
+                    );
+                }
+
+                // ✅ PERUBAHAN: Tambah notifikasi ke Admin Eng
+                $adminEngUsers = User::where('role', 'admin_eng')->where('status', 'active')->get();
+                foreach ($adminEngUsers as $adminUser) {
+                    $this->sendNotification(
+                        $adminUser,
+                        $ticket,
+                        'Completion Rejected by User',
+                        'User/Manager rejected the completion on MR #' . $ticket->ticket_number . '. Reason: ' . $request->rejection_reason,
                         'rejection'
                     );
                 }
 
             } else {
-                // User/Admin accepts the completion
-                $signaturePath = $this->saveSignature(
-                    $request->signature_data,
-                    $ticket->ticket_number,
-                    $user->id,
-                    7 // Stage 7: Checked by reporter
-                );
+                if ($user->role === 'manager' && !empty($user->signature_path)) {
+                    $signaturePath = 'signatures/quick_' . $ticket->ticket_number . '_stage7_manager_' . $user->id . '_' . time() . '.png';
+                    Storage::disk('public')->copy($user->signature_path, $signaturePath);
+                } else {
+                    $signaturePath = $this->saveSignature(
+                        $request->signature_data,
+                        $ticket->ticket_number,
+                        $user->id,
+                        7
+                    );
+                }
 
-                // Create signature record
                 Signature::create([
                     'ticket_id' => $ticket->id,
                     'user_id' => $user->id,
@@ -778,13 +895,11 @@ class TicketDetailController extends Controller
                     'ip_address' => $request->ip(),
                 ]);
 
-                // PERBAIKAN: Set status ke pending_gm
                 $ticket->update([
-                    'status' => 'pending_gm', // Status: pending GM approval
-                    'current_stage' => 7, // Stage 7: User Check Done
+                    'status' => 'pending_gm',
+                    'current_stage' => 7,
                 ]);
 
-                // Update ticket approvals
                 $approval = TicketApproval::firstOrCreate(['ticket_id' => $ticket->id]);
                 $approval->update([
                     'user_checked' => true,
@@ -792,32 +907,29 @@ class TicketDetailController extends Controller
                     'user_checked_at' => now(),
                 ]);
 
-                // Add comment
                 TicketComment::create([
                     'ticket_id' => $ticket->id,
                     'user_id' => $user->id,
-                    'comment' => "Reporter accepted the completion",
+                    'comment' => ucfirst($user->role) . " accepted the completion",
                     'is_internal' => 0,
                 ]);
 
-                // Log activity
                 ActivityLog::create([
                     'user_id' => $user->id,
                     'ticket_id' => $ticket->id,
                     'action' => 'accepted',
-                    'description' => 'Completion accepted by reporter',
+                    'description' => 'Completion accepted by ' . $user->role,
                     'ip_address' => $request->ip(),
                     'user_agent' => $request->userAgent(),
                 ]);
 
-                // Notify GM
                 $gmUsers = User::where('role', 'gm')->where('status', 'active')->get();
                 foreach ($gmUsers as $gmUser) {
                     $this->sendNotification(
                         $gmUser,
                         $ticket,
-                        'Ticket Needs GM Approval',
-                        'Ticket #' . $ticket->ticket_number . ' needs your final approval',
+                        'MR Needs GM Approval',
+                        'MR #' . $ticket->ticket_number . ' has been confirmed by the user and needs your final approval.',
                         'approval'
                     );
                 }
@@ -843,6 +955,11 @@ class TicketDetailController extends Controller
 
     /**
      * GM Approve/Reject - DENGAN OPSI SIGNATURE BARU
+     * PERUBAHAN:
+     * - Hapus notifikasi ke User dan Technician saat approve
+     * - Hanya Admin Eng yang dapat notifikasi approve
+     * - Tambah notifikasi ke Admin Eng saat reject
+     * - User dapat notifikasi umum saat reject
      */
     public function gmAction(Request $request, $id)
     {
@@ -872,7 +989,6 @@ class TicketDetailController extends Controller
             ], 403);
         }
 
-        // Verifikasi password jika ingin ganti signature yang sudah ada
         if ($request->has('current_password') && !$this->verifyPasswordForNewSignature($request)) {
             return response()->json([
                 'success' => false,
@@ -883,22 +999,19 @@ class TicketDetailController extends Controller
         DB::beginTransaction();
         try {
             if ($request->action === 'reject') {
-                // Handle rejection
                 $ticket->update([
                     'status' => 'cancelled',
-                    'current_stage' => 1, // Kembali ke stage 1
+                    'current_stage' => 1,
                     'approval_status' => 'rejected',
                     'closed_at' => now(),
                 ]);
 
                 $approval = TicketApproval::firstOrCreate(['ticket_id' => $ticket->id]);
                 $approval->update([
-                    'status' => 'rejected',
                     'rejection_reason' => $request->rejection_reason,
                     'rejection_note' => 'Rejected by GM: ' . $request->rejection_reason
                 ]);
 
-                // Log activity
                 ActivityLog::create([
                     'user_id' => $user->id,
                     'ticket_id' => $ticket->id,
@@ -908,27 +1021,36 @@ class TicketDetailController extends Controller
                     'user_agent' => $request->userAgent(),
                 ]);
 
-                // Notify reporter dan admin
+                // ✅ PERUBAHAN: Notifikasi ke Admin Eng bahwa GM menolak
+                $adminEngUsers = User::where('role', 'admin_eng')->where('status', 'active')->get();
+                foreach ($adminEngUsers as $adminUser) {
+                    $this->sendNotification(
+                        $adminUser,
+                        $ticket,
+                        'MR Rejected by GM',
+                        'MR #' . $ticket->ticket_number . ' was rejected by GM. Reason: ' . $request->rejection_reason,
+                        'rejection'
+                    );
+                }
+
+                // ✅ PERUBAHAN: Notifikasi umum ke user (tidak detail)
                 $this->sendNotification(
                     $ticket->user,
                     $ticket,
-                    'Ticket Rejected by GM',
-                    'Your ticket #' . $ticket->ticket_number . ' was rejected by GM',
+                    'Your Maintenance Request Has Been Rejected',
+                    'Your MR #' . $ticket->ticket_number . ' has been rejected. Please contact support for more information.',
                     'rejection'
                 );
 
             } else {
-                // Handle approval
                 $signaturePath = $this->saveSignature(
                     $request->signature_data,
                     $ticket->ticket_number,
                     $user->id,
-                    8 // Stage 8: GM Approval
+                    8
                 );
 
-                // Save to user profile if requested (HANYA GM)
                 if ($request->has('save_signature') && $request->boolean('save_signature')) {
-                    // Hapus signature lama jika ada
                     if ($user->signature_path) {
                         Storage::disk('public')->delete($user->signature_path);
                     }
@@ -940,7 +1062,6 @@ class TicketDetailController extends Controller
                     ]);
                 }
 
-                // Create signature record
                 Signature::create([
                     'ticket_id' => $ticket->id,
                     'user_id' => $user->id,
@@ -951,23 +1072,19 @@ class TicketDetailController extends Controller
                     'ip_address' => $request->ip(),
                 ]);
 
-                // PERBAIKAN: Set status ke ready_for_closure
                 $ticket->update([
-                    'status' => 'ready_for_closure', // Status: ready for closure
-                    'current_stage' => 8, // Stage 8: GM Approved
+                    'status' => 'ready_for_closure',
+                    'current_stage' => 8,
                     'approval_status' => 'approved',
                 ]);
 
-                // Update ticket approvals
                 $approval = TicketApproval::firstOrCreate(['ticket_id' => $ticket->id]);
                 $approval->update([
                     'gm_approved' => true,
                     'gm_approved_by' => $user->id,
                     'gm_approved_at' => now(),
-                    'status' => 'approved'
                 ]);
 
-                // Log activity
                 ActivityLog::create([
                     'user_id' => $user->id,
                     'ticket_id' => $ticket->id,
@@ -977,35 +1094,20 @@ class TicketDetailController extends Controller
                     'user_agent' => $request->userAgent(),
                 ]);
 
-                // Notify all involved parties
-                $this->sendNotification(
-                    $ticket->user,
-                    $ticket,
-                    'Ticket Approved by GM',
-                    'Your ticket #' . $ticket->ticket_number . ' has been approved by GM',
-                    'closure'
-                );
-
-                if ($ticket->assigned_to) {
-                    $this->sendNotification(
-                        User::find($ticket->assigned_to),
-                        $ticket,
-                        'Ticket Approved by GM',
-                        'Ticket #' . $ticket->ticket_number . ' has been approved by GM',
-                        'closure'
-                    );
-                }
-
+                // ✅ PERUBAHAN: Hanya Admin Eng yang mendapat notifikasi approve
                 $adminEngUsers = User::where('role', 'admin_eng')->where('status', 'active')->get();
                 foreach ($adminEngUsers as $adminUser) {
                     $this->sendNotification(
                         $adminUser,
                         $ticket,
-                        'Ticket Ready for Administrative Closure',
-                        'Ticket #' . $ticket->ticket_number . ' has been approved by GM and is ready for administrative closure.',
+                        'MR Ready for Administrative Closure',
+                        'MR #' . $ticket->ticket_number . ' has been approved by GM and is ready for administrative closure.',
                         'closure'
                     );
                 }
+
+                // ❌ HAPUS: Notifikasi ke User dan Technician untuk GM Approve
+                // User akan mendapat notifikasi di Tahap 15 saat ticket di-close
             }
 
             DB::commit();
@@ -1027,9 +1129,6 @@ class TicketDetailController extends Controller
     }
 
     /**
-     * Assign ticket to technician - PERBAIKAN: Status in_progress setelah OM approve
-     */
-    /**
      * Assign ticket to technician
      */
     public function assignTicket(Request $request, $id)
@@ -1050,15 +1149,12 @@ class TicketDetailController extends Controller
 
         $ticket = Ticket::findOrFail($id);
 
-        // PERBAIKAN: Validasi status yang benar untuk assign
-        // Bisa assign jika status in_progress (setelah OM approve) atau pending_vr
         $assignableStatuses = ['in_progress', 'pending_vr'];
 
         if (!in_array($ticket->status, $assignableStatuses)) {
             return response()->json([
                 'success' => false,
-                'message' => 'Ticket cannot be assigned in current status: ' . $ticket->status .
-                    '. Ticket must be in progress or pending VR.'
+                'message' => 'Ticket cannot be assigned in current status: ' . $ticket->status
             ], 403);
         }
 
@@ -1075,18 +1171,15 @@ class TicketDetailController extends Controller
         try {
             $oldAssignee = $ticket->assigned_to;
 
-            // Jika dari pending_vr, tetap di pending_vr (tunggu VR approval)
-            // Jika dari in_progress, tetap in_progress
             $newStatus = $ticket->status === 'pending_vr' ? 'pending_vr' : 'in_progress';
 
             $ticket->update([
                 'assigned_to' => $request->assigned_to,
-                'status' => $newStatus, // Tetap di status yang sama
-                'current_stage' => $ticket->current_stage, // Stage tetap sama
+                'status' => $newStatus,
+                'current_stage' => $ticket->current_stage,
                 'due_date' => $request->due_date ?: $ticket->due_date,
             ]);
 
-            // Add comment
             TicketComment::create([
                 'ticket_id' => $ticket->id,
                 'user_id' => $user->id,
@@ -1095,7 +1188,6 @@ class TicketDetailController extends Controller
                 'is_internal' => 0,
             ]);
 
-            // Log activity
             ActivityLog::create([
                 'user_id' => $user->id,
                 'ticket_id' => $ticket->id,
@@ -1110,22 +1202,20 @@ class TicketDetailController extends Controller
                 'user_agent' => $request->userAgent(),
             ]);
 
-            // Notify technician
             $this->sendNotification(
                 $technician,
                 $ticket,
-                'New Ticket Assigned',
-                'Ticket #' . $ticket->ticket_number . ' has been assigned to you' .
+                'New MR Assigned to You',
+                'MR #' . $ticket->ticket_number . ' has been assigned to you' .
                 ($request->due_date ? ". Due date: " . \Carbon\Carbon::parse($request->due_date)->format('d M Y, H:i') : ""),
                 'assignment'
             );
 
-            // Juga notify reporter bahwa technician sudah diassign
             $this->sendNotification(
                 $ticket->user,
                 $ticket,
-                'Technician Assigned',
-                'A technician has been assigned to your ticket #' . $ticket->ticket_number,
+                'Technician Assigned to Your Request',
+                'A technician has been assigned to your MR #' . $ticket->ticket_number . '. They will contact you if needed.',
                 'assignment'
             );
 
@@ -1149,13 +1239,13 @@ class TicketDetailController extends Controller
 
     /**
      * Cancel ticket
+     * PERUBAHAN: Hapus notifikasi ke Technician
      */
     public function cancelTicket(Request $request, $id)
     {
         $ticket = Ticket::findOrFail($id);
         $user = Auth::user();
 
-        // Check permission
         if (!in_array($user->role, ['admin_eng', 'superadmin']) && $ticket->user_id !== $user->id) {
             return response()->json([
                 'success' => false,
@@ -1163,7 +1253,6 @@ class TicketDetailController extends Controller
             ], 403);
         }
 
-        // Only allow cancelling in certain statuses
         $cancellableStatuses = ['open', 'received', 'pending_om', 'in_progress', 'pending_vr'];
         if (!in_array($ticket->status, $cancellableStatuses)) {
             return response()->json([
@@ -1182,19 +1271,16 @@ class TicketDetailController extends Controller
 
             $ticket->update([
                 'status' => 'cancelled',
-                'current_stage' => 1, // Kembali ke stage 1
+                'current_stage' => 1,
                 'closed_at' => now(),
                 'approval_status' => 'rejected',
             ]);
 
-            // Update approval record
             $approval = TicketApproval::firstOrCreate(['ticket_id' => $ticket->id]);
             $approval->update([
-                'status' => 'rejected',
                 'rejection_reason' => $request->cancellation_reason
             ]);
 
-            // Add cancellation comment
             TicketComment::create([
                 'ticket_id' => $ticket->id,
                 'user_id' => $user->id,
@@ -1202,7 +1288,6 @@ class TicketDetailController extends Controller
                 'is_internal' => 0,
             ]);
 
-            // Log activity
             ActivityLog::create([
                 'user_id' => $user->id,
                 'ticket_id' => $ticket->id,
@@ -1214,24 +1299,14 @@ class TicketDetailController extends Controller
                 'user_agent' => $request->userAgent(),
             ]);
 
-            // Notify involved parties
-            $notifyUsers = [$ticket->user];
-
-            if ($ticket->assigned_to) {
-                $notifyUsers[] = User::find($ticket->assigned_to);
-            }
-
-            foreach ($notifyUsers as $notifyUser) {
-                if ($notifyUser) {
-                    $this->sendNotification(
-                        $notifyUser,
-                        $ticket,
-                        'Ticket Cancelled',
-                        'Ticket #' . $ticket->ticket_number . ' has been cancelled. Reason: ' . $request->cancellation_reason,
-                        'cancellation'
-                    );
-                }
-            }
+            // ✅ PERUBAHAN: Hanya notifikasi ke User (hapus Technician)
+            $this->sendNotification(
+                $ticket->user,
+                $ticket,
+                'Your Maintenance Request Has Been Cancelled',
+                'Your MR #' . $ticket->ticket_number . ' has been cancelled. Reason: ' . $request->cancellation_reason,
+                'cancellation'
+            );
 
             DB::commit();
 
@@ -1252,7 +1327,7 @@ class TicketDetailController extends Controller
     }
 
     /**
-     * Close ticket (final step by admin) - PERBAIKAN: Stage menjadi 9
+     * Close ticket (final step by admin)
      */
     public function closeTicket(Request $request, $id)
     {
@@ -1267,7 +1342,6 @@ class TicketDetailController extends Controller
 
         $ticket = Ticket::findOrFail($id);
 
-        // Hanya bisa close jika status 'ready_for_closure'
         if ($ticket->status !== 'ready_for_closure') {
             return response()->json([
                 'success' => false,
@@ -1277,14 +1351,12 @@ class TicketDetailController extends Controller
 
         DB::beginTransaction();
         try {
-            // Mark ticket as administratively closed
             $ticket->update([
-                'status' => 'closed', // Status: closed
-                'current_stage' => 9, // Stage 9: Closed
+                'status' => 'closed',
+                'current_stage' => 9,
                 'closed_at' => now(),
             ]);
 
-            // Update approval record
             $approval = TicketApproval::firstOrCreate(['ticket_id' => $ticket->id]);
             $approval->update([
                 'admin_check' => true,
@@ -1292,7 +1364,6 @@ class TicketDetailController extends Controller
                 'admin_checked_at' => now(),
             ]);
 
-            // Add comment
             TicketComment::create([
                 'ticket_id' => $ticket->id,
                 'user_id' => $user->id,
@@ -1300,7 +1371,6 @@ class TicketDetailController extends Controller
                 'is_internal' => 0,
             ]);
 
-            // Log activity
             ActivityLog::create([
                 'user_id' => $user->id,
                 'ticket_id' => $ticket->id,
@@ -1310,12 +1380,11 @@ class TicketDetailController extends Controller
                 'user_agent' => $request->userAgent(),
             ]);
 
-            // Notify reporter dan technician
             $this->sendNotification(
                 $ticket->user,
                 $ticket,
-                'Ticket Closed',
-                'Ticket #' . $ticket->ticket_number . ' has been closed administratively',
+                'Your Maintenance Request Has Been Closed',
+                'Your MR #' . $ticket->ticket_number . ' has been completed and closed. Thank you for using our service.',
                 'closure'
             );
 
@@ -1323,8 +1392,8 @@ class TicketDetailController extends Controller
                 $this->sendNotification(
                     User::find($ticket->assigned_to),
                     $ticket,
-                    'Ticket Closed',
-                    'Ticket #' . $ticket->ticket_number . ' has been closed administratively',
+                    'Maintenance Request Closed',
+                    'MR #' . $ticket->ticket_number . ' has been closed administratively.',
                     'closure'
                 );
             }
@@ -1333,7 +1402,7 @@ class TicketDetailController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Ticket administratively closed',
+                'message' => 'MR administratively closed',
                 'redirect' => route('tickets.show', $ticket->id)
             ]);
 
@@ -1360,25 +1429,7 @@ class TicketDetailController extends Controller
         $ticket = Ticket::findOrFail($id);
         $user = Auth::user();
 
-        // Check permission to comment
-        $allowedRoles = ['user', 'admin_eng', 'technician'];
-        if (!in_array($user->role, $allowedRoles)) {
-            return response()->json([
-                'success' => false,
-                'message' => 'You are not authorized to comment on this ticket'
-            ], 403);
-        }
-
-        // Jika user biasa, harus pemilik ticket
-        if ($user->role === 'user' && $ticket->user_id !== $user->id) {
-            return response()->json([
-                'success' => false,
-                'message' => 'You are not authorized to comment on this ticket'
-            ], 403);
-        }
-
-        // Jika technician, harus yang assigned
-        if ($user->role === 'technician' && $ticket->assigned_to !== $user->id) {
+        if (!$this->canComment($user, $ticket)) {
             return response()->json([
                 'success' => false,
                 'message' => 'You are not authorized to comment on this ticket'
@@ -1387,7 +1438,6 @@ class TicketDetailController extends Controller
 
         DB::beginTransaction();
         try {
-            // Create comment
             $comment = TicketComment::create([
                 'ticket_id' => $ticket->id,
                 'user_id' => $user->id,
@@ -1395,7 +1445,6 @@ class TicketDetailController extends Controller
                 'is_internal' => 0,
             ]);
 
-            // Handle attachments
             if ($request->hasFile('attachments')) {
                 foreach ($request->file('attachments') as $file) {
                     $fileName = time() . '_' . $file->getClientOriginalName();
@@ -1410,7 +1459,6 @@ class TicketDetailController extends Controller
                 }
             }
 
-            // Log activity
             ActivityLog::create([
                 'user_id' => $user->id,
                 'ticket_id' => $ticket->id,
@@ -1420,27 +1468,58 @@ class TicketDetailController extends Controller
                 'user_agent' => $request->userAgent(),
             ]);
 
-            // Notify relevant parties
+            $notifiedUsers = [];
+
             if ($ticket->user_id !== $user->id) {
-                // Notify reporter jika bukan dia yang comment
                 $this->sendNotification(
                     $ticket->user,
                     $ticket,
-                    'New Comment on Ticket',
-                    'There is a new comment on ticket #' . $ticket->ticket_number,
+                    'New Comment on Your Request',
+                    'There is a new comment on your maintenance request #' . $ticket->ticket_number,
                     'comment'
                 );
+                $notifiedUsers[] = $ticket->user_id;
             }
 
             if ($ticket->assigned_to && $ticket->assigned_to !== $user->id) {
-                // Notify technician jika bukan dia yang comment
-                $this->sendNotification(
-                    User::find($ticket->assigned_to),
-                    $ticket,
-                    'New Comment on Ticket',
-                    'There is a new comment on ticket #' . $ticket->ticket_number,
-                    'comment'
-                );
+                $technician = User::find($ticket->assigned_to);
+                if ($technician && !in_array($technician->id, $notifiedUsers)) {
+                    $this->sendNotification(
+                        $technician,
+                        $ticket,
+                        'New Comment on Maintenance Request',
+                        'There is a new comment on your MR #' . $ticket->ticket_number,
+                        'comment'
+                    );
+                    $notifiedUsers[] = $technician->id;
+                }
+            }
+
+            if ($ticket->department && $ticket->department->manager_id && $ticket->department->manager_id !== $user->id) {
+                $manager = User::find($ticket->department->manager_id);
+                if ($manager && !in_array($manager->id, $notifiedUsers)) {
+                    $this->sendNotification(
+                        $manager,
+                        $ticket,
+                        'New Comment on Department Maintenance Request',
+                        'There is a new comment on MR #' . $ticket->ticket_number . ' from department ' . ($ticket->department->name ?? 'N/A'),
+                        'comment'
+                    );
+                    $notifiedUsers[] = $manager->id;
+                }
+            }
+
+            $adminEngUsers = User::where('role', 'admin_eng')->where('status', 'active')->get();
+            foreach ($adminEngUsers as $adminUser) {
+                if (!in_array($adminUser->id, $notifiedUsers) && $adminUser->id !== $user->id) {
+                    $this->sendNotification(
+                        $adminUser,
+                        $ticket,
+                        'New Comment on Maintenance Request',
+                        'There is a new comment on MR #' . $ticket->ticket_number . ' by ' . $user->name,
+                        'comment'
+                    );
+                }
             }
 
             DB::commit();
@@ -1486,13 +1565,11 @@ class TicketDetailController extends Controller
 
         DB::beginTransaction();
         try {
-            // Update ticket status ke pending_om
             $ticket->update([
                 'status' => 'pending_om',
-                'current_stage' => 3, // Stage 3: OM Approval
+                'current_stage' => 3,
             ]);
 
-            // Log activity
             ActivityLog::create([
                 'user_id' => $user->id,
                 'ticket_id' => $ticket->id,
@@ -1502,26 +1579,16 @@ class TicketDetailController extends Controller
                 'user_agent' => $request->userAgent(),
             ]);
 
-            // Send notification to OM
             $omUsers = User::where('role', 'om')->where('status', 'active')->get();
             foreach ($omUsers as $omUser) {
                 $this->sendNotification(
                     $omUser,
                     $ticket,
-                    'Ticket Needs OM Approval',
-                    'Ticket #' . $ticket->ticket_number . ' needs your approval',
+                    'MR Needs Your Approval',
+                    'MR #' . $ticket->ticket_number . ' needs your approval. Priority: ' . ($ticket->priority->name ?? 'N/A'),
                     'approval'
                 );
             }
-
-            // Juga notify reporter
-            $this->sendNotification(
-                $ticket->user,
-                $ticket,
-                'Ticket Sent to OM',
-                'Your ticket #' . $ticket->ticket_number . ' has been sent to Operation Manager for approval',
-                'info'
-            );
 
             DB::commit();
 
@@ -1542,7 +1609,7 @@ class TicketDetailController extends Controller
     }
 
     /**
-     * Delete ticket (Superadmin only) -
+     * Delete ticket (Superadmin only)
      */
     public function destroy(Request $request, $id)
     {
@@ -1557,7 +1624,6 @@ class TicketDetailController extends Controller
 
         $ticket = Ticket::withTrashed()->findOrFail($id);
 
-        // Verifikasi password untuk delete
         if (!$request->has('password') || !Hash::check($request->password, $user->password)) {
             return response()->json([
                 'success' => false,
@@ -1567,7 +1633,6 @@ class TicketDetailController extends Controller
 
         DB::beginTransaction();
         try {
-            // Delete attachments from storage
             foreach ($ticket->attachments as $attachment) {
                 Storage::disk('public')->delete($attachment->file_path);
             }
@@ -1578,20 +1643,17 @@ class TicketDetailController extends Controller
                 }
             }
 
-            // Delete signatures
             foreach ($ticket->signatures as $signature) {
                 if ($signature->signature_path) {
                     Storage::disk('public')->delete($signature->signature_path);
                 }
             }
 
-            // Delete voucher requests and items
             foreach ($ticket->voucherRequests as $vr) {
                 $vr->items()->delete();
                 $vr->delete();
             }
 
-            // Force delete ticket
             $ticket->forceDelete();
 
             DB::commit();
@@ -1614,14 +1676,14 @@ class TicketDetailController extends Controller
 
     /**
      * QUICK APPROVE - Untuk user yang sudah punya signature
+     * PERUBAHAN: Sesuaikan dengan alur notifikasi yang baru
      */
     public function quickApprove(Request $request, $id)
     {
         $user = Auth::user();
         $role = $user->role;
 
-        // Validasi role yang bisa quick approve
-        if (!in_array($role, ['admin_eng', 'om', 'gm'])) {
+        if (!in_array($role, ['admin_eng', 'om', 'gm', 'manager'])) {
             return response()->json([
                 'success' => false,
                 'message' => 'You are not authorized for quick approval'
@@ -1630,7 +1692,6 @@ class TicketDetailController extends Controller
 
         $ticket = Ticket::findOrFail($id);
 
-        // PERBAIKAN: Validasi status yang benar untuk setiap role
         $validStatus = [];
         $stage = 0;
         $status = '';
@@ -1638,33 +1699,39 @@ class TicketDetailController extends Controller
 
         switch ($role) {
             case 'admin_eng':
-                $validStatus = ['open']; // Quick approve dari open ke received
+                $validStatus = ['open'];
                 $stage = 2;
                 $status = 'received';
                 $actionType = 'receive';
                 break;
             case 'om':
-                $validStatus = ['pending_om']; // OM hanya bisa quick approve dari pending_om
+                $validStatus = ['pending_om'];
                 $stage = 3;
-                $status = 'in_progress'; // Setelah OM approve, langsung in_progress
+                $status = 'in_progress';
                 $actionType = 'om_approve';
                 break;
             case 'gm':
-                $validStatus = ['pending_gm']; // GM hanya bisa quick approve dari pending_gm
+                $validStatus = ['pending_gm'];
                 $stage = 8;
                 $status = 'ready_for_closure';
                 $actionType = 'gm_approve';
+                break;
+            case 'manager':
+                if ($ticket->department_id === $user->department_id && $ticket->status === 'completed') {
+                    $validStatus = ['completed'];
+                    $stage = 7;
+                    $actionType = 'manager_check';
+                }
                 break;
         }
 
         if (!in_array($ticket->status, $validStatus)) {
             return response()->json([
                 'success' => false,
-                'message' => 'Ticket is not in correct status for ' . strtoupper($role) . ' approval. Current status: ' . $ticket->status
+                'message' => 'Ticket is not in correct status for ' . strtoupper($role) . ' approval.'
             ], 403);
         }
 
-        // Validasi user punya signature
         if (empty($user->signature_path) || !Storage::disk('public')->exists($user->signature_path)) {
             return response()->json([
                 'success' => false,
@@ -1674,25 +1741,21 @@ class TicketDetailController extends Controller
 
         DB::beginTransaction();
         try {
-            // Copy signature dari profile ke signature record
             $signaturePath = 'signatures/quick_' . $ticket->ticket_number . '_stage' . $stage . '_user' . $user->id . '_' . time() . '.png';
             Storage::disk('public')->copy($user->signature_path, $signaturePath);
 
-            // Create signature record
             Signature::create([
                 'ticket_id' => $ticket->id,
                 'user_id' => $user->id,
-                'signature_type' => 'approver',
+                'signature_type' => $role === 'manager' ? 'reporter' : 'approver',
                 'stage' => $stage,
                 'signature_path' => $signaturePath,
                 'signed_at' => now(),
                 'ip_address' => $request->ip(),
             ]);
 
-            // Update ticket berdasarkan role
             switch ($role) {
                 case 'admin_eng':
-                    // Quick approve dari open ke received
                     $ticket->update([
                         'status' => 'received',
                         'current_stage' => 2,
@@ -1703,25 +1766,22 @@ class TicketDetailController extends Controller
                         'admin_eng_received' => true,
                         'admin_eng_received_by' => $user->id,
                         'admin_eng_received_at' => now(),
-                        'status' => 'pending'
                     ]);
 
-                    // TIDAK notify OM di sini, karena perlu admin klik "Continue to OM"
-                    // Hanya notify reporter
+                    // ✅ Notifikasi ke User bahwa ticket diterima
                     $this->sendNotification(
                         $ticket->user,
                         $ticket,
-                        'Ticket Received',
-                        'Your ticket #' . $ticket->ticket_number . ' has been received by Engineering Department',
+                        'MR Received by Engineering',
+                        'Your maintenance request #' . $ticket->ticket_number . ' has been received by the Engineering Department.',
                         'info'
                     );
                     break;
 
                 case 'om':
-                    // Quick approve dari pending_om ke in_progress
                     $ticket->update([
                         'status' => 'in_progress',
-                        'current_stage' => 4, // Stage 4: In Progress (setelah OM approve)
+                        'current_stage' => 4,
                     ]);
 
                     $approval = TicketApproval::firstOrCreate(['ticket_id' => $ticket->id]);
@@ -1731,30 +1791,20 @@ class TicketDetailController extends Controller
                         'om_approved_at' => now(),
                     ]);
 
-                    // Notify Admin Engineering bahwa OM sudah approve
+                    // ✅ Notifikasi ke Admin Eng (tidak ke user)
                     $adminEngUsers = User::where('role', 'admin_eng')->where('status', 'active')->get();
                     foreach ($adminEngUsers as $adminUser) {
                         $this->sendNotification(
                             $adminUser,
                             $ticket,
-                            'Ticket Approved by OM',
-                            'Ticket #' . $ticket->ticket_number . ' has been approved by OM and is ready for technician assignment',
+                            'MR Approved by OM',
+                            'MR #' . $ticket->ticket_number . ' has been approved by OM and is ready for technician assignment.',
                             'assignment'
                         );
                     }
-
-                    // Juga notify reporter
-                    $this->sendNotification(
-                        $ticket->user,
-                        $ticket,
-                        'Ticket Approved by OM',
-                        'Your ticket #' . $ticket->ticket_number . ' has been approved by OM. Engineering will assign a technician soon.',
-                        'info'
-                    );
                     break;
 
                 case 'gm':
-                    // Quick approve dari pending_gm ke ready_for_closure
                     $ticket->update([
                         'status' => 'ready_for_closure',
                         'current_stage' => 8,
@@ -1766,43 +1816,54 @@ class TicketDetailController extends Controller
                         'gm_approved' => true,
                         'gm_approved_by' => $user->id,
                         'gm_approved_at' => now(),
-                        'status' => 'approved'
                     ]);
 
-                    // Notify Admin Engineering
+                    // ✅ Hanya Admin Eng yang mendapat notifikasi
                     $adminEngUsers = User::where('role', 'admin_eng')->where('status', 'active')->get();
                     foreach ($adminEngUsers as $adminUser) {
                         $this->sendNotification(
                             $adminUser,
                             $ticket,
-                            'Ticket Ready for Administrative Closure',
-                            'Ticket #' . $ticket->ticket_number . ' has been approved by GM and is ready for administrative closure.',
+                            'MR Ready for Administrative Closure',
+                            'MR #' . $ticket->ticket_number . ' has been approved by GM and is ready for closure.',
                             'closure'
                         );
                     }
+                    break;
 
-                    // Notify reporter dan technician
-                    $this->sendNotification(
-                        $ticket->user,
-                        $ticket,
-                        'Ticket Approved by GM',
-                        'Your ticket #' . $ticket->ticket_number . ' has been approved by GM',
-                        'closure'
-                    );
+                case 'manager':
+                    $ticket->update([
+                        'status' => 'pending_gm',
+                        'current_stage' => 7,
+                    ]);
 
-                    if ($ticket->assigned_to) {
+                    $approval = TicketApproval::firstOrCreate(['ticket_id' => $ticket->id]);
+                    $approval->update([
+                        'user_checked' => true,
+                        'user_checked_by' => $user->id,
+                        'user_checked_at' => now(),
+                    ]);
+
+                    TicketComment::create([
+                        'ticket_id' => $ticket->id,
+                        'user_id' => $user->id,
+                        'comment' => "Manager accepted the completion using saved signature",
+                        'is_internal' => 0,
+                    ]);
+
+                    $gmUsers = User::where('role', 'gm')->where('status', 'active')->get();
+                    foreach ($gmUsers as $gmUser) {
                         $this->sendNotification(
-                            User::find($ticket->assigned_to),
+                            $gmUser,
                             $ticket,
-                            'Ticket Approved by GM',
-                            'Ticket #' . $ticket->ticket_number . ' has been approved by GM',
-                            'closure'
+                            'MR Needs GM Approval',
+                            'MR #' . $ticket->ticket_number . ' has been confirmed and needs your final approval.',
+                            'approval'
                         );
                     }
                     break;
             }
 
-            // Log activity
             ActivityLog::create([
                 'user_id' => $user->id,
                 'ticket_id' => $ticket->id,
@@ -1845,6 +1906,32 @@ class TicketDetailController extends Controller
             throw new \Exception('Failed to decode base64 signature data');
         }
 
+        $image = imagecreatefromstring($imageData);
+        if (!$image) {
+            throw new \Exception('Failed to create image from data');
+        }
+
+        $width = imagesx($image);
+        $height = imagesy($image);
+
+        $targetWidth = 300;
+        $targetHeight = 200;
+
+        $newImage = imagecreatetruecolor($targetWidth, $targetHeight);
+
+        imagesavealpha($newImage, true);
+        $transparent = imagecolorallocatealpha($newImage, 0, 0, 0, 127);
+        imagefill($newImage, 0, 0, $transparent);
+
+        imagecopyresampled($newImage, $image, 0, 0, 0, 0, $targetWidth, $targetHeight, $width, $height);
+
+        ob_start();
+        imagepng($newImage);
+        $imageData = ob_get_clean();
+
+        imagedestroy($image);
+        imagedestroy($newImage);
+
         $fileName = 'signature_' . $ticketNumber . '_stage' . $stage . '_user' . $userId . '_' . time() . '.png';
         $filePath = 'signatures/' . $fileName;
 
@@ -1864,7 +1951,6 @@ class TicketDetailController extends Controller
     private function sendNotification($user, $ticket, $title, $message, $type = 'info')
     {
         try {
-            // Create in-app notification
             Notification::create([
                 'user_id' => $user->id,
                 'ticket_id' => $ticket->id,
@@ -1874,7 +1960,6 @@ class TicketDetailController extends Controller
                 'is_read' => false,
             ]);
 
-            // Send email notification
             if (config('mail.mailers.smtp.host')) {
                 try {
                     Mail::to($user->email)->queue(new TicketNotification(
@@ -1895,5 +1980,4 @@ class TicketDetailController extends Controller
             Log::error('Notification creation failed: ' . $e->getMessage());
         }
     }
-
 }

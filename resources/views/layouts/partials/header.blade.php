@@ -26,25 +26,37 @@
 
                     <!-- Quick Actions (New Ticket) -->
                     <li class="nav-item">
-                        <a class="nav-link ai-icon" href="#" data-bs-toggle="modal"
-                            data-bs-target="#addTicketModal" title="New Ticket">
-                            <svg width="28" height="28" viewBox="0 0 28 28" fill="none"
-                                xmlns="http://www.w3.org/2000/svg">
-                                <path
-                                    d="M14 2.33331C7.55667 2.33331 2.33334 7.55665 2.33334 14C2.33334 20.4433 7.55667 25.6666 14 25.6666C20.4433 25.6666 25.6667 20.4433 25.6667 14C25.6667 7.55665 20.4433 2.33331 14 2.33331ZM19.8333 15.1666H15.1667V19.8333H12.8333V15.1666H8.16667V12.8333H12.8333V8.16665H15.1667V12.8333H19.8333V15.1666Z"
-                                    fill="#3B4CB8" />
-                            </svg>
-                        </a>
+                        @if (in_array(auth()->user()->role, ['user', 'technician', 'admin_eng']))
+                            <a class="nav-link ai-icon" href="{{ route('tickets.create') }}" title="New Ticket">
+                                <svg width="28" height="28" viewBox="0 0 28 28" fill="none"
+                                    xmlns="http://www.w3.org/2000/svg">
+                                    <path
+                                        d="M14 2.33331C7.55667 2.33331 2.33334 7.55665 2.33334 14C2.33334 20.4433 7.55667 25.6666 14 25.6666C20.4433 25.6666 25.6667 20.4433 25.6667 14C25.6667 7.55665 20.4433 2.33331 14 2.33331ZM19.8333 15.1666H15.1667V19.8333H12.8333V15.1666H8.16667V12.8333H12.8333V8.16665H15.1667V12.8333H19.8333V15.1666Z"
+                                        fill="#FF7B00" />
+                                </svg>
+                            </a>
+                        @else
+                            <a class="nav-link ai-icon" href="#" title="Quick Action" data-bs-toggle="modal"
+                                data-bs-target="#quickActionModal">
+                                <svg width="28" height="28" viewBox="0 0 28 28" fill="none"
+                                    xmlns="http://www.w3.org/2000/svg">
+                                    <path
+                                        d="M14 2.33331C7.55667 2.33331 2.33334 7.55665 2.33334 14C2.33334 20.4433 7.55667 25.6666 14 25.6666C20.4433 25.6666 25.6667 20.4433 25.6667 14C25.6667 7.55665 20.4433 2.33331 14 2.33331ZM19.8333 15.1666H15.1667V19.8333H12.8333V15.1666H8.16667V12.8333H12.8333V8.16665H15.1667V12.8333H19.8333V15.1666Z"
+                                        fill="#FF7B00" />
+                                </svg>
+                            </a>
+                        @endif
                     </li>
 
                     <!-- Notifications Dropdown -->
                     <li class="nav-item dropdown notification_dropdown">
-                        <a class="nav-link ai-icon" href="javascript:void(0)" role="button" data-bs-toggle="dropdown">
+                        <a class="nav-link ai-icon" href="{{ route('notifications.index') }}" role="button"
+                            data-bs-toggle="dropdown">
                             <svg width="28" height="28" viewBox="0 0 28 28" fill="none"
                                 xmlns="http://www.w3.org/2000/svg">
                                 <path fill-rule="evenodd" clip-rule="evenodd"
                                     d="M12.8333 5.91732V3.49998C12.8333 2.85598 13.356 2.33331 14 2.33331C14.6428 2.33331 15.1667 2.85598 15.1667 3.49998V5.91732C16.9003 6.16698 18.5208 6.97198 19.7738 8.22498C21.3057 9.75681 22.1667 11.8346 22.1667 14V18.3913L23.1105 20.279C23.562 21.1831 23.5142 22.2565 22.9822 23.1163C22.4513 23.9761 21.5122 24.5 20.5018 24.5H15.1667C15.1667 25.144 14.6428 25.6666 14 25.6666C13.356 25.6666 12.8333 25.144 12.8333 24.5H7.49817C6.48667 24.5 5.54752 23.9761 5.01669 23.1163C4.48469 22.2565 4.43684 21.1831 4.88951 20.279L5.83333 18.3913V14C5.83333 11.8346 6.69319 9.75681 8.22502 8.22498C9.47919 6.97198 11.0985 6.16698 12.8333 5.91732ZM14 8.16664C12.4518 8.16664 10.969 8.78148 9.87469 9.87581C8.78035 10.969 8.16666 12.453 8.16666 14V18.6666C8.16666 18.8475 8.12351 19.026 8.04301 19.1881C8.04301 19.1881 7.52384 20.2265 6.9755 21.322C6.88567 21.5028 6.89501 21.7186 7.00117 21.8901C7.10734 22.0616 7.29517 22.1666 7.49817 22.1666H20.5018C20.7037 22.1666 20.8915 22.0616 20.9977 21.8901C21.1038 21.7186 21.1132 21.5028 21.0234 21.322C20.475 20.2265 19.9558 19.1881 19.9558 19.1881C19.8753 19.026 19.8333 18.8475 19.8333 18.6666V14C19.8333 12.453 19.2185 10.969 18.1242 9.87581C17.0298 8.78148 15.547 8.16664 14 8.16664Z"
-                                    fill="#FE634E" />
+                                    fill="#FF7B00" />
                             </svg>
                             @php
                                 $unreadCount = auth()->user()->unreadNotifications()->count();
@@ -61,10 +73,12 @@
                                             <div class="timeline-panel">
                                                 <div class="media me-2">
                                                     @if ($notification->ticket && $notification->ticket->user)
-                                                        <img alt="{{ $notification->ticket->user->name }}"
-                                                            width="50"
-                                                            src="{{ $notification->ticket->user->profile_picture_url }}"
-                                                            class="rounded-circle">
+                                                        <div class="profile-image-container"
+                                                            style="width: 50px; height: 50px; border-radius: 50%; overflow: hidden; background-color: #f0f0f0;">
+                                                            <img alt="{{ $notification->ticket->user->name }}"
+                                                                src="{{ $notification->ticket->user->profile_picture_url }}"
+                                                                style="width: 100%; height: 100%; object-fit: cover; object-position: center;">
+                                                        </div>
                                                     @else
                                                         <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center"
                                                             style="width: 50px; height: 50px;">
@@ -77,7 +91,8 @@
                                                     <small
                                                         class="d-block">{{ $notification->created_at->diffForHumans() }}</small>
                                                     @if ($notification->ticket)
-                                                        <a href="#" class="badge badge-sm badge-primary mt-1">
+                                                        <a href="{{ route('tickets.show', $notification->ticket->id) }}"
+                                                            class="badge badge-sm badge-primary mt-1">
                                                             {{ $notification->ticket->ticket_number }}
                                                         </a>
                                                     @endif
@@ -95,7 +110,7 @@
                                     @endforelse
                                 </ul>
                             </div>
-                            <a class="all-notification" href="#">
+                            <a class="all-notification" href="{{ route('notifications.index') }}">
                                 See all notifications <i class="ti-arrow-right"></i>
                             </a>
                         </div>
@@ -104,15 +119,18 @@
                     <!-- User Profile Dropdown -->
                     <li class="nav-item dropdown header-profile">
                         <a class="nav-link" href="javascript:void(0)" role="button" data-bs-toggle="dropdown">
-                            <img src="{{ auth()->user()->profile_picture_url }}" width="20"
-                                alt="{{ auth()->user()->name }}" class="rounded-circle">
+                            <div class="profile-image-container"
+                                style="width: 52px; height: 52px; border-radius: 50%; overflow: hidden; margin-right: 8px; background-color: #f0f0f0;">
+                                <img src="{{ auth()->user()->profile_picture_url }}" alt="{{ auth()->user()->name }}"
+                                    style="width: 100%; height: 100%; object-fit: cover; object-position: center;">
+                            </div>
                             <div class="header-info">
                                 <span class="text-black">{{ auth()->user()->name }}</span>
                                 <p class="fs-12 mb-0">{{ ucfirst(auth()->user()->role) }}</p>
                             </div>
                         </a>
                         <div class="dropdown-menu dropdown-menu-end">
-                            <a href="#" class="dropdown-item ai-icon">
+                            <a href="{{ route('profile.index') }}" class="dropdown-item ai-icon">
                                 <svg id="icon-user1" xmlns="http://www.w3.org/2000/svg" class="text-primary"
                                     width="18" height="18" viewBox="0 0 24 24" fill="none"
                                     stroke="currentColor" stroke-width="2" stroke-linecap="round"
@@ -146,8 +164,8 @@
                                     <span class="badge badge-xs badge-danger ms-1">3</span>
                                 </span>
                             </a>
-                            <a href="{{ route('logout') }}" class="dropdown-item ai-icon"
-                                onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
+                            <a href="javascript:void(0)" onclick="confirmHeaderLogout()"
+                                class="dropdown-item ai-icon">
                                 <svg id="icon-logout" xmlns="http://www.w3.org/2000/svg" class="text-danger"
                                     width="18" height="18" viewBox="0 0 24 24" fill="none"
                                     stroke="currentColor" stroke-width="2" stroke-linecap="round"
@@ -172,3 +190,23 @@
 <!--**********************************
     Header end
 ***********************************-->
+
+<script>
+    function confirmHeaderLogout() {
+        Swal.fire({
+            title: 'Logout?',
+            text: 'Are you sure you want to logout?',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#ff6600',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: '<i class="fas fa-sign-out-alt me-2"></i>Yes, Logout',
+            cancelButtonText: '<i class="fas fa-times me-2"></i>Cancel',
+            reverseButtons: true
+        }).then((result) => {
+            if (result.isConfirmed) {
+                document.getElementById('logout-form').submit();
+            }
+        });
+    }
+</script>

@@ -141,19 +141,19 @@
             width: 50px;
         }
 
-        #categoriesTable thead th:nth-child(4) {
+        #categoriesTable thead th:nth-child(3) {
             width: 100px;
         }
 
-        #categoriesTable thead th:nth-child(5) {
+        #categoriesTable thead th:nth-child(4) {
             width: 120px;
         }
 
-        #categoriesTable thead th:nth-child(6) {
+        #categoriesTable thead th:nth-child(5) {
             width: 100px;
         }
 
-        #categoriesTable thead th:nth-child(7) {
+        #categoriesTable thead th:nth-child(6) {
             width: 100px;
         }
 
@@ -170,15 +170,15 @@
             text-align: center;
         }
 
-        #categoriesTable tbody td:nth-child(4) {
+        #categoriesTable tbody td:nth-child(3) {
+            text-align: center;
+        }
+
+        #categoriesTable tbody td:nth-child(5) {
             text-align: center;
         }
 
         #categoriesTable tbody td:nth-child(6) {
-            text-align: center;
-        }
-
-        #categoriesTable tbody td:nth-child(7) {
             text-align: center;
         }
 
@@ -288,6 +288,19 @@
         .text-muted {
             color: #6c757d !important;
         }
+
+        /* Error styling */
+        .is-invalid {
+            border-color: #dc3545 !important;
+        }
+
+        .invalid-feedback {
+            display: block;
+            width: 100%;
+            margin-top: 0.25rem;
+            font-size: 0.875em;
+            color: #dc3545;
+        }
     </style>
 @endpush
 
@@ -300,7 +313,7 @@
                     <h5 class="modal-title">Add New Category</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
-                <form id="addCategoryForm">
+                <form id="addCategoryForm" novalidate>
                     @csrf
                     <div class="modal-body">
                         <div class="row">
@@ -310,19 +323,6 @@
                                 <input type="text" class="form-control" name="name"
                                     placeholder="e.g., Engineering, Housekeeping, IT Support" required>
                                 <small class="text-muted">Nama kategori untuk pengelompokan ticket</small>
-                                <div class="invalid-feedback"></div>
-                            </div>
-
-                            <!-- Department -->
-                            <div class="col-md-12 mb-3">
-                                <label class="form-label">Department</label>
-                                <select class="form-control" name="department_id">
-                                    <option value="">-- Select Department (Optional) --</option>
-                                    @foreach ($departments as $department)
-                                        <option value="{{ $department->id }}">{{ $department->name }}</option>
-                                    @endforeach
-                                </select>
-                                <small class="text-muted">Department yang terkait dengan kategori ini</small>
                                 <div class="invalid-feedback"></div>
                             </div>
 
@@ -365,28 +365,16 @@
                     <h5 class="modal-title">Edit Category</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
-                <form id="editCategoryForm">
+                <form id="editCategoryForm" novalidate>
                     @csrf
                     @method('PUT')
-                    <input type="hidden" id="edit_category_id">
+                    <input type="hidden" id="edit_category_id" name="id">
                     <div class="modal-body">
                         <div class="row">
                             <!-- Category Name -->
                             <div class="col-md-12 mb-3">
                                 <label class="form-label">Category Name <span class="text-danger">*</span></label>
                                 <input type="text" class="form-control" id="edit_name" name="name" required>
-                                <div class="invalid-feedback"></div>
-                            </div>
-
-                            <!-- Department -->
-                            <div class="col-md-12 mb-3">
-                                <label class="form-label">Department</label>
-                                <select class="form-control" id="edit_department_id" name="department_id">
-                                    <option value="">-- Select Department (Optional) --</option>
-                                    @foreach ($departments as $department)
-                                        <option value="{{ $department->id }}">{{ $department->name }}</option>
-                                    @endforeach
-                                </select>
                                 <div class="invalid-feedback"></div>
                             </div>
 
@@ -425,10 +413,12 @@
             <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h4 class="card-title">Category List</h4>
-                    <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal"
-                        data-bs-target="#addCategoryModal">
-                        <i class="fas fa-plus me-1"></i> Add New Category
-                    </button>
+                    @if (auth()->user()->role === 'superadmin')
+                        <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal"
+                            data-bs-target="#addCategoryModal">
+                            <i class="fas fa-plus me-1"></i> Add New Category
+                        </button>
+                    @endif
                 </div>
                 <div class="card-body">
                     <div class="table-responsive">
@@ -437,7 +427,6 @@
                                 <tr>
                                     <th>No</th>
                                     <th>Category Name</th>
-                                    <th>Department</th>
                                     <th>Total Tickets</th>
                                     <th>Description</th>
                                     <th>Status</th>
@@ -453,17 +442,10 @@
                                             <strong>{{ $category->name }}</strong>
                                         </td>
                                         <td>
-                                            @if ($category->department)
-                                                <span
-                                                    class="badge badge-secondary">{{ $category->department->name }}</span>
-                                            @else
-                                                <span class="text-muted">-</span>
-                                            @endif
-                                        </td>
-                                        <td>
                                             <span class="badge badge-info">{{ $category->tickets_count ?? 0 }}</span>
                                         </td>
-                                        <td>{{ Str::limit($category->description, 50) ?? '-' }}</td>
+                                        <td>{{ $category->description ? Str::limit($category->description, 50) : '-' }}
+                                        </td>
                                         <td>
                                             @php
                                                 $statusBadge = [
@@ -475,40 +457,48 @@
                                                 {{ ucfirst($category->status) }}
                                             </span>
                                         </td>
-                                        <td>{{ $category->created_at->format('d M Y') }}</td>
+                                        <td>{{ $category->created_at ? $category->created_at->format('d M Y') : '-' }}</td>
                                         <td>
-                                            <div class="d-flex justify-content-center">
-                                                <button type="button"
-                                                    class="btn btn-primary btn-sm shadow btn-xs sharp me-1 edit-category"
-                                                    data-id="{{ $category->id }}" data-name="{{ $category->name }}"
-                                                    data-description="{{ $category->description }}"
-                                                    data-department_id="{{ $category->department_id }}"
-                                                    data-status="{{ $category->status }}">
-                                                    <i class="fas fa-pencil-alt"></i>
-                                                </button>
+                                            @if (auth()->user()->role === 'superadmin')
+                                                <div class="d-flex justify-content-center">
+                                                    <button type="button"
+                                                        class="btn btn-primary btn-sm shadow btn-xs sharp me-1 edit-category"
+                                                        data-id="{{ $category->id }}" data-name="{{ $category->name }}"
+                                                        data-description="{{ $category->description }}"
+                                                        data-status="{{ $category->status }}" title="Edit">
+                                                        <i class="fas fa-pencil-alt"></i>
+                                                    </button>
 
-                                                <button type="button"
-                                                    class="btn btn-{{ $category->status === 'active' ? 'warning' : 'success' }} btn-sm shadow btn-xs sharp me-1 toggle-status"
-                                                    data-id="{{ $category->id }}" data-name="{{ $category->name }}"
-                                                    data-status="{{ $category->status }}">
-                                                    <i
-                                                        class="fas fa-{{ $category->status === 'active' ? 'ban' : 'check' }}"></i>
-                                                </button>
+                                                    <button type="button"
+                                                        class="btn btn-{{ $category->status === 'active' ? 'warning' : 'success' }} btn-sm shadow btn-xs sharp me-1 toggle-status"
+                                                        data-id="{{ $category->id }}" data-name="{{ $category->name }}"
+                                                        data-status="{{ $category->status }}"
+                                                        title="{{ $category->status === 'active' ? 'Deactivate' : 'Activate' }}">
+                                                        <i
+                                                            class="fas fa-{{ $category->status === 'active' ? 'ban' : 'check' }}"></i>
+                                                    </button>
 
-                                                <button type="button"
-                                                    class="btn btn-danger btn-sm shadow btn-xs sharp delete-category"
-                                                    data-id="{{ $category->id }}" data-name="{{ $category->name }}">
-                                                    <i class="fas fa-trash"></i>
-                                                </button>
-                                            </div>
+                                                    <button type="button"
+                                                        class="btn btn-danger btn-sm shadow btn-xs sharp delete-category"
+                                                        data-id="{{ $category->id }}" data-name="{{ $category->name }}"
+                                                        title="Delete">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                </div>
+                                            @else
+                                                <span class="text-muted">No Actions</span>
+                                            @endif
                                         </td>
                                     </tr>
                                 @empty
-                                    <tr>
-                                        <td colspan="8" class="text-center">No categories found</td>
-                                    </tr>
+                                    {{-- TIDAK ADA TR KOSONG DI SINI --}}
                                 @endforelse
                             </tbody>
+                            <tfoot style="display: none;">
+                                <tr>
+                                    <td colspan="7" class="text-center">No categories found</td>
+                                </tr>
+                            </tfoot>
                         </table>
                     </div>
                 </div>
@@ -543,7 +533,7 @@
                 "hideMethod": "fadeOut"
             };
 
-            // Initialize DataTable
+            // Initialize DataTable dengan setting yang benar
             var table = $('#categoriesTable').DataTable({
                 "pageLength": 10,
                 "ordering": true,
@@ -570,17 +560,32 @@
                 },
                 "columnDefs": [{
                         "orderable": false,
-                        "targets": [7]
+                        "targets": [6] // Index action column
                     },
                     {
                         "className": "text-center",
-                        "targets": [0, 3, 5, 6, 7]
+                        "targets": [0, 2, 4, 5, 6] // Update indeks kolom
                     }
                 ],
                 "dom": '<"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6"f>>rtip',
-                "drawCallback": function() {
+                "drawCallback": function(settings) {
+                    // Handle empty table
+                    var api = this.api();
+                    if (api.rows().count() === 0) {
+                        $(this).find('tbody').html(
+                            '<tr><td colspan="7" class="text-center">No categories found</td></tr>'
+                        );
+                    }
                     $('.dataTables_paginate > .pagination').addClass(
                         'pagination-gutter pagination-primary');
+                },
+                "initComplete": function(settings, json) {
+                    // Pastikan tbody ada
+                    if (this.api().rows().count() === 0) {
+                        $('#categoriesTable tbody').html(
+                            '<tr><td colspan="7" class="text-center">No categories found</td></tr>'
+                        );
+                    }
                 }
             });
 
@@ -600,10 +605,13 @@
                     type: 'POST',
                     data: formData,
                     success: function(response) {
+                        submitBtn.prop('disabled', false).html(originalText);
+
                         if (response.success) {
                             $('#addCategoryModal').modal('hide');
                             $('#addCategoryForm')[0].reset();
                             $('.form-control').removeClass('is-invalid');
+                            $('.invalid-feedback').text('');
 
                             Swal.fire({
                                 icon: 'success',
@@ -614,6 +622,12 @@
                             }).then(() => {
                                 location.reload();
                             });
+                        } else {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Error!',
+                                text: response.message
+                            });
                         }
                     },
                     error: function(xhr) {
@@ -622,16 +636,22 @@
                         if (xhr.status === 422) {
                             var errors = xhr.responseJSON.errors;
                             $('.form-control').removeClass('is-invalid');
+                            $('.invalid-feedback').text('');
+
                             $.each(errors, function(key, value) {
-                                $('[name="' + key + '"]').addClass('is-invalid')
-                                    .siblings('.invalid-feedback').text(value[0]);
+                                var input = $('[name="' + key + '"]',
+                                    '#addCategoryForm');
+                                input.addClass('is-invalid');
+                                input.siblings('.invalid-feedback').text(value[0]);
                             });
+
                             toastr.error('Please check the form for errors');
                         } else {
                             Swal.fire({
                                 icon: 'error',
-                                title: 'Oops...',
-                                text: xhr.responseJSON.message || 'An error occurred'
+                                title: 'Error!',
+                                text: xhr.responseJSON?.message ||
+                                    'An error occurred. Please try again.'
                             });
                         }
                     }
@@ -643,16 +663,15 @@
                 var id = $(this).data('id');
                 var name = $(this).data('name');
                 var description = $(this).data('description');
-                var department_id = $(this).data('department_id');
                 var status = $(this).data('status');
 
                 $('#edit_category_id').val(id);
                 $('#edit_name').val(name);
                 $('#edit_description').val(description);
-                $('#edit_department_id').val(department_id);
                 $('#edit_status').val(status);
 
                 $('.form-control').removeClass('is-invalid');
+                $('.invalid-feedback').text('');
                 $('#editCategoryModal').modal('show');
             });
 
@@ -674,10 +693,13 @@
                     type: 'PUT',
                     data: formData,
                     success: function(response) {
+                        submitBtn.prop('disabled', false).html(originalText);
+
                         if (response.success) {
                             $('#editCategoryModal').modal('hide');
                             $('#editCategoryForm')[0].reset();
                             $('.form-control').removeClass('is-invalid');
+                            $('.invalid-feedback').text('');
 
                             Swal.fire({
                                 icon: 'success',
@@ -688,6 +710,12 @@
                             }).then(() => {
                                 location.reload();
                             });
+                        } else {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Error!',
+                                text: response.message
+                            });
                         }
                     },
                     error: function(xhr) {
@@ -696,16 +724,25 @@
                         if (xhr.status === 422) {
                             var errors = xhr.responseJSON.errors;
                             $('.form-control').removeClass('is-invalid');
+                            $('.invalid-feedback').text('');
+
                             $.each(errors, function(key, value) {
-                                $('#edit_' + key).addClass('is-invalid')
-                                    .siblings('.invalid-feedback').text(value[0]);
+                                var input = $('#edit_' + key);
+                                if (input.length === 0) {
+                                    input = $('[name="' + key + '"]',
+                                        '#editCategoryForm');
+                                }
+                                input.addClass('is-invalid');
+                                input.siblings('.invalid-feedback').text(value[0]);
                             });
+
                             toastr.error('Please check the form for errors');
                         } else {
                             Swal.fire({
                                 icon: 'error',
-                                title: 'Oops...',
-                                text: xhr.responseJSON.message || 'An error occurred'
+                                title: 'Error!',
+                                text: xhr.responseJSON?.message ||
+                                    'An error occurred. Please try again.'
                             });
                         }
                     }
@@ -724,9 +761,14 @@
                     'inactive': '#dc3545'
                 };
 
+                var statusText = {
+                    'active': 'Active',
+                    'inactive': 'Inactive'
+                };
+
                 Swal.fire({
                     title: 'Change Category Status?',
-                    html: `Are you sure you want to change <strong>${categoryName}</strong>'s status to <span style="color: ${statusColors[newStatus]}">${newStatus.toUpperCase()}</span>?`,
+                    html: `Are you sure you want to change <strong>${categoryName}</strong>'s status from <span style="color: ${statusColors[currentStatus]}">${statusText[currentStatus]}</span> to <span style="color: ${statusColors[newStatus]}">${statusText[newStatus]}</span>?`,
                     icon: 'question',
                     showCancelButton: true,
                     confirmButtonColor: '#3085d6',
@@ -755,21 +797,27 @@
                                 if (response.success) {
                                     Swal.fire({
                                         icon: 'success',
-                                        title: 'Status Changed!',
+                                        title: 'Success!',
                                         text: response.message,
                                         showConfirmButton: false,
                                         timer: 1500
                                     }).then(() => {
                                         location.reload();
                                     });
+                                } else {
+                                    Swal.fire({
+                                        icon: 'error',
+                                        title: 'Error!',
+                                        text: response.message
+                                    });
                                 }
                             },
                             error: function(xhr) {
                                 Swal.fire({
                                     icon: 'error',
-                                    title: 'Failed!',
-                                    text: xhr.responseJSON.message ||
-                                        'An error occurred'
+                                    title: 'Error!',
+                                    text: xhr.responseJSON?.message ||
+                                        'An error occurred. Please try again.'
                                 });
                             }
                         });
@@ -821,14 +869,20 @@
                                     }).then(() => {
                                         location.reload();
                                     });
+                                } else {
+                                    Swal.fire({
+                                        icon: 'warning',
+                                        title: 'Cannot Delete',
+                                        text: response.message
+                                    });
                                 }
                             },
                             error: function(xhr) {
                                 Swal.fire({
                                     icon: 'error',
-                                    title: 'Failed!',
-                                    text: xhr.responseJSON.message ||
-                                        'An error occurred'
+                                    title: 'Error!',
+                                    text: xhr.responseJSON?.message ||
+                                        'An error occurred. Please try again.'
                                 });
                             }
                         });
@@ -841,6 +895,12 @@
                 $(this).find('form')[0].reset();
                 $('.form-control').removeClass('is-invalid');
                 $('.invalid-feedback').text('');
+            });
+
+            // Form validation on input
+            $('.form-control').on('input', function() {
+                $(this).removeClass('is-invalid');
+                $(this).siblings('.invalid-feedback').text('');
             });
         });
     </script>

@@ -2,10 +2,11 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Ticket;
+use App\Http\Controllers\Controller;
 use App\Models\Category;
-use App\Models\Priority;
 use App\Models\Location;
+use App\Models\Priority;
+use App\Models\Ticket;
 use App\Models\User;
 use Illuminate\Http\Request;
 

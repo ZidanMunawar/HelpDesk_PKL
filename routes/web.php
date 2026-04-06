@@ -1,26 +1,31 @@
 <?php
 
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\TicketController;
-use App\Http\Controllers\ProfileController;
-use App\Http\Controllers\VoucherController;
-use App\Http\Controllers\Auth\AuthController;
-use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ActivityLogController;
 use App\Http\Controllers\Admin\AdminController;
-use App\Http\Controllers\NotificationController;
-use App\Http\Controllers\TicketDetailController;
-use App\Http\Controllers\TicketFilterController;
-use App\Http\Controllers\TicketReportController;
 use App\Http\Controllers\Admin\CategoryController;
+use App\Http\Controllers\Admin\DepartmentController;
 use App\Http\Controllers\Admin\LocationController;
 use App\Http\Controllers\Admin\PriorityController;
-use App\Http\Controllers\Admin\DepartmentController;
-use App\Http\Controllers\Auth\ResetPasswordController;
-use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\Admin\UserManagementController;
-use Illuminate\Foundation\Auth\EmailVerificationRequest;
+use App\Http\Controllers\Auth\AuthController;
+use App\Http\Controllers\Auth\ForgotPasswordController;
+use App\Http\Controllers\Auth\ResetPasswordController;
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\ProfileResetPasswordController;
+use App\Http\Controllers\TicketController;
+use App\Http\Controllers\TicketDetailController;
+use App\Http\Controllers\TicketReportController;
+use App\Http\Controllers\VoucherController;
+use App\Mail\TicketNotification;
+use App\Models\Ticket;
+use App\Models\User;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Route;
 
 /*
 |--------------------------------------------------------------------------
@@ -30,9 +35,43 @@ use Illuminate\Foundation\Auth\EmailVerificationRequest;
 
 Route::get('/', function () {
     return view('home');
-});
+})->name('home');
 
-// Captcha reload
+Route::get('/home', function () {
+    return view('home');
+})->name('home');
+
+// Calendar untuk semua role
+Route::get('/calendar', [App\Http\Controllers\CalendarController::class, 'index'])->name('calendar.index');
+Route::get('/calendar/events', [App\Http\Controllers\CalendarController::class, 'getEvents'])->name('calendar.events');
+Route::get('/calendar/check-access/{ticket}', [App\Http\Controllers\CalendarController::class, 'checkAccess'])->name('calendar.check-access');
+Route::get('/calendar/print', [App\Http\Controllers\CalendarController::class, 'print'])->name('calendar.print'); // TAMBAH INI
+
+
+// // Route untuk mengecek user yang sedang login (AJAX)
+Route::get('/api/user', function () {
+    if (Auth::check()) {
+        $user = Auth::user();
+        return response()->json([
+            'authenticated' => true,
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'role' => $user->role,
+                'has_remember_me' => Auth::viaRemember()
+            ]
+        ]);
+    }
+
+    return response()->json([
+        'authenticated' => false,
+        'user' => null
+    ]);
+})->name('api.user');
+// ================================
+// CAPTCHA ROUTES (Public)
+// ================================
 Route::get('/reload-captcha', function () {
     return response()->json(['captcha' => captcha_img()]);
 })->name('reload.captcha');
@@ -53,7 +92,9 @@ Route::middleware('guest')->group(function () {
 
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout')->middleware('auth');
 
-// PASSWORD RESET ROUTES
+// ================================
+// PASSWORD RESET ROUTES (Public - From Login Page)
+// ================================
 Route::get('password/reset', [ForgotPasswordController::class, 'showLinkRequestForm'])
     ->name('password.request');
 
@@ -65,6 +106,26 @@ Route::get('password/reset/{token}', [ResetPasswordController::class, 'showReset
 
 Route::post('password/reset', [ResetPasswordController::class, 'reset'])
     ->name('password.update');
+
+// ================================
+// PROFILE PASSWORD RESET ROUTES (From Profile Page)
+// ================================
+Route::prefix('profile')->name('profile.')->middleware(['auth'])->group(function () {
+    // Send reset link from profile (authenticated) - with captcha
+    Route::post('/password/email', [ProfileResetPasswordController::class, 'sendResetLink'])
+        ->name('password.email');
+});
+
+// Public reset password routes (for links from email)
+Route::get('password/reset/{token}', [ProfileResetPasswordController::class, 'showResetForm'])
+    ->name('profile.password.reset');
+
+Route::post('password/reset', [ProfileResetPasswordController::class, 'reset'])
+    ->name('profile.password.reset.submit');
+
+// Check token validity (AJAX)
+Route::post('password/check-token', [ProfileResetPasswordController::class, 'checkToken'])
+    ->name('profile.password.check-token');
 
 // ================================
 // EMAIL VERIFICATION ROUTES
@@ -136,9 +197,19 @@ Route::middleware(['auth', 'active'])->group(function () {
         Route::get('/', [ProfileController::class, 'index'])->name('index');
         Route::post('/update', [ProfileController::class, 'updateProfile'])->name('update');
         Route::post('/upload-picture', [ProfileController::class, 'uploadProfilePicture'])->name('upload-picture');
+        Route::post('/upload-cropped-picture', [ProfileController::class, 'uploadCroppedProfilePicture'])->name('upload-cropped-picture');
         Route::post('/update-password', [ProfileController::class, 'updatePassword'])->name('update-password');
         Route::post('/remove-picture', [ProfileController::class, 'removeProfilePicture'])->name('remove-picture');
+
+        // Signature Routes - Untuk role tertentu
+        Route::post('/upload-signature', [ProfileController::class, 'uploadSignature'])->name('upload-signature');
+        Route::post('/remove-signature', [ProfileController::class, 'removeSignature'])->name('remove-signature');
+        Route::get('/signature-info', [ProfileController::class, 'getSignatureInfo'])->name('signature-info');
+
+        // Password reset via email
+        Route::post('/password/email', [ProfileController::class, 'sendResetLink'])->name('password.email');
     });
+
     // ================================
 // TICKET ROUTES (All Authenticated Users)
 // ================================
@@ -147,17 +218,20 @@ Route::middleware(['auth', 'active'])->group(function () {
         // Main Index (All Tickets - semua role bisa lihat)
         Route::get('/', [TicketController::class, 'index'])->name('index');
 
+        // Tambahkan route ini di dalam group tickets
+        Route::get('/manager-signature', [TicketController::class, 'getManagerSignature'])->name('manager-signature');
+
         // Create & Store - HANYA admin_eng dan user
         Route::get('/create', [TicketController::class, 'create'])->name('create');
         Route::post('/', [TicketController::class, 'store'])->name('store');
 
-        // Check access untuk modal (API endpoint) - DITAMBAHKAN KEMBALI
+        // Check access untuk modal (API endpoint)
         Route::get('/{ticket}/check-access', [TicketController::class, 'checkAccess'])->name('check-access');
 
         // Detail & Actions (Menggunakan TicketDetailController)
         Route::get('/{ticket}', [TicketDetailController::class, 'show'])->name('show');
 
-        // Comment - HANYA user, admin_eng, technician
+        // Comment - HANYA user, admin_eng, technician, manager
         Route::post('/{ticket}/comment', [TicketDetailController::class, 'addComment'])->name('add-comment');
 
         // === ALUR BARU ===
@@ -174,7 +248,7 @@ Route::middleware(['auth', 'active'])->group(function () {
         Route::post('/{ticket}/complete', [TicketDetailController::class, 'technicianComplete'])->name('complete');
         Route::post('/{ticket}/request-vr', [TicketDetailController::class, 'requestVR'])->name('request-vr');
 
-        // User Actions
+        // User/Manager Check Actions
         Route::post('/{ticket}/user-check', [TicketDetailController::class, 'userCheck'])->name('user-check');
 
         // GM Actions
@@ -188,25 +262,102 @@ Route::middleware(['auth', 'active'])->group(function () {
 
         // Quick Approve Route
         Route::post('/{ticket}/quick-approve', [TicketDetailController::class, 'quickApprove'])->name('quick-approve');
-        // Di routes/web.php
+
+        // Continue to OM
         Route::post('/{ticket}/continue-to-om', [TicketDetailController::class, 'continueToOM'])->name('continue-to-om');
+
         // Verify Password for New Signature
         Route::post('/verify-password', [TicketDetailController::class, 'verifyPassword'])->name('verify-password');
-        // VR Routes (akan dibuat controller terpisah)
 
-        // ======= TAMBAHKAN REPORT ROUTES DI DALAM GROUP =======
+        // ========== FOLLOW-UP ROUTES ==========
+        // Add Follow-up Notes (Admin Engineering)
+        Route::post('/{ticket}/add-followup', [TicketDetailController::class, 'addFollowUpNotes'])->name('add-followup');
+
+        // Report Routes
         Route::get('/{ticket}/report', [TicketReportController::class, 'viewReport'])->name('report.view');
         Route::get('/{ticket}/report/download', [TicketReportController::class, 'generateReport'])->name('report.download');
-        // ======================================================
-
+        Route::post('/{ticket}/report/save', [TicketReportController::class, 'saveReport'])->name('report.save');
+        Route::get('/reports/cleanup', [TicketReportController::class, 'cleanupTempFiles'])->name('report.cleanup');
     });
+
     // Reports Routes
     Route::prefix('reports')->name('reports.')->middleware(['auth'])->group(function () {
         Route::get('/ticket/{ticket}/pdf', [TicketReportController::class, 'generateReport'])->name('ticket.pdf');
         Route::get('/ticket/{ticket}/pdf-with-attachments', [TicketReportController::class, 'generateReportWithAttachments'])->name('ticket.pdf-with-attachments');
         Route::get('/ticket/{ticket}/download', [TicketReportController::class, 'downloadReport'])->name('ticket.download');
     });
-    // Tambahkan routes ini
+    // Test dengan queue (jika pakai queue)
+    Route::get('/test-queue-email/{ticketId}', function ($ticketId) {
+        try {
+            $ticket = Ticket::with(['user', 'priority', 'category', 'department'])->findOrFail($ticketId);
+            $user = $ticket->user;
+
+            Log::info('=== TEST QUEUE EMAIL START ===', [
+                'ticket_id' => $ticket->id,
+                'user_email' => $user->email
+            ]);
+
+            // Test dengan queue
+            Mail::to($user->email)->queue(new TicketNotification(
+                $user,
+                $ticket,
+                'TEST QUEUE: Your Maintenance Request Has Been Created',
+                'This is a test email using QUEUE. Your request #' . $ticket->ticket_number . ' has been submitted.',
+                'success'
+            ));
+
+            Log::info('Queue email dispatched to: ' . $user->email);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Queue email dispatched to ' . $user->email,
+                'queue_connection' => config('queue.default'),
+                'note' => 'Make sure queue worker is running: php artisan queue:work'
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    })->middleware('auth');
+    // TEST EMAIL ROUTE - HAPUS SETELAH TESTING
+    Route::get('/test-email', function () {
+        try {
+            $user = Auth::user();
+            if (!$user) {
+                return response()->json(['error' => 'Please login first'], 401);
+            }
+
+            // Test send email
+            Mail::raw('Test email from ' . config('app.name'), function ($message) use ($user) {
+                $message->to($user->email)
+                    ->subject('Test Email - ' . config('app.name'))
+                    ->from(config('mail.from.address'), config('mail.from.name'));
+            });
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Test email sent to ' . $user->email,
+                'mail_config' => [
+                    'default' => config('mail.default'),
+                    'host' => config('mail.mailers.smtp.host'),
+                    'port' => config('mail.mailers.smtp.port'),
+                    'encryption' => config('mail.mailers.smtp.encryption'),
+                    'from_address' => config('mail.from.address'),
+                    'from_name' => config('mail.from.name'),
+                ]
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ], 500);
+        }
+    })->middleware('auth');
+    // Voucher Routes
     Route::prefix('vouchers')->name('vouchers.')->group(function () {
         Route::get('/', [VoucherController::class, 'index'])->name('index');
 
@@ -215,73 +366,97 @@ Route::middleware(['auth', 'active'])->group(function () {
         Route::get('/find-ticket/{ticketNumber}', [VoucherController::class, 'findTicketByNumber'])->name('find-ticket');
         Route::post('/', [VoucherController::class, 'store'])->name('store');
 
+        // Signature page for VR approval
+        Route::get('/{vr}/signature', [VoucherController::class, 'signaturePage'])->name('signature');
+
+        // Process signature submission
+        Route::post('/{vr}/signature-submit', [VoucherController::class, 'submitSignature'])->name('signature-submit');
+
+        Route::get('/modal/approve', [VoucherController::class, 'approveModal'])->name('modal.approve');
+        Route::get('/modal/reject', [VoucherController::class, 'rejectModal'])->name('modal.reject');
+        Route::get('/modal/mark-paid', [VoucherController::class, 'markPaidModal'])->name('modal.mark-paid');
         Route::get('/{vr}/show-modal', [VoucherController::class, 'showModal'])->name('show-modal');
         Route::post('/{vr}/approve', [VoucherController::class, 'approve'])->name('approve');
         Route::post('/{vr}/reject', [VoucherController::class, 'reject'])->name('reject');
         Route::post('/{vr}/mark-paid', [VoucherController::class, 'markPaid'])->name('mark-paid');
         Route::delete('/{vr}', [VoucherController::class, 'destroy'])->name('destroy');
         Route::get('/{vr}/print', [VoucherController::class, 'print'])->name('print');
-
+        // Di dalam group vouchers
+        Route::get('/list', [VoucherController::class, 'list'])->name('list');
         Route::post('/verify-password', [VoucherController::class, 'verifyPassword'])->name('verify-password');
     });
+
     // Notification Routes
-    Route::middleware(['auth'])->group(function () {
-        Route::prefix('notifications')->group(function () {
-            Route::get('/', [NotificationController::class, 'index'])->name('notifications.index');
-            Route::get('/filter', [NotificationController::class, 'filter'])->name('notifications.filter');
-            Route::get('/unread-count', [NotificationController::class, 'getUnreadCount'])->name('notifications.unread-count');
-            Route::get('/latest', [NotificationController::class, 'getLatest'])->name('notifications.latest');
-            Route::post('/mark-read', [NotificationController::class, 'ajaxMarkAsRead'])->name('notifications.ajax-mark-read');
-            Route::get('/mark-as-read/{id}', [NotificationController::class, 'markAsRead'])->name('notifications.mark-as-read');
-            Route::post('/mark-all-read', [NotificationController::class, 'markAllAsRead'])->name('notifications.mark-all-read');
-            Route::delete('/{id}', [NotificationController::class, 'destroy'])->name('notifications.destroy');
-            Route::delete('/clear-all', [NotificationController::class, 'clearAll'])->name('notifications.clear-all');
-        });
+    Route::prefix('notifications')->name('notifications.')->group(function () {
+        Route::get('/', [NotificationController::class, 'index'])->name('index');
+        Route::get('/filter', [NotificationController::class, 'filter'])->name('filter');
+        Route::get('/unread-count', [NotificationController::class, 'getUnreadCount'])->name('unread-count');
+        Route::get('/latest', [NotificationController::class, 'getLatest'])->name('latest');
+        Route::post('/mark-read', [NotificationController::class, 'ajaxMarkAsRead'])->name('ajax-mark-read');
+        Route::get('/mark-as-read/{id}', [NotificationController::class, 'markAsRead'])->name('mark-as-read');
+        Route::post('/mark-all-read', [NotificationController::class, 'markAllAsRead'])->name('mark-all-read');
+        Route::delete('/{id}', [NotificationController::class, 'destroy'])->name('destroy');
+        Route::delete('/clear-all', [NotificationController::class, 'clearAll'])->name('clear-all');
+        // Di routes/web.php dalam group notifications
+        Route::post('/broadcast', [NotificationController::class, 'broadcast'])->name('broadcast')->middleware('superadmin');
     });
 
-});
-// Activity Log Routes (SuperAdmin & Admin Eng only)
-Route::middleware(['auth'])->group(function () {
-    Route::prefix('activity-logs')->group(function () {
-        Route::get('/', [ActivityLogController::class, 'index'])->name('activity-logs.index');
-        Route::get('/export', [ActivityLogController::class, 'export'])->name('activity-logs.export');
-        Route::get('/{id}', [ActivityLogController::class, 'show'])->name('activity-logs.show');
-        Route::post('/clear-old', [ActivityLogController::class, 'clearOldLogs'])->name('activity-logs.clear-old');
-        Route::delete('/{id}', [ActivityLogController::class, 'destroy'])->name('activity-logs.destroy');
-        Route::get('/ticket/{ticketId}/activities', [ActivityLogController::class, 'getTicketActivities'])->name('activity-logs.ticket-activities');
-        Route::get('/statistics', [ActivityLogController::class, 'getStatistics'])->name('activity-logs.statistics');
+    // Activity Logs Routes
+    Route::prefix('activity-logs')->name('activity-logs.')->group(function () {
+        Route::get('/', [ActivityLogController::class, 'index'])->name('index');
+        Route::get('/export', [ActivityLogController::class, 'export'])->name('export');
+        Route::get('/{id}', [ActivityLogController::class, 'show'])->name('show');
+        Route::post('/clear-old', [ActivityLogController::class, 'clearOldLogs'])->name('clear-old');
+        Route::delete('/{id}', [ActivityLogController::class, 'destroy'])->name('destroy');
+        Route::get('/ticket/{ticketId}/activities', [ActivityLogController::class, 'getTicketActivities'])->name('ticket-activities');
+        Route::get('/statistics', [ActivityLogController::class, 'getStatistics'])->name('statistics');
     });
+});
+
+// My Department untuk Manager - tanpa middleware, langsung di controller
+// My Department untuk Manager (tanpa middleware)
+Route::prefix('my-department')->name('my-department.')->group(function () {
+    Route::get('/', [App\Http\Controllers\Manager\MyDepartmentController::class, 'index'])->name('index');
+    Route::post('/update-name', [App\Http\Controllers\Manager\MyDepartmentController::class, 'updateName'])->name('update-name');
 });
 // ================================
 // ADMIN ROUTES (For SuperAdmin & Admin)
 // ================================
-Route::prefix('admin')->name('admin.')->middleware(['auth', 'admin_or_superadmin'])->group(function () {
+Route::prefix('admin')->name('admin.')->middleware(['auth', 'superadmin'])->group(function () {
 
     // Admin Dashboard
     Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('dashboard');
 
-    // User Management (All admin roles can access, but permissions differ)
+
     Route::prefix('users')->name('users.')->group(function () {
         Route::get('/', [UserManagementController::class, 'index'])->name('index');
+        Route::get('/export', [UserManagementController::class, 'export'])->name('export');
         Route::get('/{user}', [UserManagementController::class, 'show'])->name('show');
         Route::get('/{user}/details', [UserManagementController::class, 'getUserDetails'])->name('details');
 
         // Store - Only SuperAdmin
-        Route::middleware('superadmin')->group(function () {
-            Route::post('/', [UserManagementController::class, 'store'])->name('store');
-        });
+        Route::post('/', [UserManagementController::class, 'store'])->name('store');
 
-        // Update - SuperAdmin & Admin (with restrictions)
+        // Update - SuperAdmin & Admin Eng
         Route::put('/{user}', [UserManagementController::class, 'update'])->name('update');
 
         // Destroy - Only SuperAdmin
-        Route::middleware('superadmin')->group(function () {
-            Route::delete('/{user}', [UserManagementController::class, 'destroy'])->name('destroy');
-        });
+        Route::delete('/{user}', [UserManagementController::class, 'destroy'])->name('destroy');
 
-        // Toggle Status - SuperAdmin & Admin (with restrictions)
+        // Toggle Status - SuperAdmin & Admin Eng
         Route::post('/{user}/toggle-status', [UserManagementController::class, 'toggleStatus'])->name('toggle-status');
+
+        // Bulk Operations - Only SuperAdmin
+        Route::post('/bulk/update', [UserManagementController::class, 'bulkUpdate'])->name('bulk-update');
+        // Activate with department
+        Route::post('/{user}/activate-with-department', [UserManagementController::class, 'activateWithDepartment'])
+            ->name('activate-with-department');
     });
+
+    // Departments list for dropdown
+    Route::get('/departments/list', [UserManagementController::class, 'getDepartments'])
+        ->middleware('auth')
+        ->name('departments.list');
 
     // Department Management
     Route::prefix('departments')->name('departments.')->group(function () {
@@ -290,7 +465,8 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'admin_or_superadmin
         Route::put('/{department}', [DepartmentController::class, 'update'])->name('update');
         Route::delete('/{department}', [DepartmentController::class, 'destroy'])->name('destroy');
         Route::post('/{department}/toggle-status', [DepartmentController::class, 'toggleStatus'])->name('toggle-status');
-        Route::get('/list', [UserManagementController::class, 'getDepartments'])->name('list'); // For dropdown
+        Route::get('/{department}/details', [DepartmentController::class, 'getDetails'])->name('details');
+        Route::get('/list', [UserManagementController::class, 'getDepartments'])->name('list');
     });
 
     // Location Management

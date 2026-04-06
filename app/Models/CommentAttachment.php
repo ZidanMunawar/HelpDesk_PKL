@@ -21,8 +21,15 @@ class CommentAttachment extends Model
     protected $casts = [
         'file_size' => 'integer',
         'created_at' => 'datetime',
-        'updated_at' => 'datetime',
+        // HAPUS 'updated_at' jika tidak ada di database
     ];
+
+    /**
+     * Indicates if the model should be timestamped.
+     *
+     * @var bool
+     */
+    public $timestamps = false; // Berdasarkan dump SQL, hanya `created_at` yang ada
 
     // Relationships
 

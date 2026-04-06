@@ -317,5 +317,45 @@ class Ticket extends Model
     {
         return $this->hasMany(TicketAttachment::class);
     }
+    // Di dalam class Ticket, tambahkan method ini:
 
+    /**
+     * Get status display name (for user view)
+     */
+    public function getStatusDisplayAttribute()
+    {
+        $user = auth()->user();
+
+        if ($user->role === 'user') {
+            if ($this->status === 'pending_om') {
+                return 'in_progress';
+            } elseif ($this->status === 'pending_gm') {
+                return 'completed';
+            }
+        }
+
+        return $this->status;
+    }
+
+    /**
+     * Get status label with proper class
+     */
+    public function getStatusLabelAttribute()
+    {
+        $displayStatus = $this->status_display;
+
+        $labels = [
+            'open' => '<span class="badge badge-primary">Open</span>',
+            'received' => '<span class="badge badge-info">Received</span>',
+            'pending_om' => '<span class="badge badge-warning">Pending OM</span>',
+            'in_progress' => '<span class="badge badge-info">In Progress</span>',
+            'pending_vr' => '<span class="badge badge-warning">Pending VR</span>',
+            'completed' => '<span class="badge badge-success">Completed</span>',
+            'pending_gm' => '<span class="badge badge-warning">Pending GM</span>',
+            'closed' => '<span class="badge badge-secondary">Closed</span>',
+            'cancelled' => '<span class="badge badge-danger">Cancelled</span>',
+        ];
+
+        return $labels[$displayStatus] ?? '<span class="badge badge-secondary">' . ucfirst($this->status) . '</span>';
+    }
 }

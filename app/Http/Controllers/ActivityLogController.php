@@ -1,10 +1,12 @@
 <?php
+// app/Http/Controllers/ActivityLogController.php
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Controller;
 use App\Models\ActivityLog;
-use App\Models\User;
 use App\Models\Ticket;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -12,15 +14,15 @@ use Illuminate\Support\Facades\DB;
 class ActivityLogController extends Controller
 {
     /**
-     * Display activity logs (SuperAdmin & Admin Engineering only)
+     * Display activity logs (SuperAdmin only)
      */
     public function index(Request $request)
     {
         $user = Auth::user();
 
-        // Authorization - hanya superadmin dan admin_eng
-        if (!in_array($user->role, ['superadmin', 'admin_eng'])) {
-            abort(403, 'Unauthorized access to activity logs');
+        // Authorization - HANYA SUPERADMIN
+        if ($user->role !== 'superadmin') {
+            abort(403, 'Unauthorized access. Superadmin only.');
         }
 
         // Query logs dengan eager loading
@@ -72,7 +74,7 @@ class ActivityLogController extends Controller
         $logs = $query->paginate(25)->withQueryString();
 
         // Get filter data
-        $users = User::whereIn('role', ['admin_eng', 'om', 'gm', 'technician', 'user'])
+        $users = User::whereIn('role', ['superadmin', 'admin_eng', 'om', 'gm', 'technician', 'user'])
             ->where('status', 'active')
             ->orderBy('name')
             ->get(['id', 'name', 'role']);
@@ -126,13 +128,16 @@ class ActivityLogController extends Controller
      */
     public function show($id)
     {
+        $user = Auth::user();
+        if ($user->role !== 'superadmin') {
+            abort(403, 'Unauthorized access. Superadmin only.');
+        }
+
         $log = ActivityLog::with(['user', 'ticket', 'ticket.category', 'ticket.priority'])
             ->findOrFail($id);
 
-        // Authorization
-        $user = Auth::user();
-        if (!in_array($user->role, ['superadmin', 'admin_eng'])) {
-            abort(403, 'Unauthorized access to activity logs');
+        if (request()->ajax()) {
+            return view('activity-logs.partials.details', compact('log'));
         }
 
         return view('activity-logs.show', compact('log'));
@@ -144,8 +149,8 @@ class ActivityLogController extends Controller
     public function export(Request $request)
     {
         $user = Auth::user();
-        if (!in_array($user->role, ['superadmin', 'admin_eng'])) {
-            abort(403, 'Unauthorized access to activity logs');
+        if ($user->role !== 'superadmin') {
+            abort(403, 'Unauthorized access. Superadmin only.');
         }
 
         // Build query
@@ -163,6 +168,10 @@ class ActivityLogController extends Controller
 
         if ($request->filled('date_to')) {
             $query->whereDate('created_at', '<=', $request->date_to);
+        }
+
+        if ($request->filled('action')) {
+            $query->where('action', $request->action);
         }
 
         $logs = $query->get();
@@ -185,7 +194,9 @@ class ActivityLogController extends Controller
             'Action',
             'Description',
             'IP Address',
-            'User Agent'
+            'User Agent',
+            'Old Values',
+            'New Values'
         ]);
 
         // Data rows
@@ -198,8 +209,10 @@ class ActivityLogController extends Controller
                 $log->ticket->ticket_number ?? 'N/A',
                 $log->action,
                 $log->description,
-                $log->ip_address,
-                $log->user_agent
+                $log->ip_address ?? 'N/A',
+                $log->user_agent ?? 'N/A',
+                $log->old_values,
+                $log->new_values
             ]);
         }
 
@@ -214,13 +227,40 @@ class ActivityLogController extends Controller
     {
         $user = Auth::user();
         if ($user->role !== 'superadmin') {
-            abort(403, 'Only superadmin can clear old logs');
+            return response()->json(['error' => 'Unauthorized'], 403);
         }
 
         $cutoffDate = now()->subDays(90);
         $deletedCount = ActivityLog::where('created_at', '<', $cutoffDate)->delete();
 
-        return back()->with('success', "Cleared {$deletedCount} old activity logs (older than 90 days)");
+        return response()->json([
+            'success' => true,
+            'message' => "Cleared {$deletedCount} old activity logs (older than 90 days)"
+        ]);
+    }
+
+    /**
+     * Delete single log
+     */
+    public function destroy($id)
+    {
+        $user = Auth::user();
+        if ($user->role !== 'superadmin') {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        $log = ActivityLog::findOrFail($id);
+        $log->delete();
+
+        if (request()->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Activity log deleted successfully'
+            ]);
+        }
+
+        return redirect()->route('activity-logs.index')
+            ->with('success', 'Activity log deleted successfully');
     }
 
     /**
@@ -229,7 +269,7 @@ class ActivityLogController extends Controller
     public function getTicketActivities($ticketId)
     {
         $user = Auth::user();
-        if (!in_array($user->role, ['superadmin', 'admin_eng'])) {
+        if ($user->role !== 'superadmin') {
             return response()->json(['error' => 'Unauthorized'], 403);
         }
 
@@ -255,12 +295,12 @@ class ActivityLogController extends Controller
     }
 
     /**
-     * Get system statistics
+     * Get system statistics for charts
      */
     public function getStatistics()
     {
         $user = Auth::user();
-        if (!in_array($user->role, ['superadmin', 'admin_eng'])) {
+        if ($user->role !== 'superadmin') {
             return response()->json(['error' => 'Unauthorized'], 403);
         }
 
@@ -281,7 +321,14 @@ class ActivityLogController extends Controller
             ->groupBy('user_id')
             ->orderBy('count', 'desc')
             ->limit(10)
-            ->get();
+            ->get()
+            ->map(function ($item) {
+                return [
+                    'user' => $item->user ? $item->user->name : 'System',
+                    'role' => $item->user ? $item->user->role : 'system',
+                    'count' => $item->count
+                ];
+            });
 
         // Activity by hour (last 24 hours)
         $activityByHour = [];

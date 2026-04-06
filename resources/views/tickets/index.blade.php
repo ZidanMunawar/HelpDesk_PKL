@@ -17,11 +17,249 @@
 @push('styles')
     <link rel="stylesheet" href="{{ asset('assets/vendor/toastr/css/toastr.min.css') }}">
     <link rel="stylesheet" href="{{ asset('assets/vendor/sweetalert2/dist/sweetalert2.min.css') }}">
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 
     <style>
-        /* Sidebar Filters - FIXED */
-        .sidebar-filters {
-            background: #fff;
+        /* ========== HEADER ACTIONS ========== */
+        .header-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .page-title-section h4 {
+            margin: 0;
+            font-size: 20px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .page-title-section h4 i {
+            color: #ff6200;
+            margin-right: 8px;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        /* ========== MODERN BUTTON STYLES ========== */
+        .btn-modern {
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+            border: none;
+            outline: none;
+            position: relative;
+            overflow: hidden;
+            letter-spacing: 0.3px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        }
+
+        .btn-modern::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+
+        .btn-modern:hover::before {
+            width: 300px;
+            height: 300px;
+        }
+
+        .btn-modern:active {
+            transform: scale(0.95);
+        }
+
+        /* Export Button Group */
+        .btn-export-group {
+            position: relative;
+            display: inline-block;
+        }
+
+        .btn-export {
+            background: linear-gradient(135deg, #1e3c2c, #2ecc71);
+            color: white;
+            box-shadow: 0 4px 15px rgba(46, 204, 113, 0.3);
+        }
+
+        .btn-export:hover {
+            background: linear-gradient(135deg, #2ecc71, #1e3c2c);
+            box-shadow: 0 6px 20px rgba(46, 204, 113, 0.4);
+            transform: translateY(-2px);
+        }
+
+        .btn-export i {
+            font-size: 14px;
+        }
+
+        .export-dropdown {
+            position: absolute;
+            right: 0;
+            top: 120%;
+            min-width: 200px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-10px);
+            transition: all 0.3s ease;
+            border: 1px solid rgba(0, 0, 0, 0.05);
+            overflow: hidden;
+        }
+
+        .btn-export-group:hover .export-dropdown {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        .export-dropdown a {
+            color: #333;
+            padding: 12px 20px;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 14px;
+            transition: all 0.2s ease;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .export-dropdown a:last-child {
+            border-bottom: none;
+        }
+
+        .export-dropdown a:hover {
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+            padding-left: 25px;
+        }
+
+        .export-dropdown a i {
+            width: 20px;
+            text-align: center;
+            font-size: 16px;
+        }
+
+        .export-dropdown a:nth-child(1) i {
+            color: #27ae60;
+        }
+
+        .export-dropdown a:nth-child(2) i {
+            color: #217346;
+        }
+
+        .export-dropdown a:nth-child(3) i {
+            color: #e74c3c;
+        }
+
+        /* Create Button */
+        .btn-create {
+            background: linear-gradient(135deg, #ff7b00, #ff6200);
+            color: white;
+            box-shadow: 0 4px 15px rgba(255, 98, 0, 0.3);
+            text-decoration: none;
+        }
+
+        .btn-create:hover {
+            background: linear-gradient(135deg, #ff6200, #ff7b00);
+            box-shadow: 0 6px 20px rgba(255, 98, 0, 0.4);
+            transform: translateY(-2px);
+            color: white;
+        }
+
+        .btn-create i {
+            font-size: 14px;
+        }
+
+        /* Disabled Button State */
+        .btn-modern:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none !important;
+            box-shadow: none !important;
+        }
+
+        /* ========== SEARCH BAR ========== */
+        .search-section {
+            margin-bottom: 15px;
+        }
+
+        .search-wrapper {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            background: white;
+            border: 1px solid #eaeaea;
+            border-radius: 10px;
+            padding: 2px 2px 2px 15px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+        }
+
+        .search-wrapper:focus-within {
+            border-color: #ff6200;
+            box-shadow: 0 0 0 3px rgba(255, 98, 0, 0.1);
+        }
+
+        .search-input {
+            flex: 1;
+            border: none;
+            padding: 12px 0;
+            font-size: 14px;
+            background: transparent;
+        }
+
+        .search-input:focus {
+            outline: none;
+        }
+
+        .search-btn {
+            background: #ff6200;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            white-space: nowrap;
+        }
+
+        .search-btn:hover {
+            background: #ff7b00;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 10px rgba(255, 98, 0, 0.3);
+        }
+
+        /* ========== FILTER SECTION ========== */
+        .filter-section {
+            background: white;
             border-radius: 10px;
             border: 1px solid #eaeaea;
             margin-bottom: 20px;
@@ -29,7 +267,7 @@
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
         }
 
-        .filter-section-header {
+        .filter-header {
             padding: 14px 18px;
             background: #f8f9fa;
             border-bottom: 1px solid #eaeaea;
@@ -38,104 +276,230 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            transition: all 0.3s ease;
+            transition: background 0.2s ease;
             font-size: 14px;
             color: #333;
         }
 
-        .filter-section-header:hover {
-            background: #ff6200;
-            color: white;
+        .filter-header:hover {
+            background: #f0f0f0;
         }
 
-        .filter-section-header i {
-            transition: transform 0.3s ease;
-            font-size: 12px;
-            color: #666;
-        }
-
-        .filter-section-header:hover i {
-            color: white;
-        }
-
-        .filter-section-header.collapsed i {
-            transform: rotate(-90deg);
-        }
-
-        .filter-section-content {
-            padding: 0;
-            max-height: 300px;
-            overflow-y: auto;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        .filter-section-content.collapsed {
-            max-height: 0;
-            padding: 0;
-            overflow: hidden;
-        }
-
-        /* Filter Links - FIXED */
-        .filter-link {
-            padding: 10px 18px;
-            border-bottom: 1px solid #f5f5f5;
+        .filter-header-left {
             display: flex;
             align-items: center;
-            justify-content: space-between;
+            gap: 8px;
+        }
+
+        .filter-header-left i {
+            color: #ff6200;
+            font-size: 14px;
+        }
+
+        .filter-header-arrow {
+            transition: transform 0.3s ease;
+        }
+
+        .filter-header.collapsed .filter-header-arrow {
+            transform: rotate(0deg);
+        }
+
+        .filter-header:not(.collapsed) .filter-header-arrow {
+            transform: rotate(180deg);
+        }
+
+        .filter-body {
+            padding: 18px;
+            transition: all 0.3s ease;
+        }
+
+        .filter-body.collapsed {
+            display: none;
+        }
+
+        .filter-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .filter-item {
+            width: 100%;
+        }
+
+        .filter-label {
+            font-size: 12px;
+            font-weight: 600;
             color: #555;
+            margin-bottom: 5px;
+            display: block;
+        }
+
+        .filter-select,
+        .filter-input {
+            width: 100%;
+            height: 40px;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
             font-size: 13px;
-            text-decoration: none;
             transition: all 0.2s ease;
-            cursor: pointer;
+            background-color: white;
         }
 
-        .filter-link:hover {
-            background: #ff6200;
-            color: white;
-            padding-left: 22px;
+        .filter-select:focus,
+        .filter-input:focus {
+            border-color: #ff6200;
+            box-shadow: 0 0 0 2px rgba(255, 98, 0, 0.1);
+            outline: none;
         }
 
-        .filter-link.active {
-            background: #ff6200;
-            color: white;
-            font-weight: 500;
+        /* Select2 Customization */
+        .select2-container--default .select2-selection--single {
+            height: 40px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
         }
 
-        .filter-link.active:hover {
-            background: #ff6200;
-            color: white;
-        }
-
-        .filter-link i {
-            margin-right: 8px;
+        .select2-container--default .select2-selection--single .select2-selection__rendered {
+            line-height: 38px;
+            padding-left: 12px;
             font-size: 13px;
-            width: 18px;
-            text-align: center;
         }
 
-        .filter-link .badge {
-            font-size: 10px;
-            padding: 2px 6px;
-            min-width: 20px;
-            text-align: center;
+        .select2-container--default .select2-selection--single .select2-selection__arrow {
+            height: 38px;
+            right: 8px;
         }
 
-        /* Ticket Items - IMPROVED */
+        .select2-container--default .select2-selection--multiple {
+            min-height: 40px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+
+        .select2-container--default.select2-container--focus .select2-selection--multiple {
+            border-color: #ff6200;
+            box-shadow: 0 0 0 2px rgba(255, 98, 0, 0.1);
+        }
+
+        .filter-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 5px;
+        }
+
+        .btn-filter {
+            background: #ff6200;
+            color: white;
+            border: none;
+            padding: 10px 24px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            height: 40px;
+        }
+
+        .btn-filter:hover {
+            background: #ff7b00;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 10px rgba(255, 98, 0, 0.3);
+        }
+
+        .btn-reset {
+            background: #f5f5f5;
+            color: #666;
+            border: 1px solid #ddd;
+            padding: 10px 24px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+            height: 40px;
+        }
+
+        .btn-reset:hover {
+            background: #ff6200;
+            border-color: #ff6200;
+            color: white;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 10px rgba(255, 98, 0, 0.3);
+        }
+
+        /* Loading Overlay */
+        .ticket-loading {
+            position: relative;
+            min-height: 200px;
+        }
+
+        .ticket-loading::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+        }
+
+        .ticket-loading::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 40px;
+            height: 40px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #ff6200;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            z-index: 11;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: translate(-50%, -50%) rotate(0deg);
+            }
+
+            100% {
+                transform: translate(-50%, -50%) rotate(360deg);
+            }
+        }
+
+        /* ========== TICKET CARDS ========== */
         .ticket-card {
             background: white;
-            border-radius: 8px;
-            padding: 14px;
-            margin-bottom: 10px;
+            border-radius: 10px;
+            padding: 16px;
+            margin-bottom: 12px;
             border: 1px solid #eaeaea;
             transition: all 0.3s ease;
             cursor: pointer;
             position: relative;
             overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
         }
 
         .ticket-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(255, 98, 0, 0.15);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(255, 98, 0, 0.15);
             border-color: #ff6200;
         }
 
@@ -145,7 +509,7 @@
             left: 0;
             top: 0;
             height: 100%;
-            width: 3px;
+            width: 4px;
             background: #ff6200;
         }
 
@@ -163,17 +527,17 @@
             color: #ff6200;
             font-weight: 600;
             background: #fff3e0;
-            padding: 2px 8px;
-            border-radius: 4px;
+            padding: 4px 10px;
+            border-radius: 20px;
             display: inline-block;
         }
 
         .ticket-title {
-            font-size: 14px;
+            font-size: 15px;
             color: #333;
             font-weight: 500;
-            margin: 8px 0;
-            line-height: 1.4;
+            margin: 10px 0;
+            line-height: 1.5;
             display: -webkit-box;
             -webkit-line-clamp: 2;
             -webkit-box-orient: vertical;
@@ -182,25 +546,24 @@
             word-break: break-word;
         }
 
-        /* Ticket Meta - IMPROVED for Android */
         .ticket-meta {
-            font-size: 11px;
+            font-size: 12px;
             color: #666;
             display: flex;
             flex-wrap: wrap;
-            gap: 10px;
-            margin-bottom: 8px;
+            gap: 15px;
+            margin-bottom: 10px;
         }
 
         .ticket-meta-item {
             display: flex;
             align-items: center;
-            gap: 4px;
+            gap: 5px;
             flex-shrink: 0;
         }
 
         .ticket-meta-item i {
-            font-size: 10px;
+            font-size: 12px;
             color: #999;
             flex-shrink: 0;
         }
@@ -212,34 +575,27 @@
             max-width: 120px;
         }
 
-        /* Ticket Footer - COMPACT */
         .ticket-footer {
             display: flex;
             flex-wrap: wrap;
-            gap: 6px;
+            gap: 8px;
             align-items: center;
-            padding-top: 8px;
+            padding-top: 12px;
             border-top: 1px dashed #eee;
             margin-top: 8px;
         }
 
-        /* Badges - COMPACT */
+        /* Badges */
         .badge-sm {
-            padding: 3px 6px;
-            font-size: 10px;
+            padding: 4px 8px;
+            font-size: 11px;
             font-weight: 500;
-            border-radius: 3px;
+            border-radius: 6px;
             display: inline-flex;
             align-items: center;
-            gap: 3px;
+            gap: 4px;
             line-height: 1;
             white-space: nowrap;
-        }
-
-        .badge-cost {
-            background: #e8f5e9;
-            color: #2e7d32;
-            border: 1px solid #c8e6c9;
         }
 
         .badge-assigned {
@@ -254,357 +610,265 @@
             border: 1px solid #ffe0b2;
         }
 
-        .badge-user {
-            background: #f3e5f5;
-            color: #7b1fa2;
-            border: 1px solid #e1bee7;
-        }
-
-        /* Status Badges - COMPACT */
+        /* Status Badges - Sama seperti di show blade */
         .status-badge {
-            padding: 3px 8px;
-            font-size: 10px;
+            padding: 6px 15px;
+            border-radius: 20px;
             font-weight: 600;
-            border-radius: 12px;
+            font-size: 12px;
             text-transform: uppercase;
-            letter-spacing: 0.3px;
+            letter-spacing: 0.5px;
             white-space: nowrap;
         }
 
         .status-open {
             background: #e3f2fd;
             color: #1565c0;
+            border: 1px solid #bbdefb;
         }
 
         .status-received {
             background: #e3f2fd;
             color: #1565c0;
+            border: 1px solid #bbdefb;
         }
 
         .status-pending_om {
             background: #fff3cd;
             color: #856404;
+            border: 1px solid #ffeaa7;
         }
 
         .status-in_progress {
-            background: #fff8e1;
-            color: #ff8f00;
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
         }
 
         .status-pending_vr {
-            background: #e7f3ff;
-            color: #0056b3;
-        }
-
-        .status-pending {
-            background: #fff3e0;
-            color: #ef6c00;
+            background: #fff8e1;
+            color: #ff8f00;
+            border: 1px solid #ffe082;
         }
 
         .status-completed {
-            background: #e8f5e9;
-            color: #2e7d32;
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
         }
 
         .status-pending_gm {
-            background: #fff3e0;
-            color: #ef6c00;
+            background: #e8f4fd;
+            color: #0d47a1;
+            border: 1px solid #bbdefb;
+        }
+
+        .status-ready_for_closure {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
         }
 
         .status-closed {
-            background: #f5f5f5;
-            color: #424242;
+            background: #f8f9fa;
+            color: #495057;
+            border: 1px solid #e9ecef;
         }
 
         .status-cancelled {
-            background: #ffebee;
-            color: #c62828;
-        }
-
-        /* Approval Badge - COMPACT */
-        .approval-badge {
-            padding: 3px 6px;
-            font-size: 9px;
-            border-radius: 10px;
-            font-weight: 500;
-            display: inline-flex;
-            align-items: center;
-            gap: 3px;
-            white-space: nowrap;
-        }
-
-        .approval-pending {
-            background: #fff3cd;
-            color: #856404;
-        }
-
-        .approval-approved {
-            background: #d4edda;
-            color: #155724;
-        }
-
-        .approval-rejected {
             background: #f8d7da;
             color: #721c24;
+            border: 1px solid #f5c6cb;
         }
 
-        /* Priority Badge - COMPACT */
+        /* Priority Badges - Sama seperti di show blade */
         .priority-badge {
-            padding: 3px 8px;
-            font-size: 10px;
-            border-radius: 3px;
-            color: white;
+            padding: 5px 12px;
+            border-radius: 15px;
             font-weight: 600;
-            min-width: 50px;
-            text-align: center;
+            font-size: 11px;
+            color: white !important;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
             white-space: nowrap;
         }
 
-        /* Empty State - BUTTONS FIXED */
+        /* Empty State */
         .empty-state {
             text-align: center;
-            padding: 30px 15px;
+            padding: 60px 20px;
+            background: white;
+            border-radius: 10px;
+            border: 1px solid #eaeaea;
         }
 
         .empty-state-icon {
-            font-size: 40px;
+            font-size: 60px;
             color: #e0e0e0;
-            margin-bottom: 12px;
+            margin-bottom: 20px;
         }
 
         .empty-state-title {
-            font-size: 15px;
+            font-size: 18px;
             color: #666;
-            margin-bottom: 6px;
+            margin-bottom: 10px;
             font-weight: 500;
         }
 
         .empty-state-text {
-            font-size: 12px;
+            font-size: 14px;
             color: #999;
-            margin-bottom: 15px;
+            margin-bottom: 25px;
         }
 
         .empty-state-buttons {
             display: flex;
-            gap: 8px;
+            gap: 12px;
             justify-content: center;
             flex-wrap: wrap;
         }
 
-        /* Buttons - USING BOOTSTRAP DEFAULT */
-        .btn-new-ticket {
-            background: #ff6200;
-            border: none;
-            padding: 8px 16px;
-            font-size: 13px;
-            font-weight: 500;
-            border-radius: 6px;
-            transition: all 0.3s ease;
-            color: white;
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        .btn-new-ticket:hover {
-            background: #ff7b00;
-            transform: translateY(-1px);
-            box-shadow: 0 4px 8px rgba(255, 98, 0, 0.2);
-            color: white;
-        }
-
-        .btn-create-ticket {
-            background: linear-gradient(135deg, #ff7b00, #ff6200);
-            border: none;
-            padding: 8px 16px;
-            font-size: 13px;
-            font-weight: 500;
-            border-radius: 6px;
-            transition: all 0.3s ease;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            color: white;
-            text-decoration: none;
-        }
-
-        .btn-create-ticket:hover {
-            background: linear-gradient(135deg, #ff6200, #ff7b00);
-            transform: translateY(-1px);
-            box-shadow: 0 4px 8px rgba(255, 98, 0, 0.2);
-            color: white;
-        }
-
-        .btn-clear {
-            background: #f5f5f5;
-            border: 1px solid #ddd;
-            padding: 7px 14px;
-            font-size: 12px;
-            border-radius: 6px;
-            transition: all 0.3s ease;
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-            color: #666;
-            text-decoration: none;
-        }
-
-        .btn-clear:hover {
-            background: #ff6200;
-            border-color: #ff6200;
-            color: white;
-        }
-
-        /* Search - FIXED */
-        .search-container {
-            background: #fff;
-            border-radius: 8px;
-            padding: 12px;
-            margin-bottom: 12px;
-            border: 1px solid #eaeaea;
-        }
-
-        .search-input-group {
-            display: flex;
-            gap: 8px;
-            align-items: center;
-        }
-
-        .search-input {
-            flex: 1;
-            border: 1px solid #ddd;
-            border-radius: 6px;
-            padding: 8px 12px;
-            font-size: 13px;
-            transition: all 0.3s ease;
-            background: white;
-        }
-
-        .search-input:focus {
-            border-color: #ff6200;
-            box-shadow: 0 0 0 2px rgba(255, 98, 0, 0.1);
-            outline: none;
-        }
-
-        .search-btn {
-            background: #ff6200;
-            border: none;
-            border-radius: 6px;
-            padding: 8px 16px;
-            color: white;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            font-size: 13px;
-            font-weight: 500;
-        }
-
-        .search-btn:hover {
-            background: #ff7b00;
-            transform: translateY(-1px);
-        }
-
-        /* Pagination - IMPROVED */
-        .pagination-container {
-            margin-top: 15px;
-            padding: 12px;
-            border-top: 1px solid #eee;
+        /* Pagination */
+        .pagination-wrapper {
+            margin-top: 25px;
+            padding: 15px;
             background: #f9f9f9;
-            border-radius: 0 0 12px 12px;
+            border-radius: 10px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .pagination {
+            margin: 0;
+            flex-wrap: wrap;
+            gap: 5px;
         }
 
         .pagination .page-link {
-            font-size: 12px;
-            padding: 5px 10px;
+            font-size: 13px;
+            padding: 8px 14px;
             border-color: #ddd;
             color: #666;
-            min-width: 32px;
-            text-align: center;
+            border-radius: 8px;
+            margin: 0 2px;
+            transition: all 0.2s ease;
         }
 
         .pagination .page-item.active .page-link {
             background: #ff6200;
             border-color: #ff6200;
             color: white;
+            box-shadow: 0 4px 10px rgba(255, 98, 0, 0.3);
         }
 
         .pagination .page-link:hover {
             background: #ff7b00;
             border-color: #ff7b00;
             color: white;
+            transform: translateY(-1px);
         }
 
-        /* Ticket Info Modal */
+        /* Modal */
         .ticket-info-item {
+            padding: 15px 0;
             border-bottom: 1px solid #f0f0f0;
-            padding-bottom: 10px;
-            margin-bottom: 10px;
         }
 
         .ticket-info-item:last-child {
             border-bottom: none;
-            margin-bottom: 0;
         }
 
-        .ticket-info-item strong {
-            display: block;
+        .ticket-info-label {
             font-size: 12px;
             color: #666;
             margin-bottom: 5px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
         }
 
-        .ticket-info-item div {
-            font-size: 14px;
+        .ticket-info-value {
+            font-size: 16px;
             color: #333;
+            font-weight: 500;
         }
 
-        /* CRITICAL Android/Mobile Optimizations */
+        .modal-warning {
+            background: #fff3cd;
+            border: 1px solid #ffeeba;
+            color: #856404;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            font-size: 14px;
+        }
+
+        /* Responsive */
         @media (max-width: 768px) {
-
-            /* Compact spacing */
-            .sidebar-filters {
-                margin-bottom: 10px;
+            .header-actions {
+                flex-direction: column;
+                align-items: flex-start;
             }
 
-            .filter-section-header {
-                padding: 10px 12px;
-                font-size: 12px;
+            .action-buttons {
+                width: 100%;
+                gap: 10px;
             }
 
-            .filter-link {
-                padding: 8px 12px;
-                font-size: 11px;
-                min-height: 36px;
-            }
-
-            /* Ticket card mobile optimization */
-            .ticket-card {
-                padding: 10px;
-                margin-bottom: 8px;
-                border-radius: 6px;
-            }
-
-            .ticket-title {
+            .btn-modern {
+                flex: 1;
+                padding: 10px 15px;
                 font-size: 13px;
-                -webkit-line-clamp: 2;
-                line-height: 1.3;
-                margin: 6px 0;
             }
 
-            /* Meta items - HORIZONTAL SCROLL for Android */
+            .btn-export-group {
+                flex: 1;
+            }
+
+            .btn-export {
+                width: 100%;
+            }
+
+            .btn-create {
+                flex: 1;
+            }
+
+            .search-wrapper {
+                flex-direction: column;
+                align-items: stretch;
+                padding: 10px;
+            }
+
+            .search-input {
+                width: 100%;
+                padding: 10px 0;
+            }
+
+            .search-btn {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .filter-grid {
+                grid-template-columns: 1fr;
+                gap: 12px;
+            }
+
+            .filter-actions {
+                flex-direction: column;
+            }
+
+            .btn-filter,
+            .btn-reset {
+                width: 100%;
+                justify-content: center;
+            }
+
             .ticket-meta {
-                display: flex;
                 overflow-x: auto;
-                overflow-y: hidden;
-                gap: 8px;
-                padding-bottom: 4px;
-                margin-bottom: 6px;
+                flex-wrap: nowrap;
                 -webkit-overflow-scrolling: touch;
-                scrollbar-width: none;
+                padding-bottom: 8px;
             }
 
             .ticket-meta::-webkit-scrollbar {
@@ -613,608 +877,338 @@
 
             .ticket-meta-item {
                 flex: 0 0 auto;
-                white-space: nowrap;
             }
 
             .ticket-meta-text {
                 max-width: 100px;
             }
 
-            /* Footer - horizontal layout */
-            .ticket-footer {
-                gap: 4px;
-                padding-top: 6px;
-                margin-top: 6px;
-            }
-
-            /* Badges - smaller */
-            .badge-sm {
-                font-size: 9px;
-                padding: 2px 5px;
-            }
-
-            .status-badge,
-            .approval-badge {
-                font-size: 9px;
-                padding: 2px 6px;
-            }
-
-            .priority-badge {
-                font-size: 9px;
-                padding: 2px 6px;
-                min-width: 40px;
-            }
-
-            /* Empty state mobile */
-            .empty-state {
-                padding: 20px 10px;
-            }
-
-            .empty-state-icon {
-                font-size: 32px;
-            }
-
-            .empty-state-title {
-                font-size: 13px;
-            }
-
-            .empty-state-text {
-                font-size: 11px;
-                margin-bottom: 12px;
-            }
-
-            .empty-state-buttons {
-                gap: 6px;
-            }
-
-            .btn-create-ticket,
-            .btn-clear {
-                padding: 6px 12px;
-                font-size: 11px;
-            }
-
-            /* Search mobile */
-            .search-container {
-                padding: 10px;
-                margin-bottom: 8px;
-            }
-
-            .search-input {
-                padding: 8px 10px;
-                font-size: 12px;
-            }
-
-            .search-btn {
-                padding: 8px 12px;
-                font-size: 12px;
-                min-width: 60px;
-            }
-
-            .search-input-group {
-                gap: 6px;
-            }
-        }
-
-        @media (max-width: 576px) {
-
-            /* Extra small screens */
-            .ticket-header {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 6px;
-            }
-
-            .ticket-meta-text {
-                max-width: 80px;
-            }
-
-            .ticket-footer {
-                justify-content: flex-start;
-            }
-
-            /* Stack buttons on very small screens */
-            .empty-state-buttons {
-                flex-direction: column;
+            .export-dropdown {
                 width: 100%;
-                max-width: 200px;
-                margin: 0 auto;
+                right: auto;
+                left: 0;
             }
-
-            .empty-state-buttons .btn {
-                width: 100%;
-                justify-content: center;
-            }
-
-            /* Single column on very small */
-            .col-lg-3,
-            .col-lg-9 {
-                width: 100%;
-                padding-left: 8px;
-                padding-right: 8px;
-            }
-        }
-
-        /* Performance optimizations */
-        .ticket-card {
-            will-change: transform;
-            backface-visibility: hidden;
-            -webkit-font-smoothing: antialiased;
-        }
-
-        .filter-link {
-            will-change: background-color;
         }
     </style>
 @endpush
 
 @section('content')
-    <div class="row">
-        <!-- Sidebar Filters -->
-        <div class="col-lg-3 col-md-4 mb-4">
-            <div class="sidebar-filters">
-                <!-- New Ticket Button - FIXED (Bootstrap Button) -->
-                <div class="p-3 border-bottom">
-                    @if (in_array(auth()->user()->role, ['admin_eng', 'user']))
-                        <a href="{{ route('tickets.create') }}" class="btn btn-primary btn-block btn-new-ticket">
-                            <i class="fas fa-plus me-2"></i> New Ticket
-                        </a>
-                    @else
-                        <div class="alert alert-info py-2 mb-0" style="font-size: 12px;">
-                            <i class="fas fa-info-circle me-1"></i>
-                            Only Admin Eng and Users can create tickets
-                        </div>
-                    @endif
-                </div>
-
-                <!-- Status Filters -->
-                <div class="filter-section-header" data-toggle="filter-section" data-target="status-filter">
-                    <span>Ticket Status</span>
-                    <i class="fas fa-chevron-up"></i>
-                </div>
-                <div class="filter-section-content" id="status-filter">
-                    <div>
-                        <a href="{{ route('tickets.index') }}" class="filter-link {{ !request('status') ? 'active' : '' }}">
-                            <i class="fas fa-inbox"></i>
-                            <span>All Tickets</span>
-                            <span class="badge bg-secondary">{{ $statusCounts['all'] }}</span>
-                        </a>
-
-                        <!-- ==================== STATUS UNTUK USER ROLE ==================== -->
-                        @if (auth()->user()->role === 'user')
-                            <!-- Untuk USER: Hide pending_om dan pending_gm -->
-                            <a href="{{ route('tickets.index', ['status' => 'open']) }}"
-                                class="filter-link {{ request('status') == 'open' ? 'active' : '' }}">
-                                <i class="fas fa-folder-open"></i>
-                                <span>Open</span>
-                                <span class="badge bg-primary">{{ $statusCounts['open'] ?? 0 }}</span>
-                            </a>
-                            <a href="{{ route('tickets.index', ['status' => 'received']) }}"
-                                class="filter-link {{ request('status') == 'received' ? 'active' : '' }}">
-                                <i class="fas fa-inbox"></i>
-                                <span>Received</span>
-                                <span class="badge bg-info">{{ $statusCounts['received'] ?? 0 }}</span>
-                            </a>
-                            <a href="{{ route('tickets.index', ['status' => 'in_progress']) }}"
-                                class="filter-link {{ request('status') == 'in_progress' ? 'active' : '' }}">
-                                <i class="fas fa-spinner"></i>
-                                <span>In Progress</span>
-                                <span class="badge bg-info">{{ $statusCounts['in_progress'] ?? 0 }}</span>
-                            </a>
-                            <a href="{{ route('tickets.index', ['status' => 'pending_vr']) }}"
-                                class="filter-link {{ request('status') == 'pending_vr' ? 'active' : '' }}">
-                                <i class="fas fa-file-invoice-dollar"></i>
-                                <span>Pending VR</span>
-                                <span class="badge bg-warning">{{ $statusCounts['pending_vr'] ?? 0 }}</span>
-                            </a>
-                            <a href="{{ route('tickets.index', ['status' => 'completed']) }}"
-                                class="filter-link {{ request('status') == 'completed' ? 'active' : '' }}">
-                                <i class="fas fa-check-circle"></i>
-                                <span>Completed</span>
-                                <span class="badge bg-success">{{ $statusCounts['completed'] ?? 0 }}</span>
-                            </a>
-                            <a href="{{ route('tickets.index', ['status' => 'closed']) }}"
-                                class="filter-link {{ request('status') == 'closed' ? 'active' : '' }}">
-                                <i class="fas fa-times-circle"></i>
-                                <span>Closed</span>
-                                <span class="badge bg-dark">{{ $statusCounts['closed'] ?? 0 }}</span>
-                            </a>
-                            <a href="{{ route('tickets.index', ['status' => 'cancelled']) }}"
-                                class="filter-link {{ request('status') == 'cancelled' ? 'active' : '' }}">
-                                <i class="fas fa-ban"></i>
-                                <span>Cancelled</span>
-                                <span class="badge bg-danger">{{ $statusCounts['cancelled'] ?? 0 }}</span>
-                            </a>
-                        @else
-                            <!-- Untuk ADMIN/MANAGER/TECHNICIAN/OM/GM: Show semua status -->
-                            <a href="{{ route('tickets.index', ['status' => 'open']) }}"
-                                class="filter-link {{ request('status') == 'open' ? 'active' : '' }}">
-                                <i class="fas fa-folder-open"></i>
-                                <span>Open</span>
-                                <span class="badge bg-primary">{{ $statusCounts['open'] ?? 0 }}</span>
-                            </a>
-                            <a href="{{ route('tickets.index', ['status' => 'received']) }}"
-                                class="filter-link {{ request('status') == 'received' ? 'active' : '' }}">
-                                <i class="fas fa-inbox"></i>
-                                <span>Received</span>
-                                <span class="badge bg-info">{{ $statusCounts['received'] ?? 0 }}</span>
-                            </a>
-                            <a href="{{ route('tickets.index', ['status' => 'pending_om']) }}"
-                                class="filter-link {{ request('status') == 'pending_om' ? 'active' : '' }}">
-                                <i class="fas fa-clock"></i>
-                                <span>Pending OM</span>
-                                <span class="badge bg-warning">{{ $statusCounts['pending_om'] ?? 0 }}</span>
-                            </a>
-                            <a href="{{ route('tickets.index', ['status' => 'in_progress']) }}"
-                                class="filter-link {{ request('status') == 'in_progress' ? 'active' : '' }}">
-                                <i class="fas fa-spinner"></i>
-                                <span>In Progress</span>
-                                <span class="badge bg-info">{{ $statusCounts['in_progress'] ?? 0 }}</span>
-                            </a>
-                            <a href="{{ route('tickets.index', ['status' => 'pending_vr']) }}"
-                                class="filter-link {{ request('status') == 'pending_vr' ? 'active' : '' }}">
-                                <i class="fas fa-file-invoice-dollar"></i>
-                                <span>Pending VR</span>
-                                <span class="badge bg-warning">{{ $statusCounts['pending_vr'] ?? 0 }}</span>
-                            </a>
-                            <a href="{{ route('tickets.index', ['status' => 'completed']) }}"
-                                class="filter-link {{ request('status') == 'completed' ? 'active' : '' }}">
-                                <i class="fas fa-check-circle"></i>
-                                <span>Completed</span>
-                                <span class="badge bg-success">{{ $statusCounts['completed'] ?? 0 }}</span>
-                            </a>
-                            <a href="{{ route('tickets.index', ['status' => 'pending_gm']) }}"
-                                class="filter-link {{ request('status') == 'pending_gm' ? 'active' : '' }}">
-                                <i class="fas fa-user-tie"></i>
-                                <span>Pending GM</span>
-                                <span class="badge bg-warning">{{ $statusCounts['pending_gm'] ?? 0 }}</span>
-                            </a>
-                            <a href="{{ route('tickets.index', ['status' => 'closed']) }}"
-                                class="filter-link {{ request('status') == 'closed' ? 'active' : '' }}">
-                                <i class="fas fa-times-circle"></i>
-                                <span>Closed</span>
-                                <span class="badge bg-dark">{{ $statusCounts['closed'] ?? 0 }}</span>
-                            </a>
-                            <a href="{{ route('tickets.index', ['status' => 'cancelled']) }}"
-                                class="filter-link {{ request('status') == 'cancelled' ? 'active' : '' }}">
-                                <i class="fas fa-ban"></i>
-                                <span>Cancelled</span>
-                                <span class="badge bg-danger">{{ $statusCounts['cancelled'] ?? 0 }}</span>
-                            </a>
-                        @endif
-                    </div>
-                </div>
-
-                <!-- My Tickets Filter - HANYA UNTUK USER -->
-                @if (auth()->user()->role === 'user')
-                    <div class="filter-section-header collapsed" data-toggle="filter-section"
-                        data-target="my-tickets-filter">
-                        <span>My Tickets</span>
-                        <i class="fas fa-chevron-up"></i>
-                    </div>
-                    <div class="filter-section-content collapsed" id="my-tickets-filter">
-                        <div>
-                            <a href="{{ route('tickets.index', ['my_tickets' => '1']) }}"
-                                class="filter-link {{ request('my_tickets') == '1' ? 'active' : '' }}">
-                                <i class="fas fa-user"></i>
-                                <span>My Tickets Only</span>
-                            </a>
-                            <a href="{{ route('tickets.index') }}"
-                                class="filter-link {{ !request('my_tickets') ? 'active' : '' }}">
-                                <i class="fas fa-users"></i>
-                                <span>All Tickets</span>
-                            </a>
-                        </div>
-                    </div>
-                @endif
-
-                <!-- Approval Status Filters -->
-                <div class="filter-section-header collapsed" data-toggle="filter-section" data-target="approval-filter">
-                    <span>Approval Status</span>
-                    <i class="fas fa-chevron-up"></i>
-                </div>
-                <div class="filter-section-content collapsed" id="approval-filter">
-                    <div>
-                        <a href="{{ route('tickets.index', ['approval_status' => '']) }}"
-                            class="filter-link {{ !request('approval_status') ? 'active' : '' }}">
-                            <i class="fas fa-circle"></i>
-                            <span>All</span>
-                        </a>
-                        <a href="{{ route('tickets.index', ['approval_status' => 'pending_approval']) }}"
-                            class="filter-link {{ request('approval_status') == 'pending_approval' ? 'active' : '' }}">
-                            <i class="fas fa-clock text-warning"></i>
-                            <span>Pending Approval</span>
-                        </a>
-                        <a href="{{ route('tickets.index', ['approval_status' => 'approved']) }}"
-                            class="filter-link {{ request('approval_status') == 'approved' ? 'active' : '' }}">
-                            <i class="fas fa-check-circle text-success"></i>
-                            <span>Approved</span>
-                        </a>
-                        <a href="{{ route('tickets.index', ['approval_status' => 'rejected']) }}"
-                            class="filter-link {{ request('approval_status') == 'rejected' ? 'active' : '' }}">
-                            <i class="fas fa-times-circle text-danger"></i>
-                            <span>Rejected</span>
-                        </a>
-                    </div>
-                </div>
-
-                <!-- Category Filters -->
-                <div class="filter-section-header collapsed" data-toggle="filter-section" data-target="category-filter">
-                    <span>Categories</span>
-                    <i class="fas fa-chevron-up"></i>
-                </div>
-                <div class="filter-section-content collapsed" id="category-filter">
-                    <div>
-                        <a href="{{ route('tickets.index', ['category' => '']) }}"
-                            class="filter-link {{ !request('category') ? 'active' : '' }}">
-                            <i class="fas fa-folder"></i>
-                            <span>All Categories</span>
-                        </a>
-                        @foreach ($categories as $category)
-                            <a href="{{ route('tickets.index', ['category' => $category->id]) }}"
-                                class="filter-link {{ request('category') == $category->id ? 'active' : '' }}">
-                                <i class="fas fa-folder-open"></i>
-                                <span class="d-flex align-items-center">
-                                    {{ Str::limit($category->name, 18) }}
-                                    @if ($category->department)
-                                        <small
-                                            class="text-muted ms-1">({{ Str::limit($category->department->name, 8) }})</small>
-                                    @endif
-                                </span>
-                            </a>
-                        @endforeach
-                    </div>
-                </div>
-
-                <!-- Priority Filters -->
-                <div class="filter-section-header collapsed" data-toggle="filter-section" data-target="priority-filter">
-                    <span>Priorities</span>
-                    <i class="fas fa-chevron-up"></i>
-                </div>
-                <div class="filter-section-content collapsed" id="priority-filter">
-                    <div>
-                        <a href="{{ route('tickets.index', ['priority' => '']) }}"
-                            class="filter-link {{ !request('priority') ? 'active' : '' }}">
-                            <i class="fas fa-flag"></i>
-                            <span>All Priorities</span>
-                        </a>
-                        @foreach ($priorities as $priority)
-                            <a href="{{ route('tickets.index', ['priority' => $priority->id]) }}"
-                                class="filter-link {{ request('priority') == $priority->id ? 'active' : '' }}">
-                                <i class="fas fa-flag" style="color: {{ $priority->color }}"></i>
-                                <span>{{ $priority->name }}</span>
-                            </a>
-                        @endforeach
-                    </div>
-                </div>
-
-                <!-- Department Filters -->
-                <div class="filter-section-header collapsed" data-toggle="filter-section"
-                    data-target="department-filter">
-                    <span>Departments</span>
-                    <i class="fas fa-chevron-up"></i>
-                </div>
-                <div class="filter-section-content collapsed" id="department-filter">
-                    <div>
-                        <a href="{{ route('tickets.index', ['department' => '']) }}"
-                            class="filter-link {{ !request('department') ? 'active' : '' }}">
-                            <i class="fas fa-building"></i>
-                            <span>All Departments</span>
-                        </a>
-                        @foreach ($departments as $department)
-                            <a href="{{ route('tickets.index', ['department' => $department->id]) }}"
-                                class="filter-link {{ request('department') == $department->id ? 'active' : '' }}">
-                                <i class="fas fa-building"></i>
-                                <span>{{ Str::limit($department->name, 18) }}</span>
-                            </a>
-                        @endforeach
-                    </div>
-                </div>
-            </div>
+    <!-- Header dengan Tombol Create & Export -->
+    <div class="header-actions">
+        <div class="page-title-section">
+            <h4><i class="fas fa-ticket-alt"></i>Ticket Management</h4>
         </div>
-
-        <!-- Main Content -->
-        <div class="col-lg-9 col-md-8">
-            <div class="card border-0 shadow-sm">
-                <div class="card-body p-0">
-                    <!-- Search Bar -->
-                    <div class="search-container">
-                        <form action="{{ route('tickets.index') }}" method="GET" id="searchForm">
-                            <div class="search-input-group">
-                                <input type="text" name="search" class="search-input"
-                                    placeholder="Search tickets by number, title, user, or location..."
-                                    value="{{ request('search') }}" autocomplete="off">
-                                <button type="submit" class="search-btn">
-                                    <i class="fas fa-search"></i>
-                                    <span class="d-none d-md-inline">Search</span>
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-
-                    <!-- Ticket List -->
-                    <div class="px-2 px-md-3">
-                        @forelse($tickets as $ticket)
-                            <div class="ticket-card" onclick="viewTicket({{ $ticket->id }})">
-                                <div class="ticket-header">
-                                    <div class="ticket-number">#{{ $ticket->ticket_number }}</div>
-                                    <div class="d-flex align-items-center gap-2">
-                                        @if (auth()->user()->role !== 'user')
-                                            <!-- Approval badge hanya untuk NON-USER -->
-                                            <span class="approval-badge approval-{{ $ticket->approval_status }}">
-                                                <i
-                                                    class="fas {{ $ticket->approval_status == 'approved' ? 'fa-check-circle' : ($ticket->approval_status == 'rejected' ? 'fa-times-circle' : 'fa-clock') }}"></i>
-                                                {{ str_replace('_', ' ', $ticket->approval_status) }}
-                                            </span>
-                                        @endif
-
-                                        <!-- Status badge dengan mapping untuk USER -->
-                                        @php
-                                            $displayStatus = $ticket->status;
-                                            if (auth()->user()->role === 'user') {
-                                                // User: map pending_om dan pending_gm
-                                                if ($displayStatus === 'pending_om') {
-                                                    $displayStatus = 'in_progress';
-                                                } elseif ($displayStatus === 'pending_gm') {
-                                                    $displayStatus = 'completed';
-                                                }
-                                            }
-                                        @endphp
-                                        <span class="status-badge status-{{ $displayStatus }}">
-                                            @if (auth()->user()->role === 'user' && in_array($ticket->status, ['pending_om', 'pending_gm']))
-                                                {{ str_replace('_', ' ', $displayStatus) }}
-                                            @else
-                                                {{ str_replace('_', ' ', $ticket->status) }}
-                                            @endif
-                                        </span>
-                                    </div>
-                                </div>
-
-                                <div class="ticket-title" title="{{ $ticket->title }}">
-                                    {{ Str::limit($ticket->title, 80) }}
-                                </div>
-
-                                <div class="ticket-meta">
-                                    <!-- User Information -->
-                                    <div class="ticket-meta-item">
-                                        <i class="fas fa-user"></i>
-                                        <span class="ticket-meta-text" title="{{ $ticket->user->name }}">
-                                            {{ Str::limit($ticket->user->name, 20) }}
-                                        </span>
-                                    </div>
-
-                                    <div class="ticket-meta-item">
-                                        <i class="fas fa-folder"></i>
-                                        <span class="ticket-meta-text" title="{{ $ticket->category->name }}">
-                                            {{ Str::limit($ticket->category->name, 20) }}
-                                        </span>
-                                    </div>
-
-                                    @if ($ticket->department)
-                                        <div class="ticket-meta-item">
-                                            <i class="fas fa-building"></i>
-                                            <span class="ticket-meta-text" title="{{ $ticket->department->name }}">
-                                                {{ Str::limit($ticket->department->name, 18) }}
-                                            </span>
-                                        </div>
-                                    @endif
-
-                                    <div class="ticket-meta-item">
-                                        <i class="fas fa-map-marker-alt"></i>
-                                        <span class="ticket-meta-text">
-                                            @if ($ticket->location)
-                                                {{ Str::limit($ticket->location->name, 18) }}
-                                                @if ($ticket->location->floor_number)
-                                                    (F{{ $ticket->location->floor_number }})
-                                                @endif
-                                            @elseif($ticket->location_manual)
-                                                {{ Str::limit($ticket->location_manual, 18) }}
-                                            @else
-                                                N/A
-                                            @endif
-                                        </span>
-                                    </div>
-
-                                    <div class="ticket-meta-item">
-                                        <i class="fas fa-clock"></i>
-                                        <span>{{ $ticket->created_at->diffForHumans() }}</span>
-                                    </div>
-                                </div>
-
-                                <div class="ticket-footer">
-                                    @if ($ticket->assigned_to)
-                                        <span class="badge-sm badge-assigned" title="Assigned To">
-                                            <i class="fas fa-user-tag"></i>
-                                            {{ Str::limit($ticket->assignedUser->name ?? 'N/A', 12) }}
-                                        </span>
-                                    @endif
-
-                                    @if ($ticket->due_date)
-                                        <span class="badge-sm badge-date" title="Due Date">
-                                            <i class="fas fa-calendar-alt"></i>
-                                            {{ \Carbon\Carbon::parse($ticket->due_date)->format('M d, Y') }}
-                                            @if ($ticket->due_date < now())
-                                                <i class="fas fa-exclamation-triangle text-danger"></i>
-                                            @endif
-                                        </span>
-                                    @endif
-
-                                    <span class="priority-badge"
-                                        style="background-color: {{ $ticket->priority->color }}">
-                                        {{ $ticket->priority->name }}
-                                    </span>
-                                </div>
-                            </div>
-                        @empty
-                            <div class="empty-state">
-                                <div class="empty-state-icon">
-                                    <i class="fas fa-inbox"></i>
-                                </div>
-                                <h5 class="empty-state-title">No Tickets Found</h5>
-                                <p class="empty-state-text">
-                                    @if (request()->anyFilled(['search', 'status', 'category', 'priority', 'department', 'approval_status']))
-                                        Try adjusting your search criteria or create a new ticket.
-                                    @else
-                                        There are no tickets in the system yet.
-                                    @endif
-                                </p>
-                                <div class="empty-state-buttons">
-                                    @if (request()->anyFilled(['search', 'status', 'category', 'priority', 'department', 'approval_status']))
-                                        <a href="{{ route('tickets.index') }}" class="btn-clear">
-                                            <i class="fas fa-redo"></i>
-                                            Clear Filters
-                                        </a>
-                                    @endif
-                                    @if (in_array(auth()->user()->role, ['admin_eng', 'user']))
-                                        <a href="{{ route('tickets.create') }}" class="btn-create-ticket">
-                                            <i class="fas fa-plus"></i>
-                                            Create New Ticket
-                                        </a>
-                                    @endif
-                                </div>
-                            </div>
-                        @endforelse
-                    </div>
-
-                    <!-- Pagination -->
-                    @if ($tickets->hasPages())
-                        <div class="pagination-container">
-                            <div class="d-flex justify-content-center">
-                                {{ $tickets->withQueryString()->links('pagination::bootstrap-4') }}
-                            </div>
-                        </div>
-                    @endif
+        <div class="action-buttons">
+            <!-- Export Dropdown with Modern Button -->
+            <div class="btn-export-group">
+                <button class="btn-modern btn-export">
+                    <i class="fas fa-download"></i> Export
+                    <i class="fas fa-file" style="font-size: 12px;"></i>
+                </button>
+                <div class="export-dropdown">
+                    <a href="#" onclick="alert('Export CSV feature coming soon!')">
+                        <i class="fas fa-file-csv"></i> Export as CSV
+                    </a>
+                    <a href="#" onclick="alert('Export Excel feature coming soon!')">
+                        <i class="fas fa-file-excel"></i> Export as Excel
+                    </a>
+                    <a href="#" onclick="alert('Export PDF feature coming soon!')">
+                        <i class="fas fa-file-pdf"></i> Export as PDF
+                    </a>
                 </div>
             </div>
+
+            <!-- Create Ticket Button - Modern -->
+            @if (in_array(auth()->user()->role, ['admin_eng', 'user', 'manager']))
+                <a href="{{ route('tickets.create') }}" class="btn-modern btn-create">
+                    <i class="fas fa-plus-circle"></i> New Ticket
+                </a>
+            @endif
         </div>
     </div>
 
-    <!-- Modal untuk User saat akses ticket orang lain -->
-    <div class="modal fade" id="ticketInfoModal" tabindex="-1" aria-labelledby="ticketInfoModalLabel"
-        aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="ticketInfoModalLabel">Ticket Information</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="ticket-info-content">
-                        <!-- Content akan diisi oleh JavaScript -->
+    <!-- SEARCH BAR -->
+    <div class="search-section">
+        <form action="{{ route('tickets.index') }}" method="GET" id="searchForm" class="ajax-filter-form">
+            <!-- Preserve existing filters -->
+            @if (request()->filled('status') &&
+                    !in_array(request('status'), ['open', 'pending_om', 'pending_vr', 'ready_for_closure']))
+                <input type="hidden" name="status" value="{{ request('status') }}">
+            @endif
+            @if (request()->filled('my_tickets'))
+                <input type="hidden" name="my_tickets" value="{{ request('my_tickets') }}">
+            @endif
+            @if (request()->filled('assigned'))
+                <input type="hidden" name="assigned" value="{{ request('assigned') }}">
+            @endif
+            @if (request()->filled('department_filter'))
+                <input type="hidden" name="department_filter" value="{{ request('department_filter') }}">
+            @endif
+            @if (request()->filled('stage'))
+                <input type="hidden" name="stage" value="{{ request('stage') }}">
+            @endif
+            @if (request()->filled('unassigned'))
+                <input type="hidden" name="unassigned" value="{{ request('unassigned') }}">
+            @endif
+
+            <div class="search-wrapper">
+                <input type="text" name="search" class="search-input"
+                    placeholder="Search by ticket number, title, user, or location..." value="{{ request('search') }}"
+                    autocomplete="off">
+                <button type="submit" class="search-btn">
+                    <i class="fas fa-search"></i> Search
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Filter Section -->
+    <div class="filter-section">
+        <div class="filter-header {{ request()->anyFilled(['status', 'category', 'priority', 'department', 'date_from', 'date_to']) ? '' : 'collapsed' }}"
+            id="filterToggle">
+            <div class="filter-header-left">
+                <i class="fas fa-filter"></i>
+                <span>Advanced Filters</span>
+            </div>
+            <i class="fas fa-chevron-down filter-header-arrow"></i>
+        </div>
+        <div class="filter-body {{ request()->anyFilled(['status', 'category', 'priority', 'department', 'date_from', 'date_to']) ? '' : 'collapsed' }}"
+            id="filterBody">
+            <form action="{{ route('tickets.index') }}" method="GET" id="filterForm" class="ajax-filter-form">
+                <!-- Preserve special filters -->
+                @if (request()->filled('my_tickets'))
+                    <input type="hidden" name="my_tickets" value="{{ request('my_tickets') }}">
+                @endif
+                @if (request()->filled('assigned'))
+                    <input type="hidden" name="assigned" value="{{ request('assigned') }}">
+                @endif
+                @if (request()->filled('department_filter'))
+                    <input type="hidden" name="department_filter" value="{{ request('department_filter') }}">
+                @endif
+                @if (request()->filled('stage'))
+                    <input type="hidden" name="stage" value="{{ request('stage') }}">
+                @endif
+                @if (request()->filled('unassigned'))
+                    <input type="hidden" name="unassigned" value="{{ request('unassigned') }}">
+                @endif
+
+                <input type="hidden" name="search" value="{{ request('search') }}">
+
+                <div class="filter-grid">
+                    <!-- Status Filter -->
+                    <div class="filter-item">
+                        <label class="filter-label">Status</label>
+                        <select name="status" class="filter-select">
+                            <option value="">All Status</option>
+                            @foreach ($statusOptions as $value => $label)
+                                @if ($value)
+                                    <option value="{{ $value }}"
+                                        {{ request('status') == $value ? 'selected' : '' }}>
+                                        {{ $label }}
+                                    </option>
+                                @endif
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <!-- Priority Filter - MULTIPLE -->
+                    <div class="filter-item">
+                        <label class="filter-label">Priority</label>
+                        <select name="priority[]" class="filter-select select2-multiple" multiple="multiple">
+                            @foreach ($priorities as $priority)
+                                <option value="{{ $priority->id }}"
+                                    {{ in_array($priority->id, (array) request('priority', [])) ? 'selected' : '' }}>
+                                    {{ $priority->name }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <!-- Category Filter - MULTIPLE -->
+                    <div class="filter-item">
+                        <label class="filter-label">Category</label>
+                        <select name="category[]" class="filter-select select2-multiple" multiple="multiple">
+                            @foreach ($categories as $category)
+                                <option value="{{ $category->id }}"
+                                    {{ in_array($category->id, (array) request('category', [])) ? 'selected' : '' }}>
+                                    {{ $category->name }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <!-- Department Filter - MULTIPLE -->
+                    <div class="filter-item">
+                        <label class="filter-label">Department</label>
+                        <select name="department[]" class="filter-select select2-multiple" multiple="multiple">
+                            @foreach ($departments as $department)
+                                <option value="{{ $department->id }}"
+                                    {{ in_array($department->id, (array) request('department', [])) ? 'selected' : '' }}>
+                                    {{ $department->name }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <!-- Date From -->
+                    <div class="filter-item">
+                        <label class="filter-label">Date From</label>
+                        <input type="date" name="date_from" class="filter-input" value="{{ request('date_from') }}">
+                    </div>
+
+                    <!-- Date To -->
+                    <div class="filter-item">
+                        <label class="filter-label">Date To</label>
+                        <input type="date" name="date_to" class="filter-input" value="{{ request('date_to') }}">
                     </div>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+
+                <!-- Filter Actions -->
+                <div class="filter-actions">
+                    <button type="submit" class="btn-filter">
+                        <i class="fas fa-filter"></i> Apply Filters
+                    </button>
+                    <button type="button" class="btn-reset" id="resetFiltersBtn">
+                        <i class="fas fa-redo-alt"></i> Reset Filters
+                    </button>
                 </div>
-            </div>
+            </form>
         </div>
+    </div>
+
+    <!-- TICKET CARDS CONTAINER -->
+    <div id="ticket-list-container">
+        @include('tickets.partials.ticket-cards', ['tickets' => $tickets])
     </div>
 @endsection
 
 @push('scripts')
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <script src="{{ asset('assets/vendor/toastr/js/toastr.min.js') }}"></script>
     <script src="{{ asset('assets/vendor/sweetalert2/dist/sweetalert2.min.js') }}"></script>
+
     <script>
-        // Helper untuk status badge color
+        $(document).ready(function() {
+            // Initialize Select2 for multiple selects
+            $('.select2-multiple').select2({
+                width: '100%',
+                placeholder: 'Select options',
+                allowClear: true,
+                closeOnSelect: false
+            });
+
+            // Filter toggle
+            const filterBody = $('#filterBody');
+            const filterToggle = $('#filterToggle');
+
+            filterToggle.on('click', function() {
+                filterBody.toggleClass('collapsed');
+                $(this).toggleClass('collapsed');
+            });
+
+            // Toastr configuration
+            toastr.options = {
+                "closeButton": true,
+                "progressBar": true,
+                "positionClass": "toast-top-right",
+                "timeOut": "3000",
+                "extendedTimeOut": "1000",
+                "showEasing": "swing",
+                "hideEasing": "linear",
+                "showMethod": "fadeIn",
+                "hideMethod": "fadeOut"
+            };
+
+            // AJAX Filter
+            $('.ajax-filter-form').on('submit', function(e) {
+                e.preventDefault();
+                applyFilters();
+            });
+
+            // Reset Filters
+            $('#resetFiltersBtn').on('click', function() {
+                // Reset all form fields
+                $('#filterForm')[0].reset();
+
+                // Reset Select2
+                $('.select2-multiple').val(null).trigger('change');
+
+                // Clear date inputs
+                $('input[name="date_from"]').val('');
+                $('input[name="date_to"]').val('');
+
+                // Apply filters with empty values
+                applyFilters();
+            });
+
+            // Handle pagination links
+            $(document).on('click', '.pagination a', function(e) {
+                e.preventDefault();
+                let url = $(this).attr('href');
+                fetchTickets(url);
+            });
+
+            function applyFilters() {
+                let formData = $('#filterForm').serialize();
+                let searchData = $('#searchForm').serialize();
+
+                // Combine both forms data
+                let params = new URLSearchParams(formData + '&' + searchData);
+                let url = '{{ route('tickets.index') }}?' + params.toString();
+
+                fetchTickets(url);
+            }
+
+            function fetchTickets(url) {
+                // Show loading
+                $('#ticket-list-container').addClass('ticket-loading');
+
+                $.ajax({
+                    url: url,
+                    type: 'GET',
+                    dataType: 'html',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    success: function(response) {
+                        // Extract only the ticket cards content
+                        let tempDiv = $('<div>').html(response);
+                        let newContent = tempDiv.find('#ticket-list-container').html();
+
+                        if (newContent) {
+                            $('#ticket-list-container').html(newContent);
+                        } else {
+                            $('#ticket-list-container').html(response);
+                        }
+
+                        // Update browser URL without refresh
+                        window.history.pushState({}, '', url);
+
+                        // Reinitialize Select2 for any new selects
+                        $('.select2-multiple').select2({
+                            width: '100%',
+                            placeholder: 'Select options',
+                            allowClear: true,
+                            closeOnSelect: false
+                        });
+                    },
+                    error: function(xhr) {
+                        toastr.error('Failed to load tickets. Please try again.');
+                        console.error('Error:', xhr);
+                    },
+                    complete: function() {
+                        $('#ticket-list-container').removeClass('ticket-loading');
+                    }
+                });
+            }
+
+            // Handle browser back/forward buttons
+            window.onpopstate = function() {
+                location.reload();
+            };
+        });
+
+        // Helper functions
         function getStatusBadgeColor(status) {
             const colors = {
                 'open': 'primary',
@@ -1224,46 +1218,29 @@
                 'pending_vr': 'warning',
                 'completed': 'success',
                 'pending_gm': 'warning',
+                'ready_for_closure': 'info',
                 'closed': 'dark',
-                'cancelled': 'danger',
-                'pending': 'warning',
-                'resolved': 'success'
+                'cancelled': 'danger'
             };
-
-            // Normalize status
-            const normalizedStatus = status.toLowerCase().replace(/ /g, '_');
-            return colors[normalizedStatus] || 'secondary';
+            return colors[status] || 'secondary';
         }
 
-        // Helper untuk status display name dengan mapping untuk USER
-        function getStatusDisplayName(status, isUser = false) {
-            // Jika user dan status pending_om/pending_gm, map ke yang lain
-            if (isUser) {
-                if (status === 'pending_om' || status === 'pending_om') {
-                    return 'In Progress';
-                } else if (status === 'pending_gm' || status === 'pending_gm') {
-                    return 'Completed';
-                }
-            }
-
+        function getStatusDisplayName(status) {
             const displayNames = {
                 'open': 'Open',
                 'received': 'Received',
-                'pending_om': 'Pending OM',
+                'pending_om': 'OM Approval',
                 'in_progress': 'In Progress',
-                'pending_vr': 'Pending VR',
+                'pending_vr': 'VR Approval',
                 'completed': 'Completed',
-                'pending_gm': 'Pending GM',
+                'pending_gm': 'GM Approval',
+                'ready_for_closure': 'Ready for Closure',
                 'closed': 'Closed',
                 'cancelled': 'Cancelled'
             };
-
-            // Normalize status
-            const normalizedStatus = status.toLowerCase().replace(/ /g, '_');
-            return displayNames[normalizedStatus] || status;
+            return displayNames[status] || status;
         }
 
-        // Fungsi view ticket dengan permission check menggunakan API endpoint
         function viewTicket(ticketId) {
             const checkAccessUrl = `{{ route('tickets.check-access', ':id') }}`.replace(':id', ticketId);
 
@@ -1280,127 +1257,58 @@
                     } else if (data.type === 'redirect') {
                         window.location.href = data.url;
                     } else {
-                        // Fallback ke URL langsung
                         window.location.href = `{{ route('tickets.show', ':id') }}`.replace(':id', ticketId);
                     }
                 })
                 .catch(error => {
                     console.error('Error checking access:', error);
-                    // Fallback: direct redirect
                     window.location.href = `{{ route('tickets.show', ':id') }}`.replace(':id', ticketId);
                 });
         }
 
-        // Fungsi tampilkan modal info ticket
         function showTicketInfoModal(ticketInfo) {
-            const isUser = {{ auth()->user()->role === 'user' ? 'true' : 'false' }};
-            const displayStatus = getStatusDisplayName(ticketInfo.status, isUser);
+            const statusColor = getStatusBadgeColor(ticketInfo.status);
+            const displayStatus = getStatusDisplayName(ticketInfo.status);
 
             const modalContent = `
                 <div class="ticket-info-item">
-                    <strong>Ticket Number:</strong>
-                    <div>#${ticketInfo.number}</div>
+                    <div class="ticket-info-label">Ticket Number</div>
+                    <div class="ticket-info-value">#${ticketInfo.number}</div>
                 </div>
                 <div class="ticket-info-item">
-                    <strong>Title:</strong>
-                    <div>${ticketInfo.title}</div>
+                    <div class="ticket-info-label">Title</div>
+                    <div class="ticket-info-value">${ticketInfo.title}</div>
                 </div>
                 <div class="ticket-info-item">
-                    <strong>Status:</strong>
-                    <div>
-                        <span class="badge bg-${getStatusBadgeColor(ticketInfo.status)}">
-                            ${displayStatus}
-                        </span>
+                    <div class="ticket-info-label">Status</div>
+                    <div class="ticket-info-value">
+                        <span class="badge bg-${statusColor}">${displayStatus}</span>
                     </div>
                 </div>
                 <div class="ticket-info-item">
-                    <strong>Created By:</strong>
-                    <div>${ticketInfo.created_by}</div>
+                    <div class="ticket-info-label">Created By</div>
+                    <div class="ticket-info-value">${ticketInfo.created_by}</div>
                 </div>
                 <div class="ticket-info-item">
-                    <strong>Department:</strong>
-                    <div>${ticketInfo.department}</div>
+                    <div class="ticket-info-label">Department</div>
+                    <div class="ticket-info-value">${ticketInfo.department}</div>
                 </div>
                 <div class="ticket-info-item">
-                    <strong>Category:</strong>
-                    <div>${ticketInfo.category}</div>
+                    <div class="ticket-info-label">Category</div>
+                    <div class="ticket-info-value">${ticketInfo.category}</div>
                 </div>
                 <div class="ticket-info-item">
-                    <strong>Created At:</strong>
-                    <div>${ticketInfo.created_at}</div>
+                    <div class="ticket-info-label">Created At</div>
+                    <div class="ticket-info-value">${ticketInfo.created_at}</div>
                 </div>
-                <div class="alert alert-warning mt-3 mb-0">
+                <div class="modal-warning">
                     <i class="fas fa-exclamation-triangle me-2"></i>
                     <strong>Access Restricted:</strong> ${ticketInfo.reason}
                 </div>
             `;
 
-            document.querySelector('.ticket-info-content').innerHTML = modalContent;
-            const modal = new bootstrap.Modal(document.getElementById('ticketInfoModal'));
-            modal.show();
+            $('.ticket-info-content').html(modalContent);
+            $('#ticketInfoModal').modal('show');
         }
-
-        $(document).ready(function() {
-            // Toastr configuration
-            toastr.options = {
-                "closeButton": true,
-                "progressBar": true,
-                "positionClass": "toast-top-right",
-                "timeOut": "3000"
-            };
-
-            // Filter section toggle
-            $('[data-toggle="filter-section"]').on('click', function(e) {
-                e.stopPropagation();
-                const target = $(this).data('target');
-                const $content = $('#' + target);
-                const $icon = $(this).find('i');
-
-                if ($content.hasClass('collapsed')) {
-                    $content.removeClass('collapsed');
-                    $(this).removeClass('collapsed');
-                    $icon.removeClass('fa-chevron-down').addClass('fa-chevron-up');
-                } else {
-                    $content.addClass('collapsed');
-                    $(this).addClass('collapsed');
-                    $icon.removeClass('fa-chevron-up').addClass('fa-chevron-down');
-                }
-            });
-
-            // Auto submit on filter click
-            $('.filter-link').on('click', function(e) {
-                const href = $(this).attr('href');
-                if (href && href !== 'javascript:void(0)') {
-                    e.preventDefault();
-                    window.location.href = href;
-                }
-            });
-
-            // Search form submit on enter
-            $('.search-input').on('keypress', function(e) {
-                if (e.which === 13) {
-                    $('#searchForm').submit();
-                    return false;
-                }
-            });
-
-            // Optimize for mobile
-            function optimizeForMobile() {
-                if ($(window).width() < 768) {
-                    $('.filter-section-header').not('[data-target="status-filter"]').addClass('collapsed');
-                    $('.filter-section-content').not('#status-filter').addClass('collapsed');
-                    $('.filter-section-header').not('[data-target="status-filter"]').find('i')
-                        .removeClass('fa-chevron-up').addClass('fa-chevron-down');
-                }
-            }
-
-            optimizeForMobile();
-
-            let resizeTimer;
-            $(window).on('resize', function() {
-                clearTimeout(resizeTimer);
-                resizeTimer = setTimeout(optimizeForMobile, 100);
-            });
-        });
     </script>
 @endpush

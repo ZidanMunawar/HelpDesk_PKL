@@ -1,3 +1,4 @@
+{{-- resources/views/admin/departments/index.blade.php --}}
 @extends('layouts.main')
 
 @section('title', 'Department Management | ' . config('app.name'))
@@ -286,6 +287,19 @@
         .text-muted {
             color: #6c757d !important;
         }
+
+        /* Error styling */
+        .is-invalid {
+            border-color: #dc3545 !important;
+        }
+
+        .invalid-feedback {
+            display: block;
+            width: 100%;
+            margin-top: 0.25rem;
+            font-size: 0.875em;
+            color: #dc3545;
+        }
     </style>
 @endpush
 
@@ -298,7 +312,7 @@
                     <h5 class="modal-title">Add New Department</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
-                <form id="addDepartmentForm">
+                <form id="addDepartmentForm" novalidate>
                     @csrf
                     <div class="modal-body">
                         <div class="row">
@@ -359,10 +373,10 @@
                     <h5 class="modal-title">Edit Department</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
-                <form id="editDepartmentForm">
+                <form id="editDepartmentForm" novalidate>
                     @csrf
                     @method('PUT')
-                    <input type="hidden" id="edit_department_id">
+                    <input type="hidden" id="edit_department_id" name="id">
                     <div class="modal-body">
                         <div class="row">
                             <!-- Department Name -->
@@ -421,10 +435,12 @@
             <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h4 class="card-title">Department List</h4>
-                    <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal"
-                        data-bs-target="#addDepartmentModal">
-                        <i class="fas fa-plus me-1"></i> Add New Department
-                    </button>
+                    @if (auth()->user()->role === 'superadmin')
+                        <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal"
+                            data-bs-target="#addDepartmentModal">
+                            <i class="fas fa-plus me-1"></i> Add New Department
+                        </button>
+                    @endif
                 </div>
                 <div class="card-body">
                     <div class="table-responsive">
@@ -451,9 +467,16 @@
                                         <td>
                                             @if ($department->manager)
                                                 <div class="d-flex align-items-center">
-                                                    <img src="{{ $department->manager->profile_picture_url }}"
-                                                        class="rounded-circle me-2" width="28" height="28"
-                                                        alt="{{ $department->manager->name }}">
+                                                    @if ($department->manager->profile_picture)
+                                                        <img src="{{ asset('storage/' . $department->manager->profile_picture) }}"
+                                                            class="rounded-circle me-2" width="28" height="28"
+                                                            alt="{{ $department->manager->name }}">
+                                                    @else
+                                                        <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center me-2"
+                                                            style="width: 28px; height: 28px;">
+                                                            {{ strtoupper(substr($department->manager->name, 0, 1)) }}
+                                                        </div>
+                                                    @endif
                                                     <span>{{ $department->manager->name }}</span>
                                                 </div>
                                             @else
@@ -461,9 +484,11 @@
                                             @endif
                                         </td>
                                         <td>
-                                            <span class="badge badge-info">{{ $department->users->count() }}</span>
+                                            <span
+                                                class="badge badge-info">{{ $department->active_users_count ?? 0 }}</span>
                                         </td>
-                                        <td>{{ Str::limit($department->description, 50) ?? '-' }}</td>
+                                        <td>{{ $department->description ? Str::limit($department->description, 50) : '-' }}
+                                        </td>
                                         <td>
                                             @php
                                                 $statusBadge = [
@@ -475,38 +500,45 @@
                                                 {{ ucfirst($department->status) }}
                                             </span>
                                         </td>
-                                        <td>{{ $department->created_at->format('d M Y') }}</td>
+                                        <td>{{ $department->created_at ? $department->created_at->format('d M Y') : '-' }}
+                                        </td>
                                         <td>
-                                            <div class="d-flex justify-content-center">
-                                                <button type="button"
-                                                    class="btn btn-primary btn-sm shadow btn-xs sharp me-1 edit-department"
-                                                    data-id="{{ $department->id }}" data-name="{{ $department->name }}"
-                                                    data-manager-id="{{ $department->manager_id }}"
-                                                    data-description="{{ $department->description }}"
-                                                    data-status="{{ $department->status }}">
-                                                    <i class="fas fa-pencil-alt"></i>
-                                                </button>
+                                            @if (auth()->user()->role === 'superadmin')
+                                                <div class="d-flex justify-content-center">
+                                                    <button type="button"
+                                                        class="btn btn-primary btn-sm shadow btn-xs sharp me-1 edit-department"
+                                                        data-id="{{ $department->id }}"
+                                                        data-name="{{ $department->name }}"
+                                                        data-manager-id="{{ $department->manager_id }}"
+                                                        data-description="{{ $department->description }}"
+                                                        data-status="{{ $department->status }}" title="Edit">
+                                                        <i class="fas fa-pencil-alt"></i>
+                                                    </button>
 
-                                                <button type="button"
-                                                    class="btn btn-{{ $department->status === 'active' ? 'warning' : 'success' }} btn-sm shadow btn-xs sharp me-1 toggle-status"
-                                                    data-id="{{ $department->id }}" data-name="{{ $department->name }}"
-                                                    data-status="{{ $department->status }}">
-                                                    <i
-                                                        class="fas fa-{{ $department->status === 'active' ? 'ban' : 'check' }}"></i>
-                                                </button>
+                                                    <button type="button"
+                                                        class="btn btn-{{ $department->status === 'active' ? 'warning' : 'success' }} btn-sm shadow btn-xs sharp me-1 toggle-status"
+                                                        data-id="{{ $department->id }}"
+                                                        data-name="{{ $department->name }}"
+                                                        data-status="{{ $department->status }}"
+                                                        title="{{ $department->status === 'active' ? 'Deactivate' : 'Activate' }}">
+                                                        <i
+                                                            class="fas fa-{{ $department->status === 'active' ? 'ban' : 'check' }}"></i>
+                                                    </button>
 
-                                                <button type="button"
-                                                    class="btn btn-danger btn-sm shadow btn-xs sharp delete-department"
-                                                    data-id="{{ $department->id }}" data-name="{{ $department->name }}">
-                                                    <i class="fas fa-trash"></i>
-                                                </button>
-                                            </div>
+                                                    <button type="button"
+                                                        class="btn btn-danger btn-sm shadow btn-xs sharp delete-department"
+                                                        data-id="{{ $department->id }}"
+                                                        data-name="{{ $department->name }}" title="Delete">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                </div>
+                                            @else
+                                                <span class="text-muted">No Actions</span>
+                                            @endif
                                         </td>
                                     </tr>
                                 @empty
-                                    <tr>
-                                        <td colspan="8" class="text-center">No departments found</td>
-                                    </tr>
+                                    {{-- JANGAN TARUH TR KOSONG DI SINI --}}
                                 @endforelse
                             </tbody>
                         </table>
@@ -543,7 +575,7 @@
                 "hideMethod": "fadeOut"
             };
 
-            // Initialize DataTable
+            // Initialize DataTable dengan empty table handling
             var table = $('#departmentsTable').DataTable({
                 "pageLength": 10,
                 "ordering": true,
@@ -578,67 +610,34 @@
                     }
                 ],
                 "dom": '<"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6"f>>rtip',
-                "drawCallback": function() {
+                "drawCallback": function(settings) {
+                    // Handle empty table on draw
+                    var api = this.api();
+                    if (api.rows().count() === 0) {
+                        var tbody = $(this).find('tbody');
+                        if (tbody.find('tr').length === 0) {
+                            tbody.html(
+                                '<tr><td colspan="8" class="text-center">No departments found</td></tr>'
+                            );
+                        }
+                    }
                     $('.dataTables_paginate > .pagination').addClass(
                         'pagination-gutter pagination-primary');
+                },
+                "initComplete": function(settings, json) {
+                    // Handle empty table on init
+                    if (this.api().rows().count() === 0) {
+                        var tbody = $('#departmentsTable tbody');
+                        if (tbody.find('tr').length === 0) {
+                            tbody.html(
+                                '<tr><td colspan="8" class="text-center">No departments found</td></tr>'
+                            );
+                        }
+                    }
                 }
             });
 
-            // Add Department Form Submit
-            $('#addDepartmentForm').on('submit', function(e) {
-                e.preventDefault();
-
-                var formData = $(this).serialize();
-                var submitBtn = $(this).find('button[type="submit"]');
-                var originalText = submitBtn.html();
-
-                submitBtn.prop('disabled', true).html(
-                    '<i class="fa fa-spinner fa-spin me-1"></i>Saving...');
-
-                $.ajax({
-                    url: "{{ route('admin.departments.store') }}",
-                    type: 'POST',
-                    data: formData,
-                    success: function(response) {
-                        if (response.success) {
-                            $('#addDepartmentModal').modal('hide');
-                            $('#addDepartmentForm')[0].reset();
-                            $('.form-control').removeClass('is-invalid');
-
-                            Swal.fire({
-                                icon: 'success',
-                                title: 'Success!',
-                                text: response.message,
-                                showConfirmButton: false,
-                                timer: 1500
-                            }).then(() => {
-                                location.reload();
-                            });
-                        }
-                    },
-                    error: function(xhr) {
-                        submitBtn.prop('disabled', false).html(originalText);
-
-                        if (xhr.status === 422) {
-                            var errors = xhr.responseJSON.errors;
-                            $('.form-control').removeClass('is-invalid');
-                            $.each(errors, function(key, value) {
-                                $('[name="' + key + '"]').addClass('is-invalid')
-                                    .siblings('.invalid-feedback').text(value[0]);
-                            });
-                            toastr.error('Please check the form for errors');
-                        } else {
-                            Swal.fire({
-                                icon: 'error',
-                                title: 'Oops...',
-                                text: xhr.responseJSON.message || 'An error occurred'
-                            });
-                        }
-                    }
-                });
-            });
-
-            // Edit Department Button Click
+            // Delegasi event untuk edit, toggle, delete
             $(document).on('click', '.edit-department', function() {
                 var id = $(this).data('id');
                 var name = $(this).data('name');
@@ -653,80 +652,19 @@
                 $('#edit_status').val(status);
 
                 $('.form-control').removeClass('is-invalid');
+                $('.invalid-feedback').text('');
                 $('#editDepartmentModal').modal('show');
             });
 
-            // Edit Department Form Submit
-            $('#editDepartmentForm').on('submit', function(e) {
-                e.preventDefault();
-
-                var departmentId = $('#edit_department_id').val();
-                var formData = $(this).serialize();
-                var submitBtn = $(this).find('button[type="submit"]');
-                var originalText = submitBtn.html();
-
-                submitBtn.prop('disabled', true).html(
-                    '<i class="fa fa-spinner fa-spin me-1"></i>Updating...');
-
-                $.ajax({
-                    url: "{{ route('admin.departments.update', ':id') }}".replace(':id',
-                        departmentId),
-                    type: 'PUT',
-                    data: formData,
-                    success: function(response) {
-                        if (response.success) {
-                            $('#editDepartmentModal').modal('hide');
-                            $('#editDepartmentForm')[0].reset();
-                            $('.form-control').removeClass('is-invalid');
-
-                            Swal.fire({
-                                icon: 'success',
-                                title: 'Success!',
-                                text: response.message,
-                                showConfirmButton: false,
-                                timer: 1500
-                            }).then(() => {
-                                location.reload();
-                            });
-                        }
-                    },
-                    error: function(xhr) {
-                        submitBtn.prop('disabled', false).html(originalText);
-
-                        if (xhr.status === 422) {
-                            var errors = xhr.responseJSON.errors;
-                            $('.form-control').removeClass('is-invalid');
-                            $.each(errors, function(key, value) {
-                                $('#edit_' + key).addClass('is-invalid')
-                                    .siblings('.invalid-feedback').text(value[0]);
-                            });
-                            toastr.error('Please check the form for errors');
-                        } else {
-                            Swal.fire({
-                                icon: 'error',
-                                title: 'Oops...',
-                                text: xhr.responseJSON.message || 'An error occurred'
-                            });
-                        }
-                    }
-                });
-            });
-
-            // Toggle Status
             $(document).on('click', '.toggle-status', function() {
                 var departmentId = $(this).data('id');
                 var departmentName = $(this).data('name');
                 var currentStatus = $(this).data('status');
                 var newStatus = currentStatus === 'active' ? 'inactive' : 'active';
 
-                var statusColors = {
-                    'active': '#28a745',
-                    'inactive': '#dc3545'
-                };
-
                 Swal.fire({
                     title: 'Change Department Status?',
-                    html: `Are you sure you want to change <strong>${departmentName}</strong>'s status to <span style="color: ${statusColors[newStatus]}">${newStatus.toUpperCase()}</span>?`,
+                    html: `Are you sure you want to change <strong>${departmentName}</strong>'s status?`,
                     icon: 'question',
                     showCancelButton: true,
                     confirmButtonColor: '#3085d6',
@@ -735,15 +673,6 @@
                     cancelButtonText: 'Cancel'
                 }).then((result) => {
                     if (result.isConfirmed) {
-                        Swal.fire({
-                            title: 'Processing...',
-                            html: 'Please wait',
-                            allowOutsideClick: false,
-                            didOpen: () => {
-                                Swal.showLoading();
-                            }
-                        });
-
                         $.ajax({
                             url: "{{ route('admin.departments.toggle-status', ':id') }}"
                                 .replace(':id', departmentId),
@@ -755,21 +684,27 @@
                                 if (response.success) {
                                     Swal.fire({
                                         icon: 'success',
-                                        title: 'Status Changed!',
+                                        title: 'Success!',
                                         text: response.message,
                                         showConfirmButton: false,
                                         timer: 1500
                                     }).then(() => {
                                         location.reload();
                                     });
+                                } else {
+                                    Swal.fire({
+                                        icon: 'error',
+                                        title: 'Error!',
+                                        text: response.message
+                                    });
                                 }
                             },
                             error: function(xhr) {
                                 Swal.fire({
                                     icon: 'error',
-                                    title: 'Failed!',
-                                    text: xhr.responseJSON.message ||
-                                        'An error occurred'
+                                    title: 'Error!',
+                                    text: xhr.responseJSON?.message ||
+                                        'An error occurred. Please try again.'
                                 });
                             }
                         });
@@ -777,7 +712,6 @@
                 });
             });
 
-            // Delete Department
             $(document).on('click', '.delete-department', function() {
                 var departmentId = $(this).data('id');
                 var departmentName = $(this).data('name');
@@ -793,15 +727,6 @@
                     cancelButtonText: 'Cancel'
                 }).then((result) => {
                     if (result.isConfirmed) {
-                        Swal.fire({
-                            title: 'Deleting...',
-                            html: 'Please wait',
-                            allowOutsideClick: false,
-                            didOpen: () => {
-                                Swal.showLoading();
-                            }
-                        });
-
                         $.ajax({
                             url: "{{ route('admin.departments.destroy', ':id') }}".replace(
                                 ':id',
@@ -821,17 +746,163 @@
                                     }).then(() => {
                                         location.reload();
                                     });
+                                } else {
+                                    Swal.fire({
+                                        icon: 'warning',
+                                        title: 'Cannot Delete',
+                                        text: response.message
+                                    });
                                 }
                             },
                             error: function(xhr) {
                                 Swal.fire({
                                     icon: 'error',
-                                    title: 'Failed!',
-                                    text: xhr.responseJSON.message ||
-                                        'An error occurred'
+                                    title: 'Error!',
+                                    text: xhr.responseJSON?.message ||
+                                        'An error occurred. Please try again.'
                                 });
                             }
                         });
+                    }
+                });
+            });
+
+            // Add Department Form Submit
+            $('#addDepartmentForm').on('submit', function(e) {
+                e.preventDefault();
+
+                var formData = $(this).serialize();
+                var submitBtn = $(this).find('button[type="submit"]');
+                var originalText = submitBtn.html();
+
+                submitBtn.prop('disabled', true).html(
+                    '<i class="fa fa-spinner fa-spin me-1"></i>Saving...');
+
+                $.ajax({
+                    url: "{{ route('admin.departments.store') }}",
+                    type: 'POST',
+                    data: formData,
+                    success: function(response) {
+                        submitBtn.prop('disabled', false).html(originalText);
+
+                        if (response.success) {
+                            $('#addDepartmentModal').modal('hide');
+                            $('#addDepartmentForm')[0].reset();
+                            $('.form-control').removeClass('is-invalid');
+                            $('.invalid-feedback').text('');
+
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Success!',
+                                text: response.message,
+                                showConfirmButton: false,
+                                timer: 1500
+                            }).then(() => {
+                                location.reload();
+                            });
+                        } else {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Error!',
+                                text: response.message
+                            });
+                        }
+                    },
+                    error: function(xhr) {
+                        submitBtn.prop('disabled', false).html(originalText);
+
+                        if (xhr.status === 422) {
+                            var errors = xhr.responseJSON.errors;
+                            $('.form-control').removeClass('is-invalid');
+                            $('.invalid-feedback').text('');
+
+                            $.each(errors, function(key, value) {
+                                var input = $('[name="' + key + '"]',
+                                    '#addDepartmentForm');
+                                input.addClass('is-invalid');
+                                input.siblings('.invalid-feedback').text(value[0]);
+                            });
+
+                            toastr.error('Please check the form for errors');
+                        } else {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Error!',
+                                text: xhr.responseJSON?.message ||
+                                    'An error occurred. Please try again.'
+                            });
+                        }
+                    }
+                });
+            });
+
+            // Edit Department Form Submit
+            $('#editDepartmentForm').on('submit', function(e) {
+                e.preventDefault();
+
+                var departmentId = $('#edit_department_id').val();
+                var formData = $(this).serialize();
+                var submitBtn = $(this).find('button[type="submit"]');
+                var originalText = submitBtn.html();
+
+                submitBtn.prop('disabled', true).html(
+                    '<i class="fa fa-spinner fa-spin me-1"></i>Updating...');
+
+                $.ajax({
+                    url: "{{ route('admin.departments.update', ':id') }}".replace(':id',
+                        departmentId),
+                    type: 'POST', // Use POST with _method
+                    data: formData + '&_method=PUT',
+                    success: function(response) {
+                        submitBtn.prop('disabled', false).html(originalText);
+
+                        if (response.success) {
+                            $('#editDepartmentModal').modal('hide');
+                            $('#editDepartmentForm')[0].reset();
+                            $('.form-control').removeClass('is-invalid');
+                            $('.invalid-feedback').text('');
+
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Success!',
+                                text: response.message,
+                                showConfirmButton: false,
+                                timer: 1500
+                            }).then(() => {
+                                location.reload();
+                            });
+                        } else {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Error!',
+                                text: response.message
+                            });
+                        }
+                    },
+                    error: function(xhr) {
+                        submitBtn.prop('disabled', false).html(originalText);
+
+                        if (xhr.status === 422) {
+                            var errors = xhr.responseJSON.errors;
+                            $('.form-control').removeClass('is-invalid');
+                            $('.invalid-feedback').text('');
+
+                            $.each(errors, function(key, value) {
+                                var input = $('[name="' + key + '"]',
+                                    '#editDepartmentForm');
+                                input.addClass('is-invalid');
+                                input.siblings('.invalid-feedback').text(value[0]);
+                            });
+
+                            toastr.error('Please check the form for errors');
+                        } else {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Error!',
+                                text: xhr.responseJSON?.message ||
+                                    'An error occurred. Please try again.'
+                            });
+                        }
                     }
                 });
             });
@@ -841,6 +912,12 @@
                 $(this).find('form')[0].reset();
                 $('.form-control').removeClass('is-invalid');
                 $('.invalid-feedback').text('');
+            });
+
+            // Form validation on input
+            $('.form-control').on('input', function() {
+                $(this).removeClass('is-invalid');
+                $(this).siblings('.invalid-feedback').text('');
             });
         });
     </script>

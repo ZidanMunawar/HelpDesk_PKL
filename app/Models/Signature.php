@@ -31,9 +31,15 @@ class Signature extends Model
      */
     protected $casts = [
         'signed_at' => 'datetime',
-        'created_at' => 'datetime',
-        'updated_at' => 'datetime',
+        // HAPUS 'updated_at' dari casts karena tidak ada di database
     ];
+
+    /**
+     * Indicates if the model should be timestamped.
+     *
+     * @var bool
+     */
+    public $timestamps = false; // TAMBAHKAN INI karena table tidak ada timestamps
 
     // ==================== RELATIONSHIPS ====================
 

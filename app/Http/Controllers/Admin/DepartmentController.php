@@ -5,9 +5,12 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Department;
 use App\Models\User;
+use App\Models\ActivityLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class DepartmentController extends Controller
 {
@@ -16,8 +19,20 @@ class DepartmentController extends Controller
      */
     public function index()
     {
-        $departments = Department::with(['manager', 'users'])->latest()->get();
-        $managers = User::where('role', 'admin')->where('status', 'active')->get();
+        $departments = Department::with(['manager', 'users'])
+            ->withCount([
+                'users as active_users_count' => function ($query) {
+                    $query->where('status', 'active');
+                }
+            ])
+            ->latest()
+            ->get();
+
+        // Hanya ambil user dengan role 'manager' yang aktif
+        $managers = User::where('role', 'manager')
+            ->where('status', 'active')
+            ->orderBy('name')
+            ->get();
 
         return view('admin.departments.index', compact('departments', 'managers'));
     }
@@ -42,8 +57,27 @@ class DepartmentController extends Controller
             ], 422);
         }
 
+        DB::beginTransaction();
         try {
-            $department = Department::create($request->all());
+            $department = Department::create([
+                'name' => $request->name,
+                'manager_id' => $request->manager_id,
+                'description' => $request->description,
+                'status' => $request->status,
+            ]);
+
+            // Log activity
+            ActivityLog::create([
+                'user_id' => Auth::id(),
+                'action' => 'created',
+                'description' => 'Created new department: ' . $department->name,
+                'old_values' => null,
+                'new_values' => $department->toArray(),
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->userAgent(),
+            ]);
+
+            DB::commit();
 
             return response()->json([
                 'success' => true,
@@ -51,6 +85,7 @@ class DepartmentController extends Controller
                 'data' => $department->load('manager')
             ]);
         } catch (\Exception $e) {
+            DB::rollBack();
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to create department: ' . $e->getMessage()
@@ -64,7 +99,12 @@ class DepartmentController extends Controller
     public function update(Request $request, Department $department)
     {
         $validator = Validator::make($request->all(), [
-            'name' => ['required', 'string', 'max:255', Rule::unique('departments')->ignore($department->id)],
+            'name' => [
+                'required',
+                'string',
+                'max:255',
+                Rule::unique('departments')->ignore($department->id)
+            ],
             'manager_id' => 'nullable|exists:users,id',
             'description' => 'nullable|string',
             'status' => 'required|in:active,inactive',
@@ -78,8 +118,29 @@ class DepartmentController extends Controller
             ], 422);
         }
 
+        DB::beginTransaction();
         try {
-            $department->update($request->all());
+            $oldValues = $department->toArray();
+
+            $department->update([
+                'name' => $request->name,
+                'manager_id' => $request->manager_id,
+                'description' => $request->description,
+                'status' => $request->status,
+            ]);
+
+            // Log activity
+            ActivityLog::create([
+                'user_id' => Auth::id(),
+                'action' => 'updated',
+                'description' => 'Updated department: ' . $department->name,
+                'old_values' => $oldValues,
+                'new_values' => $department->fresh()->toArray(),
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->userAgent(),
+            ]);
+
+            DB::commit();
 
             return response()->json([
                 'success' => true,
@@ -87,6 +148,7 @@ class DepartmentController extends Controller
                 'data' => $department->load('manager')
             ]);
         } catch (\Exception $e) {
+            DB::rollBack();
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to update department: ' . $e->getMessage()
@@ -97,8 +159,9 @@ class DepartmentController extends Controller
     /**
      * Remove the specified department
      */
-    public function destroy(Department $department)
+    public function destroy(Request $request, Department $department)
     {
+        DB::beginTransaction();
         try {
             // Check if department has users
             if ($department->users()->count() > 0) {
@@ -108,13 +171,30 @@ class DepartmentController extends Controller
                 ], 422);
             }
 
+            $oldValues = $department->toArray();
+            $departmentName = $department->name;
+
             $department->delete();
+
+            // Log activity
+            ActivityLog::create([
+                'user_id' => Auth::id(),
+                'action' => 'deleted',
+                'description' => 'Deleted department: ' . $departmentName,
+                'old_values' => $oldValues,
+                'new_values' => null,
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->userAgent(),
+            ]);
+
+            DB::commit();
 
             return response()->json([
                 'success' => true,
                 'message' => 'Department deleted successfully!'
             ]);
         } catch (\Exception $e) {
+            DB::rollBack();
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to delete department: ' . $e->getMessage()
@@ -127,16 +207,37 @@ class DepartmentController extends Controller
      */
     public function toggleStatus(Request $request, Department $department)
     {
+        DB::beginTransaction();
         try {
+            $oldStatus = $department->status;
             $newStatus = $department->status === 'active' ? 'inactive' : 'active';
+
+            $oldValues = ['status' => $oldStatus];
+            $newValues = ['status' => $newStatus];
+
             $department->update(['status' => $newStatus]);
+
+            // Log activity
+            ActivityLog::create([
+                'user_id' => Auth::id(),
+                'ticket_id' => null,
+                'action' => 'status_changed',
+                'description' => 'Changed department status from ' . $oldStatus . ' to ' . $newStatus . ': ' . $department->name,
+                'old_values' => $oldValues,
+                'new_values' => $newValues,
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->userAgent(),
+            ]);
+
+            DB::commit();
 
             return response()->json([
                 'success' => true,
                 'message' => 'Department status updated successfully!',
-                'data' => $department
+                'data' => $department->fresh()
             ]);
         } catch (\Exception $e) {
+            DB::rollBack();
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to update status: ' . $e->getMessage()

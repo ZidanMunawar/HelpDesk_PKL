@@ -9,6 +9,8 @@ class VoucherItem extends Model
 {
     use HasFactory;
 
+    protected $table = 'voucher_items';
+
     /**
      * The attributes that are mass assignable.
      *
@@ -20,6 +22,7 @@ class VoucherItem extends Model
         'qty',
         'unit_price',
         'vendor',
+        'description',
     ];
 
     /**
@@ -71,6 +74,14 @@ class VoucherItem extends Model
     }
 
     /**
+     * Get item summary for display
+     */
+    public function getSummaryAttribute()
+    {
+        return $this->item_name . ' (' . $this->qty . ' x ' . $this->formatted_unit_price . ')';
+    }
+
+    /**
      * Boot method - recalculate VR total when item saved/deleted
      */
     protected static function boot()
@@ -78,11 +89,15 @@ class VoucherItem extends Model
         parent::boot();
 
         static::saved(function ($item) {
-            $item->voucherRequest->calculateTotal();
+            if ($item->voucherRequest) {
+                $item->voucherRequest->calculateTotal();
+            }
         });
 
         static::deleted(function ($item) {
-            $item->voucherRequest->calculateTotal();
+            if ($item->voucherRequest) {
+                $item->voucherRequest->calculateTotal();
+            }
         });
     }
 }

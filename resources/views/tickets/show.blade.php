@@ -1,14 +1,14 @@
 @extends('layouts.main')
 
-@section('title', 'Ticket #' . $ticket->ticket_number . ' | ' . config('app.name'))
+@section('title', 'Maintenance Request #' . $ticket->ticket_number . ' | ' . config('app.name'))
 
-@section('page-title', 'Ticket Detail')
+@section('page-title', 'Maintenance Request Detail')
 
 @section('breadcrumb')
     @php
         $breadcrumb = [
-            ['title' => 'Tickets', 'url' => route('tickets.index')],
-            ['title' => 'Ticket #' . $ticket->ticket_number, 'url' => 'javascript:void(0)'],
+            ['title' => 'Maintenance Requests', 'url' => route('tickets.index')],
+            ['title' => $ticket->ticket_number, 'url' => 'javascript:void(0)'],
         ];
     @endphp
     @include('layouts.partials.breadcrumb')
@@ -26,34 +26,35 @@
     <link rel="stylesheet" href="{{ asset('assets/vendor/sweetalert2/dist/sweetalert2.min.css') }}">
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    {{-- <!--boostrap-->
-    <link rel="stylesheet" href="{{ asset('assets/vendor/bootstrap/css/bootstrap.min.css') }}"> --}}
+
     <style>
         :root {
-            --primary-color: #ff6200;
-            --secondary-color: #ff7b00;
-            --success-color: #28a745;
-            --warning-color: #ffc107;
-            --danger-color: #dc3545;
-            --info-color: #17a2b8;
-            --dark-color: #343a40;
-            --light-color: #f8f9fa;
+            --navy: #003366;
+            --orange: #ff6600;
+            --navy-light: #1e4a7a;
+            --orange-light: #ff8533;
+            --success: #28a745;
+            --danger: #dc3545;
+            --warning: #ffc107;
+            --info: #17a2b8;
+            --dark: #343a40;
+            --light: #f8f9fa;
         }
 
         /* ============================================
-                                                                                                                                                                                                                                                       TICKET HEADER
-                                                                                                                                                                                                                                                    ============================================ */
+                                                MAINTENANCE REQUEST HEADER - Navy & Orange Theme
+                                            ============================================ */
         .ticket-header-container {
             background: white;
-            border: 2px solid var(--primary-color);
+            border: 2px solid var(--navy);
             border-radius: 8px;
             margin-bottom: 20px;
             overflow: hidden;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            box-shadow: 0 4px 12px rgba(0, 51, 102, 0.08);
         }
 
         .header-title {
-            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            background: var(--navy);
             color: white;
             padding: 15px 20px;
             text-align: center;
@@ -80,11 +81,11 @@
             padding: 10px;
             background: #f8f9fa;
             border-radius: 6px;
-            border-left: 4px solid var(--primary-color);
+            border-left: 4px solid var(--orange);
         }
 
         .info-item i {
-            color: var(--primary-color);
+            color: var(--orange);
             font-size: 18px;
             width: 24px;
             text-align: center;
@@ -104,10 +105,9 @@
             font-weight: 500;
         }
 
-        /* Tambahkan di CSS */
         .required::after {
             content: " *";
-            color: #dc3545;
+            color: var(--danger);
         }
 
         .form-text {
@@ -126,8 +126,8 @@
         }
 
         /* ============================================
-                                                                                                                                                                                                                                                       STATUS & PRIORITY BADGES
-                                                                                                                                                                                                                                                    ============================================ */
+                                                STATUS & PRIORITY BADGES - Solid Colors
+                                            ============================================ */
         .status-badge {
             padding: 6px 15px;
             border-radius: 20px;
@@ -135,66 +135,47 @@
             font-size: 12px;
             text-transform: uppercase;
             letter-spacing: 0.5px;
+            color: white !important;
         }
 
         .status-open {
-            background: #e3f2fd;
-            color: #1565c0;
-            border: 1px solid #bbdefb;
+            background: #1565c0;
         }
 
         .status-received {
-            background: #e3f2fd;
-            color: #1565c0;
-            border: 1px solid #bbdefb;
+            background: #1565c0;
         }
 
         .status-pending_om {
-            background: #fff3cd;
-            color: #856404;
-            border: 1px solid #ffeaa7;
+            background: #856404;
         }
 
         .status-in_progress {
-            background: #d1ecf1;
-            color: #0c5460;
-            border: 1px solid #bee5eb;
+            background: #0c5460;
         }
 
         .status-pending_vr {
-            background: #fff8e1;
-            color: #ff8f00;
-            border: 1px solid #ffe082;
+            background: #ff8f00;
         }
 
         .status-completed {
-            background: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
+            background: #155724;
         }
 
         .status-pending_gm {
-            background: #e8f4fd;
-            color: #0d47a1;
-            border: 1px solid #bbdefb;
+            background: #0d47a1;
         }
 
         .status-closed {
-            background: #f8f9fa;
-            color: #495057;
-            border: 1px solid #e9ecef;
+            background: #495057;
         }
 
         .status-cancelled {
-            background: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
+            background: #721c24;
         }
 
         .status-ready_for_closure {
-            background: #d1ecf1;
-            color: #0c5460;
-            border: 1px solid #bee5eb;
+            background: #0c5460;
         }
 
         .priority-badge {
@@ -208,10 +189,10 @@
         }
 
         /* ============================================
-                                                                                                                                                                                                                                                       CURRENT STAGE INFO
-                                                                                                                                                                                                                                                    ============================================ */
+                                                CURRENT STAGE INFO - Orange Solid
+                                            ============================================ */
         .stage-info {
-            background: linear-gradient(135deg, #ff6200, #ff7b00);
+            background: var(--orange);
             color: white;
             padding: 15px;
             border-radius: 8px;
@@ -253,8 +234,8 @@
         }
 
         /* ============================================
-                                                                                                                                                                                                                                                       ACTION BUTTONS
-                                                                                                                                                                                                                                                    ============================================ */
+                                                ACTION BUTTONS - Solid Colors
+                                            ============================================ */
         .action-buttons {
             display: flex;
             flex-wrap: wrap;
@@ -275,79 +256,50 @@
             border-radius: 6px;
             font-size: 14px;
             font-weight: 500;
-            transition: all 0.3s ease;
+            transition: all 0.2s ease;
             border: none;
             color: white;
             min-width: 160px;
             cursor: pointer;
-            user-select: none;
-            -webkit-tap-highlight-color: transparent;
+            background: var(--navy);
         }
 
         .btn-action:hover {
+            opacity: 0.9;
             transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 4px 8px rgba(0, 51, 102, 0.2);
         }
 
         .btn-action:active {
-            transform: scale(0.95);
+            transform: scale(0.98);
         }
 
         .btn-primary {
-            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
-        }
-
-        .btn-primary:hover {
-            background: linear-gradient(135deg, #e65500, #ff6b00);
+            background: var(--navy);
         }
 
         .btn-success {
-            background: linear-gradient(135deg, #28a745, #20c997);
-        }
-
-        .btn-success:hover {
-            background: linear-gradient(135deg, #218838, #1ba87e);
+            background: var(--success);
         }
 
         .btn-warning {
-            background: linear-gradient(135deg, #ffc107, #fd7e14);
-            color: #212529 !important;
-        }
-
-        .btn-warning:hover {
-            background: linear-gradient(135deg, #e0a800, #e56b00);
+            background: var(--orange);
         }
 
         .btn-danger {
-            background: linear-gradient(135deg, #dc3545, #c82333);
-        }
-
-        .btn-danger:hover {
-            background: linear-gradient(135deg, #bd2130, #a71e2a);
+            background: var(--danger);
         }
 
         .btn-info {
-            background: linear-gradient(135deg, #17a2b8, #138496);
-        }
-
-        .btn-info:hover {
-            background: linear-gradient(135deg, #138496, #117a8b);
+            background: var(--info);
         }
 
         .btn-secondary {
-            background: linear-gradient(135deg, #6c757d, #495057);
-        }
-
-        .btn-secondary:hover {
-            background: linear-gradient(135deg, #5a6268, #343a40);
+            background: #6c757d;
         }
 
         .btn-dark {
-            background: linear-gradient(135deg, #343a40, #212529);
-        }
-
-        .btn-dark:hover {
-            background: linear-gradient(135deg, #23272b, #121416);
+            background: var(--dark);
         }
 
         .btn-outline-secondary {
@@ -362,18 +314,17 @@
         }
 
         /* ============================================
-                                                                                                                                                                                                                                                       TICKET BODY - DENGAN JUDUL TICKET
-                                                                                                                                                                                                                                                    ============================================ */
+                                                TICKET BODY
+                                            ============================================ */
         .ticket-body {
             background: white;
             border: 1px solid #e0e0e0;
             border-radius: 8px;
             padding: 25px;
             margin-bottom: 20px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            box-shadow: 0 2px 4px rgba(0, 51, 102, 0.05);
         }
 
-        /* Judul Ticket baru */
         .ticket-title-section {
             margin-bottom: 25px;
             padding-bottom: 15px;
@@ -392,7 +343,7 @@
         .ticket-title {
             font-size: 22px;
             font-weight: 700;
-            color: var(--primary-color);
+            color: var(--navy);
             line-height: 1.3;
             margin: 0;
         }
@@ -405,8 +356,8 @@
         }
 
         .section-title {
-            color: var(--primary-color);
-            border-bottom: 2px solid var(--primary-color);
+            color: var(--navy);
+            border-bottom: 2px solid var(--orange);
             padding-bottom: 10px;
             margin-bottom: 20px;
             font-weight: 600;
@@ -416,20 +367,77 @@
             gap: 10px;
         }
 
-        .description-box {
-            background: #f8f9fa;
-            padding: 20px;
+        .description-wrapper {
+            position: relative;
+            width: 100%;
+            max-width: 793px;
+            height: 210px;
+            border: 1px solid #ff6a2a;
             border-radius: 6px;
-            border-left: 4px solid var(--primary-color);
-            margin-bottom: 25px;
-            line-height: 1.6;
-            font-size: 14px;
-            min-height: 100px;
+            background: #f8f9fa;
+            overflow-x: auto;
+            overflow-y: hidden;
+            margin: 0 auto;
+        }
+
+        .description-content {
+            width: 793px !important;
+            min-width: 793px !important;
+            max-width: 793px !important;
+            min-height: 200px !important;
+            height: 200px !important;
+            max-height: 200px !important;
+            padding: 8px 10px;
+            font-family: 'Lucida Console', Monaco, monospace !important;
+            font-size: 10pt !important;
+            line-height: 1.2 !important;
+            overflow: hidden !important;
+            border: none;
+            background: transparent;
+            color: #000000 !important;
+            display: block;
+            margin: 0 auto;
+            word-wrap: break-word;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        .description-container {
+            width: 100%;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            margin-bottom: 15px;
+        }
+
+        .scroll-hint {
+            font-size: 11px;
+            color: #999;
+            margin-bottom: 5px;
+            text-align: right;
+        }
+
+        .scroll-hint i {
+            color: #ff6a2a;
+            margin-right: 4px;
+        }
+
+        @media (max-width: 820px) {
+            .description-container {
+                overflow-x: auto;
+                border: 1px solid #eee;
+                border-radius: 4px;
+            }
+
+            .description-content {
+                width: 793px !important;
+                min-width: 793px !important;
+                margin: 0;
+            }
         }
 
         /* ============================================
-                                                                                                                                                                                                                                                       ATTACHMENTS
-                                                                                                                                                                                                                                                    ============================================ */
+                                                ATTACHMENTS - More organized
+                                            ============================================ */
         .attachments-section {
             margin-top: 25px;
         }
@@ -459,11 +467,11 @@
 
         .attachment-item:hover {
             background: #f8f9fa;
-            border-color: var(--primary-color);
-            color: var(--primary-color);
+            border-color: var(--orange);
+            color: var(--orange);
             text-decoration: none;
             transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 4px 8px rgba(0, 51, 102, 0.1);
         }
 
         .attachment-icon {
@@ -484,12 +492,106 @@
 
         .image-attachment:hover {
             transform: scale(1.05);
-            border-color: var(--primary-color);
+            border-color: var(--orange);
+        }
+
+        /* Image Gallery Grid */
+        .image-gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .gallery-item {
+            position: relative;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid #e0e0e0;
+            transition: all 0.2s ease;
+        }
+
+        .gallery-item:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+            border-color: var(--orange);
+        }
+
+        .gallery-item img {
+            width: 100%;
+            height: 150px;
+            object-fit: cover;
+            cursor: pointer;
+        }
+
+        .gallery-item .gallery-filename {
+            padding: 8px;
+            font-size: 11px;
+            background: #f8f9fa;
+            text-align: center;
+            word-break: break-all;
+            color: #666;
+        }
+
+        /* File List */
+        .file-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-top: 15px;
+        }
+
+        .file-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 15px;
+            background: #f8f9fa;
+            border-radius: 6px;
+            border: 1px solid #e0e0e0;
+            transition: all 0.2s ease;
+        }
+
+        .file-item:hover {
+            background: #fff;
+            border-color: var(--orange);
+        }
+
+        .file-item i {
+            font-size: 24px;
+            color: var(--orange);
+        }
+
+        .file-item .file-info {
+            flex: 1;
+        }
+
+        .file-item .file-name {
+            font-weight: 500;
+            color: #333;
+        }
+
+        .file-item .file-size {
+            font-size: 11px;
+            color: #999;
+        }
+
+        .file-item .file-download {
+            color: var(--navy);
+            text-decoration: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+
+        .file-item .file-download:hover {
+            background: var(--navy);
+            color: white;
         }
 
         /* ============================================
-                                                                                                                                                                                                                                                       SIGNATURES SECTION
-                                                                                                                                                                                                                                                    ============================================ */
+            SIGNATURES SECTION - With Toggle & Responsive
+        ============================================ */
         .signatures-section {
             background: white;
             border: 1px solid #e0e0e0;
@@ -498,11 +600,53 @@
             margin-bottom: 20px;
         }
 
+        .signatures-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            margin-bottom: 0;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--orange);
+        }
+
+        .signatures-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 600;
+            font-size: 18px;
+            color: var(--navy);
+            margin: 0;
+        }
+
+        .signatures-toggle-arrow {
+            transition: transform 0.3s ease;
+            font-size: 16px;
+            color: #666;
+        }
+
+        .signatures-section.collapsed .signatures-toggle-arrow {
+            transform: rotate(-90deg);
+        }
+
+        .signatures-container {
+            margin-top: 20px;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+            max-height: 2000px;
+        }
+
+        .signatures-section.collapsed .signatures-container {
+            max-height: 0;
+            margin-top: 0;
+        }
+
         .signature-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
             gap: 20px;
-            margin-top: 20px;
+            margin-top: 0;
         }
 
         .signature-item {
@@ -511,13 +655,12 @@
             border: 1px solid #e0e0e0;
             border-radius: 8px;
             background: #f9f9f9;
-            transition: all 0.3s;
-            flex-shrink: 0;
+            transition: all 0.2s;
         }
 
         .signature-item:hover {
             transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 4px 8px rgba(0, 51, 102, 0.1);
         }
 
         .signature-label {
@@ -530,14 +673,15 @@
         }
 
         .signature-image {
-            width: 100%;
-            max-height: 100px;
+            width: 300px;
+            height: 200px;
             object-fit: contain;
-            margin-bottom: 15px;
+            margin: 0 auto 15px;
             border: 1px solid #ddd;
             border-radius: 6px;
-            background: white;
-            padding: 10px;
+            background: transparent;
+            padding: 5px;
+            display: block;
         }
 
         .signature-info {
@@ -559,9 +703,171 @@
             margin-top: 5px;
         }
 
+        /* Mobile Signature - Ukuran 162x108 */
+        @media (max-width: 768px) {
+            .signature-grid {
+                display: flex;
+                flex-wrap: nowrap;
+                overflow-x: auto;
+                gap: 12px;
+                padding-bottom: 10px;
+                -webkit-overflow-scrolling: touch;
+                scrollbar-width: thin;
+            }
+
+            .signature-grid::-webkit-scrollbar {
+                height: 4px;
+            }
+
+            .signature-grid::-webkit-scrollbar-track {
+                background: #f1f1f1;
+                border-radius: 4px;
+            }
+
+            .signature-grid::-webkit-scrollbar-thumb {
+                background: var(--orange);
+                border-radius: 4px;
+            }
+
+            .signature-item {
+                min-width: 200px;
+                flex-shrink: 0;
+                padding: 12px;
+            }
+
+            .signature-label {
+                font-size: 11px;
+                margin-bottom: 10px;
+            }
+
+            .signature-image {
+                width: 162px !important;
+                height: 108px !important;
+                margin-bottom: 10px;
+            }
+
+            .signature-info strong {
+                font-size: 12px;
+            }
+
+            .signature-info {
+                font-size: 10px;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .signature-item {
+                min-width: 180px;
+                padding: 10px;
+            }
+
+            .signature-image {
+                width: 140px !important;
+                height: 93px !important;
+            }
+
+            .signature-label {
+                font-size: 10px;
+            }
+
+            .signature-info strong {
+                font-size: 11px;
+            }
+        }
+
+        /* Print styles tetap sama */
+        @media print {
+            .signatures-section.collapsed .signatures-container {
+                max-height: none !important;
+                display: block !important;
+            }
+
+            .signatures-toggle-arrow {
+                display: none !important;
+            }
+
+            .signature-image {
+                width: 300px;
+                height: 200px;
+            }
+        }
+
         /* ============================================
-                                                                                                                                                                                                                                                       APPROVAL STATUS
-                                                                                                                                                                                                                                                    ============================================ */
+                                                PURCHASE REQUEST (PR) SECTION
+                                            ============================================ */
+        .pr-alert {
+            background: #fff8e1;
+            border: 1px solid #ffe082;
+            border-left: 4px solid var(--orange);
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+        }
+
+        .pr-card {
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            overflow: hidden;
+        }
+
+        .pr-card-header {
+            background: var(--navy);
+            color: white;
+            padding: 12px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .pr-card-body {
+            padding: 20px;
+        }
+
+        .pr-photos {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .pr-photo-item {
+            position: relative;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid #e0e0e0;
+        }
+
+        .pr-photo-item img {
+            width: 100%;
+            height: 150px;
+            object-fit: cover;
+            cursor: pointer;
+        }
+
+        .pr-photo-item .photo-description {
+            padding: 8px;
+            font-size: 11px;
+            background: #f8f9fa;
+            text-align: center;
+            word-break: break-all;
+        }
+
+        .pr-notes {
+            background: #f8f9fa;
+            padding: 12px;
+            border-radius: 6px;
+            margin-top: 15px;
+            font-size: 13px;
+            border-left: 3px solid var(--orange);
+        }
+
+        /* ============================================
+                            APPROVAL STATUS - Horizontal di semua device
+                        ============================================ */
         .approval-status {
             background: white;
             border: 1px solid #e0e0e0;
@@ -572,7 +878,7 @@
 
         .approval-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            grid-template-columns: repeat(4, 1fr);
             gap: 15px;
             margin-top: 15px;
         }
@@ -582,7 +888,6 @@
             padding: 15px;
             border: 1px solid #e0e0e0;
             border-radius: 6px;
-            flex-shrink: 0;
         }
 
         .approval-status-badge {
@@ -591,28 +896,76 @@
             font-size: 11px;
             font-weight: 600;
             text-transform: uppercase;
+            color: white;
         }
 
         .status-pending {
-            background: #fff3cd;
-            color: #856404;
+            background: var(--warning);
+            color: #212529;
         }
 
         .status-approved {
-            background: #d4edda;
-            color: #155724;
+            background: var(--success);
         }
 
         .status-rejected {
-            background: #f8d7da;
-            color: #721c24;
+            background: var(--danger);
+        }
+
+        /* Mobile: tetap horizontal dengan scroll jika perlu */
+        @media (max-width: 768px) {
+            .approval-grid {
+                display: flex;
+                flex-wrap: nowrap;
+                overflow-x: auto;
+                gap: 12px;
+                padding-bottom: 10px;
+                -webkit-overflow-scrolling: touch;
+                scrollbar-width: thin;
+            }
+
+            .approval-grid::-webkit-scrollbar {
+                height: 4px;
+            }
+
+            .approval-grid::-webkit-scrollbar-track {
+                background: #f1f1f1;
+                border-radius: 4px;
+            }
+
+            .approval-grid::-webkit-scrollbar-thumb {
+                background: var(--orange);
+                border-radius: 4px;
+            }
+
+            .approval-item {
+                min-width: 140px;
+                flex-shrink: 0;
+                padding: 12px;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .approval-item {
+                min-width: 130px;
+                padding: 10px;
+            }
+
+            .approval-item .mb-2 {
+                font-size: 11px;
+            }
+
+            .approval-status-badge {
+                font-size: 10px;
+                padding: 3px 8px;
+            }
         }
 
         /* ============================================
-                                                                                                                                                                                                                                                       DUE DATE WIDGET
-                                                                /* Tambahkan di CSS section */
+                                                DUE DATE WIDGET
+                                            ============================================ */
         .due-date-compact {
-            background: linear-gradient(135deg, #ff6200, #ff7b00);
+            background: var(--navy);
             color: white;
             border-radius: 8px;
             margin-bottom: 15px;
@@ -620,15 +973,15 @@
             display: flex;
             flex-direction: column;
             gap: 8px;
-            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 3px 6px rgba(0, 51, 102, 0.1);
         }
 
         .due-date-compact.overdue {
-            background: linear-gradient(135deg, #dc3545, #c82333) !important;
+            background: var(--danger) !important;
         }
 
         .due-date-compact.completed {
-            background: linear-gradient(135deg, #28a745, #20c997) !important;
+            background: var(--success) !important;
         }
 
         .due-date-header {
@@ -667,11 +1020,9 @@
             letter-spacing: 0.5px;
         }
 
-
-
         /* ============================================
-                                                                                                                                                                                                                                                       COMMENTS SECTION - DENGAN TOGGLE
-                                                                                                                                                                                                                                                    ============================================ */
+                                                COMMENTS SECTION
+                                            ============================================ */
         .comments-section {
             background: white;
             border: 1px solid #e0e0e0;
@@ -687,7 +1038,7 @@
             cursor: pointer;
             margin-bottom: 0;
             padding-bottom: 10px;
-            border-bottom: 2px solid var(--primary-color);
+            border-bottom: 2px solid var(--orange);
         }
 
         .comments-title {
@@ -696,7 +1047,7 @@
             gap: 10px;
             font-weight: 600;
             font-size: 18px;
-            color: var(--primary-color);
+            color: var(--navy);
             margin: 0;
         }
 
@@ -726,11 +1077,26 @@
             padding: 20px;
             border-bottom: 1px solid #eee;
             margin-bottom: 20px;
+            position: relative;
         }
 
         .comment-item:last-child {
             border-bottom: none;
             margin-bottom: 0;
+        }
+
+        .follow-up-badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: var(--orange);
+            color: white;
+            font-size: 10px;
+            font-weight: 600;
+            padding: 3px 8px;
+            border-radius: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
         .comment-header {
@@ -744,7 +1110,7 @@
             height: 40px;
             border-radius: 50%;
             margin-right: 12px;
-            background: var(--primary-color);
+            background: var(--navy);
             color: white;
             display: flex;
             align-items: center;
@@ -798,9 +1164,7 @@
             border-top: 1px dashed #eee;
         }
 
-        /* ============================================
-                                                                                                                                                                                                                                                       COMMENT FORM (akan disembunyikan jika status tertentu)
-                                                                                                                                                                                                                                                    ============================================ */
+        /* Comment Form */
         .comment-form-section {
             background: white;
             border: 1px solid #e0e0e0;
@@ -819,9 +1183,26 @@
             pointer-events: none;
         }
 
+        .comment-textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            line-height: 1.6;
+            resize: vertical;
+            min-height: 120px;
+        }
+
+        .comment-textarea:focus {
+            border-color: var(--orange);
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(255, 102, 0, 0.1);
+        }
+
         /* ============================================
-                                                                                                                                                                                                                                                       ACTIVITY SECTION - WITH TOGGLE
-                                                                                                                                                                                                                                                    ============================================ */
+                                                ACTIVITY SECTION
+                                            ============================================ */
         .activity-section {
             background: #f8f9fa;
             border: 1px solid #e0e0e0;
@@ -837,7 +1218,7 @@
             cursor: pointer;
             margin-bottom: 0;
             padding-bottom: 10px;
-            border-bottom: 2px solid var(--primary-color);
+            border-bottom: 2px solid var(--orange);
         }
 
         .activity-title {
@@ -846,7 +1227,7 @@
             gap: 10px;
             font-weight: 600;
             font-size: 18px;
-            color: var(--primary-color);
+            color: var(--navy);
             margin: 0;
         }
 
@@ -881,7 +1262,7 @@
             top: 0;
             bottom: 0;
             width: 2px;
-            background: linear-gradient(to bottom, var(--primary-color), var(--secondary-color));
+            background: var(--orange);
         }
 
         .activity-item {
@@ -897,9 +1278,9 @@
             width: 12px;
             height: 12px;
             border-radius: 50%;
-            background: var(--primary-color);
+            background: var(--navy);
             border: 3px solid #f8f9fa;
-            box-shadow: 0 0 0 2px var(--primary-color);
+            box-shadow: 0 0 0 2px var(--navy);
         }
 
         .activity-content {
@@ -931,7 +1312,7 @@
             width: 0;
             height: 0;
             border-top: 10px solid transparent;
-            border-bottom: 10px transparent;
+            border-bottom: 10px solid transparent;
             border-right: 10px solid white;
         }
 
@@ -964,50 +1345,90 @@
         }
 
         /* ============================================
-                                                                                                                                                                                                                                                       VOUCHER INFO
-                                                                                                                                                                                                                                                    ============================================ */
-        .voucher-alert {
-            background: #fff8e1;
-            border: 1px solid #ffe082;
-            border-left: 4px solid #ffc107;
-            padding: 15px;
-            border-radius: 6px;
-            margin-bottom: 20px;
+                                                MODAL STYLES
+                                            ============================================ */
+        .modal-dialog {
+            margin: 0.5rem;
+            max-width: 500px;
         }
 
-        /* ============================================
-                                                                                                                                                                                                                                                       MODAL STYLES
-                                                                                                                                                                                                                                                    ============================================ */
+        @media (min-width: 576px) {
+            .modal-dialog {
+                margin: 1.75rem auto;
+                max-width: 500px;
+            }
+        }
+
+        .modal-content {
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .modal-header {
+            background: var(--navy) !important;
+            color: white !important;
+            padding: 1rem 1.5rem;
+            border-bottom: none;
+        }
+
+        .modal-header .modal-title {
+            color: white !important;
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        .modal-header .btn-close {
+            filter: brightness(0) invert(1);
+            opacity: 1;
+        }
+
+        .modal-body {
+            padding: 1.5rem;
+            max-height: calc(100vh - 200px);
+            overflow-y: auto;
+        }
+
+        .modal-footer {
+            padding: 1rem 1.5rem;
+            border-top: 1px solid #dee2e6;
+        }
+
         .modal-signature-canvas {
             border: 2px dashed #ddd;
             border-radius: 6px;
             cursor: crosshair;
-            background: white;
+            background: transparent;
             width: 100%;
             height: 200px;
+            max-width: 300px;
+            margin: 0 auto;
+            display: block;
         }
 
         .signature-actions {
             display: flex;
             gap: 10px;
             margin-top: 10px;
+            justify-content: center;
+        }
+
+        .signature-canvas-container {
+            display: flex;
+            justify-content: center;
+            background: transparent;
+            padding: 10px;
         }
 
         /* ============================================
-                                                                                                                                                                                                                                                       MOBILE RESPONSIVE IMPROVEMENTS
-                                                                                                                                                                                                                                                    ============================================ */
-
-        /* DESKTOP: Grid normal */
+                                                MOBILE RESPONSIVE
+                                            ============================================ */
         @media (min-width: 993px) {
             .info-grid {
                 grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
             }
         }
 
-        /* TABLET: 2 kolom */
         @media (max-width: 992px) {
-
-            /* Ticket Header - 2 kolom */
             .info-grid {
                 grid-template-columns: repeat(2, 1fr);
                 gap: 12px;
@@ -1033,34 +1454,16 @@
                 line-height: 1.4;
             }
 
-            /* Judul Ticket */
             .ticket-title {
                 font-size: 20px;
             }
-
-            .ticket-subtitle {
-                font-size: 13px;
-            }
-
-            /* Stage Progress */
-            .stage-info {
-                padding: 12px;
-            }
-
-            .stage-name {
-                font-size: 15px;
-            }
         }
 
-        /* MOBILE: Portrait & Landscape tetap 2 kolom */
         @media (max-width: 768px) {
-
-            /* Sidebar - Quick Actions */
             .sidebar-quick-actions {
                 display: none !important;
             }
 
-            /* Action Buttons Bar */
             .action-buttons {
                 display: flex;
                 flex-wrap: nowrap;
@@ -1070,7 +1473,6 @@
                 margin-bottom: 15px;
                 -webkit-overflow-scrolling: touch;
                 scrollbar-width: none;
-                white-space: nowrap;
             }
 
             .action-buttons::-webkit-scrollbar {
@@ -1097,27 +1499,11 @@
                 font-size: 12px;
             }
 
-            /* Ticket Header - Tetap 2 kolom di mobile */
-            .ticket-header-container {
-                margin-bottom: 15px;
-                border-radius: 6px;
-            }
-
-            .header-title {
-                padding: 12px 15px;
-                font-size: 16px;
-            }
-
-            .header-info {
-                padding: 15px;
-            }
-
             .info-grid {
                 grid-template-columns: repeat(2, 1fr);
                 gap: 10px;
             }
 
-            /* Optimasi untuk mobile - lebih compact */
             .info-item {
                 flex-direction: column;
                 align-items: flex-start;
@@ -1133,10 +1519,8 @@
 
             .info-label {
                 font-size: 11px;
-                color: #666;
                 min-width: auto;
                 width: 100%;
-                font-weight: 600;
             }
 
             .info-value {
@@ -1146,57 +1530,11 @@
                 word-break: break-word;
             }
 
-            /* Judul Ticket untuk mobile */
-            .ticket-title-section {
-                margin-bottom: 20px;
-                padding-bottom: 12px;
-            }
-
             .ticket-title {
                 font-size: 18px;
             }
 
-            .ticket-subtitle {
-                font-size: 12px;
-            }
-
-            .ticket-title-label {
-                font-size: 12px;
-            }
-
-            /* Khusus untuk teks panjang */
-            .info-item:nth-child(1) .info-value,
-            .info-item:nth-child(2) .info-value {
-                font-size: 11px;
-            }
-
-            /* Untuk ticket number berikan highlight */
-            .info-item:nth-child(3) .info-value {
-                font-weight: 700;
-                color: var(--primary-color);
-                font-size: 13px;
-            }
-
-            /* Stage Progress - Mobile Friendly */
-            .stage-info {
-                padding: 12px;
-            }
-
-            .stage-name {
-                font-size: 14px;
-                line-height: 1.4;
-            }
-
-            .stage-progress {
-                gap: 3px;
-            }
-
-            .stage-dot {
-                width: 10px;
-                height: 10px;
-            }
-
-            /* Signature Section - Horizontal Layout */
+            /* Signature Grid - Horizontal Scroll */
             .signature-grid {
                 display: flex;
                 flex-wrap: nowrap;
@@ -1205,7 +1543,6 @@
                 padding-bottom: 10px;
                 -webkit-overflow-scrolling: touch;
                 scrollbar-width: none;
-                margin-top: 15px;
             }
 
             .signature-grid::-webkit-scrollbar {
@@ -1213,420 +1550,55 @@
             }
 
             .signature-item {
-                min-width: 180px;
+                min-width: 320px;
                 flex-shrink: 0;
                 padding: 15px;
             }
 
-            .signature-label {
-                font-size: 12px;
-            }
-
-            .signature-image {
-                max-height: 70px;
-            }
-
-            .signature-info {
-                font-size: 11px;
-            }
-
-            .signature-info strong {
-                font-size: 12px;
-            }
-
-            /* Approval Status - Horizontal Layout */
-            .approval-grid {
-                display: flex;
-                flex-wrap: nowrap;
-                overflow-x: auto;
+            /* Image Gallery */
+            .image-gallery {
+                grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
                 gap: 10px;
-                padding-bottom: 10px;
-                -webkit-overflow-scrolling: touch;
-                margin-top: 15px;
             }
 
-            .approval-grid::-webkit-scrollbar {
-                display: none;
+            .gallery-item img {
+                height: 120px;
             }
 
-            .approval-item {
-                min-width: 140px;
-                flex-shrink: 0;
-                padding: 12px;
-            }
-
-            .due-date-compact {
-                padding: 10px;
-                gap: 6px;
-            }
-
-            .due-date-label {
-                font-size: 13px;
-            }
-
-            .due-date-label i {
-                font-size: 14px;
-            }
-
-            .due-date-status {
-                font-size: 10px;
-                padding: 2px 6px;
-            }
-
-            .due-date-value {
-                font-size: 13px;
-                padding: 6px;
-            }
-
-            /* Ticket Body */
-            .ticket-body {
-                padding: 15px;
-            }
-
-            .section-title {
-                font-size: 16px;
-            }
-
-            .description-box {
-                padding: 15px;
-                font-size: 14px;
-            }
-
-            /* Comments Section */
-            .comments-section {
-                padding: 15px;
-            }
-
-            .comments-header {
-                padding: 0 0 10px 0;
-            }
-
-            .comments-title {
-                font-size: 16px;
-            }
-
-            .comments-toggle-arrow {
-                font-size: 14px;
-            }
-
-            .comment-item {
-                padding: 15px 0;
-            }
-
-            .comment-header {
-                flex-direction: row;
-                align-items: center;
-            }
-
-            .comment-avatar {
-                margin-bottom: 0;
-                width: 35px;
-                height: 35px;
-                font-size: 14px;
-                margin-right: 10px;
-            }
-
-            .comment-body {
-                padding-left: 45px;
-                font-size: 13px;
-            }
-
-            /* Comment Form */
-            .comment-form-section {
-                padding: 15px;
-            }
-
-            .comment-form-section .row {
-                flex-direction: column;
-            }
-
-            .comment-form-section .col-md-6 {
-                width: 100%;
-                margin-bottom: 15px;
-            }
-
-            /* Activity Section */
-            .activity-section {
-                padding: 15px;
-            }
-
-            .activity-header {
-                padding: 0 0 10px 0;
-            }
-
-            .activity-title {
-                font-size: 16px;
-            }
-
-            .toggle-arrow {
-                font-size: 14px;
-            }
-
-            .activity-timeline {
-                padding-left: 20px;
-            }
-
-            .activity-item::before {
-                left: -15px;
-                width: 10px;
-                height: 10px;
-            }
-
-            .activity-content {
-                padding: 12px;
-            }
-
-            .activity-content::before,
-            .activity-content::after {
-                display: none;
-            }
-
-            /* Attachments */
-            .attachment-list {
+            .pr-photos {
+                grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
                 gap: 10px;
-                flex-wrap: wrap;
             }
 
-            .image-attachment {
-                max-width: 120px;
-                max-height: 100px;
-            }
-
-            /* Modal Adjustments */
-            .modal-dialog {
-                margin: 10px;
-            }
-
-            .modal-header {
-                padding: 12px 15px;
-            }
-
-            .modal-body {
-                padding: 15px;
-            }
-
-            .modal-footer {
-                padding: 12px 15px;
-            }
-
-            /* Voucher Alert */
-            .voucher-alert {
-                padding: 12px;
-            }
-
-            .voucher-alert i {
-                font-size: 24px;
-            }
-
-            /* Quick Info in Sidebar */
-            .card .small {
-                font-size: 12px;
+            .pr-photo-item img {
+                height: 120px;
             }
         }
 
-        /* Mobile kecil (≤ 576px): tetap 2 kolom tapi lebih compact */
         @media (max-width: 576px) {
-            .header-title {
-                font-size: 15px;
-                padding: 10px 12px;
+            .image-gallery {
+                grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
             }
 
-            .header-info {
-                padding: 12px;
+            .gallery-item img {
+                height: 100px;
             }
 
-            .info-grid {
-                grid-template-columns: repeat(2, 1fr);
-                gap: 8px;
+            .pr-photos {
+                grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
             }
 
-            .info-item {
-                padding: 8px;
-                min-height: 65px;
-                gap: 5px;
+            .pr-photo-item img {
+                height: 100px;
             }
 
-            .info-item i {
-                font-size: 14px;
-                width: 18px;
-            }
-
-            .info-label {
-                font-size: 10px;
-            }
-
-            .info-value {
-                font-size: 11px;
-                line-height: 1.3;
-            }
-
-            /* Judul Ticket untuk mobile kecil */
-            .ticket-title {
-                font-size: 16px;
-            }
-
-            .ticket-subtitle {
-                font-size: 11px;
-            }
-
-            .ticket-title-label {
-                font-size: 11px;
-            }
-
-            .info-item:nth-child(1) .info-value,
-            .info-item:nth-child(2) .info-value {
-                font-size: 10px;
-            }
-
-            .info-item:nth-child(3) .info-value {
-                font-size: 12px;
-            }
-
-            /* Action buttons lebih kecil */
-            .action-buttons {
-                padding: 10px;
-                gap: 6px;
-            }
-
-            .btn-action {
-                padding: 8px 12px;
-                font-size: 12px;
-                min-width: 65px;
-            }
-
-            .btn-action i {
-                font-size: 13px;
-                margin-right: 4px;
-            }
-
-            .btn-action span {
-                font-size: 11px;
-            }
-
-            /* Status badges lebih kecil */
-            .status-badge,
-            .priority-badge {
-                font-size: 9px;
-                padding: 3px 6px;
-            }
-
-            .due-date-compact {
-                padding: 8px;
-            }
-
-            .due-date-label {
-                font-size: 12px;
-            }
-
-            .due-date-value {
-                font-size: 12px;
-                padding: 5px;
+            .pr-card-header {
+                flex-direction: column;
+                text-align: center;
             }
         }
 
-        /* Mobile sangat kecil (≤ 400px) */
-        @media (max-width: 400px) {
-            .info-grid {
-                grid-template-columns: repeat(2, 1fr);
-                gap: 6px;
-            }
-
-            .info-item {
-                padding: 6px;
-                min-height: 60px;
-            }
-
-            .info-label {
-                font-size: 9px;
-            }
-
-            .info-value {
-                font-size: 10px;
-            }
-
-            .info-item:nth-child(3) .info-value {
-                font-size: 11px;
-            }
-
-            .header-title {
-                font-size: 14px;
-                padding: 8px 10px;
-            }
-
-            /* Judul Ticket untuk mobile sangat kecil */
-            .ticket-title {
-                font-size: 15px;
-            }
-
-            .ticket-subtitle {
-                font-size: 10px;
-            }
-
-            .btn-action {
-                padding: 6px 10px;
-                min-width: 60px;
-                font-size: 11px;
-            }
-
-            .btn-action span {
-                font-size: 10px;
-            }
-
-            .btn-action i {
-                font-size: 12px;
-                margin-right: 3px;
-            }
-        }
-
-        /* Landscape Mode untuk Mobile */
-        @media (max-width: 768px) and (orientation: landscape) {
-
-            /* Di landscape, buat lebih rapat */
-            .info-grid {
-                gap: 8px;
-            }
-
-            .info-item {
-                min-height: 60px;
-                padding: 8px;
-            }
-
-            .action-buttons {
-                flex-wrap: wrap;
-                overflow-x: visible;
-            }
-
-            .btn-action {
-                min-width: 90px;
-            }
-
-            /* Activity timeline lebih pendek di landscape */
-            .activity-timeline {
-                max-height: 150px;
-                overflow-y: auto;
-            }
-
-            /* Comments container lebih pendek di landscape */
-            .comments-container {
-                max-height: 150px;
-                overflow-y: auto;
-            }
-        }
-
-        /* Fix untuk badge agar tidak kepotong */
-        .status-badge,
-        .priority-badge {
-            display: inline-block;
-            max-width: 100%;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-            vertical-align: middle;
-        }
-
-        /* ============================================
-                                                                                                                                                                                                                                                       PRINT STYLES
-                                                                                                                                                                                                                                                    ============================================ */
+        /* Print Styles */
         @media print {
             .no-print {
                 display: none !important;
@@ -1641,6 +1613,7 @@
                 background: #000 !important;
                 color: #fff !important;
                 -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
             }
 
             .action-buttons,
@@ -1658,11 +1631,6 @@
                 page-break-inside: avoid;
             }
 
-            .btn-action {
-                display: none !important;
-            }
-
-            /* Pastikan semua section terbuka saat print */
             .activity-section.collapsed .activity-timeline,
             .comments-section.collapsed .comments-container {
                 max-height: none !important;
@@ -1673,24 +1641,39 @@
             .comments-toggle-arrow {
                 display: none !important;
             }
+
+            .status-badge,
+            .priority-badge {
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
         }
 
-        /* ============================================
-                                                                                                                                                                                                                                                       UTILITY CLASSES
-                                                                                                                                                                                                                                                    ============================================ */
+        .text-navy {
+            color: var(--navy) !important;
+        }
+
+        .bg-navy {
+            background-color: var(--navy) !important;
+        }
+
+        .border-navy {
+            border-color: var(--navy) !important;
+        }
+
         .text-orange {
-            color: var(--primary-color) !important;
+            color: var(--orange) !important;
         }
 
         .bg-orange {
-            background-color: var(--primary-color) !important;
+            background-color: var(--orange) !important;
         }
 
         .border-orange {
-            border-color: var(--primary-color) !important;
+            border-color: var(--orange) !important;
         }
 
-        /* Image Modal Fix */
+        /* Image Modal */
         .image-modal-backdrop {
             position: fixed;
             top: 0;
@@ -1736,81 +1719,44 @@
             color: #333;
         }
 
-        /* Quick Action Button */
-        .btn-quick-approve {
-            background: linear-gradient(135deg, #20c997, #28a745);
+        .followup-alert {
+            background: #fff8e1;
+            border: 1px solid var(--orange);
+            border-radius: 6px;
+            padding: 15px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .followup-alert .btn {
+            background: var(--orange);
             color: white;
             border: none;
             padding: 8px 16px;
             border-radius: 6px;
-            font-size: 12px;
             font-weight: 600;
-            transition: all 0.3s;
         }
 
-        .btn-quick-approve:hover {
-            background: linear-gradient(135deg, #1ba87e, #218838);
-            transform: translateY(-2px);
-        }
-
-        /* Better scrolling for mobile */
-        body {
-            -webkit-overflow-scrolling: touch;
-        }
-
-        /* Fix untuk iOS Safari */
-        @supports (-webkit-touch-callout) {
-
-            .action-buttons,
-            .signature-grid,
-            .approval-grid {
-                -webkit-overflow-scrolling: touch;
-            }
-        }
-
-        /* Animation for mobile buttons */
-        .btn-action.active {
-            transform: scale(0.95);
-            opacity: 0.8;
-        }
-
-        /* Responsive adjustments for Toggle buttons */
-        .comments-collapse-btn,
-        .activity-collapse-btn {
-            background: none;
-            border: none;
-            padding: 5px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.3s ease;
-        }
-
-        .comments-collapse-btn:hover,
-        .activity-collapse-btn:hover {
-            opacity: 0.8;
-        }
-
-        .comments-collapse-btn:focus,
-        .activity-collapse-btn:focus {
-            outline: none;
+        .followup-alert .btn:hover {
+            opacity: 0.9;
         }
     </style>
 @endpush
 
 @section('content')
     @php
-
         function getDisplayStage($actualStage)
         {
-            // Mapping: actual stage → display stage (agar tampil berurutan 1-9)
             $stageMapping = [
                 1 => 1, // Requested
                 2 => 2, // Received
                 3 => 3, // OM Approval
                 4 => 4, // In Progress
-                5 => 4, // VR (ditampilkan sebagai stage 4 juga)
+                5 => 4, // PR (ditampilkan sebagai stage 4 juga)
                 6 => 5, // Completed
                 7 => 6, // User Check Done
                 8 => 7, // GM Approval
@@ -1818,7 +1764,7 @@
             ];
             return $stageMapping[$actualStage] ?? $actualStage;
         }
-        // Helper function untuk warna avatar
+
         function stringToColorPHP($str)
         {
             if (!$str) {
@@ -1836,7 +1782,6 @@
             return $color;
         }
 
-        // Determine stage name
         function getStageName($stage)
         {
             $stages = [
@@ -1844,7 +1789,7 @@
                 2 => 'Received by Admin Engineering',
                 3 => 'OM Approval',
                 4 => 'In Progress / Technician Working',
-                5 => 'Waiting VR Approval', // Tetap ada tapi display stage 4
+                5 => 'Waiting PR Approval',
                 6 => 'Completed by Technician',
                 7 => 'User Check Done - Waiting GM',
                 8 => 'GM Approved - Ready for Closure',
@@ -1853,16 +1798,12 @@
             return $stages[$stage] ?? 'Unknown Stage';
         }
 
-        // Get display stage untuk progress bar
         $displayStage = getDisplayStage($ticket->current_stage);
-        // Get current user
         $user = auth()->user();
         $hasSignature = !empty($user->signature_path) && Storage::disk('public')->exists($user->signature_path);
-
-        // Hanya AdminEng, OM, GM yang bisa save signature
         $canSaveSignature = in_array($user->role, ['admin_eng', 'om', 'gm']);
 
-        // Determine available actions based on role and ticket status
+        // Determine available actions
         $availableActions = [];
         $ticketStatus = $ticket->status;
         $userRole = $user->role;
@@ -1872,12 +1813,10 @@
             if ($ticketStatus === 'open') {
                 $availableActions[] = 'receive';
                 $availableActions[] = 'cancel';
-            } elseif ($ticketStatus === 'pending_om') {
-                // Waiting for OM
             } elseif (in_array($ticket->status, ['in_progress', 'pending_vr'])) {
                 $availableActions[] = 'assign';
             } elseif ($ticketStatus === 'pending_vr') {
-                $availableActions[] = 'create_vr';
+                $availableActions[] = 'create_pr';
                 $availableActions[] = 'assign';
                 $availableActions[] = 'cancel';
             } elseif ($ticketStatus === 'ready_for_closure') {
@@ -1891,12 +1830,11 @@
             $availableActions[] = 'om_reject';
         }
 
+        // Technician Actions
         if ($userRole === 'technician' && $ticket->assigned_to == $user->id) {
             if ($ticket->status === 'in_progress') {
                 $availableActions[] = 'complete';
-                $availableActions[] = 'need_vr';
-            } elseif ($ticket->status === 'pending_vr') {
-                // Waiting for VR
+                $availableActions[] = 'need_pr';
             }
         }
 
@@ -1909,59 +1847,75 @@
             }
         }
 
+        // Manager Actions (for department tickets)
+        $isManagerForDepartment = $user->role === 'manager' && $ticket->department_id === $user->department_id;
+        if ($isManagerForDepartment && $ticketStatus === 'completed') {
+            $availableActions[] = 'user_check_accept';
+            $availableActions[] = 'user_check_reject';
+        }
+
         // GM Actions
         if ($userRole === 'gm' && $ticketStatus === 'pending_gm') {
             $availableActions[] = 'gm_approve';
             $availableActions[] = 'gm_reject';
         }
 
-        // Always available
         $availableActions[] = 'print';
         $availableActions[] = 'back';
 
-        // Check VR status
-        // $hasVR = $ticket->voucherRequests->count() > 0;
-        $needsVR = $ticket->approval->needs_vr ?? false;
-        // ================== LOGIKA VR ==================
-        $hasVR = $ticket->voucherRequests->count() > 0;
-        $hasPaidVR = false;
-        $hasPendingOrApprovedVR = false;
+        // Check PR status
+        $hasPR = $ticket->voucherRequests->count() > 0;
+        $needsPR = $ticket->approval->needs_vr ?? false;
+        $hasPaidPR = false;
+        $hasPendingOrApprovedPR = false;
 
-        foreach ($ticket->voucherRequests as $vr) {
-            if ($vr->status === 'paid') {
-                $hasPaidVR = true;
+        foreach ($ticket->voucherRequests as $pr) {
+            if ($pr->status === 'paid') {
+                $hasPaidPR = true;
             }
-            if (in_array($vr->status, ['pending', 'admin_approved', 'om_approved', 'gm_approved', 'paid'])) {
-                $hasPendingOrApprovedVR = true;
+            if (in_array($pr->status, ['pending', 'admin_approved', 'om_approved', 'gm_approved', 'paid'])) {
+                $hasPendingOrApprovedPR = true;
             }
         }
 
-        // Kapan tombol "Need VR" harus ditampilkan?
-        // Hanya tampil jika:
-        // 1. Ticket status = in_progress
-        // 2. Belum ada VR sama sekali, ATAU
-        // 3. Ada VR tapi sudah rejected (boleh request baru)
-        $canShowNeedVRButton = false;
-
+        $canShowNeedPRButton = false;
         if ($userRole === 'technician' && $ticket->assigned_to == $user->id) {
             if ($ticket->status === 'in_progress') {
-                if (!$hasVR) {
-                    $canShowNeedVRButton = true;
+                if (!$hasPR) {
+                    $canShowNeedPRButton = true;
                 } else {
-                    // Cek apakah semua VR sudah rejected
-                    $allVRRejected = true;
-                    foreach ($ticket->voucherRequests as $vr) {
-                        if ($vr->status !== 'rejected') {
-                            $allVRRejected = false;
+                    $allPRRejected = true;
+                    foreach ($ticket->voucherRequests as $pr) {
+                        if ($pr->status !== 'rejected') {
+                            $allPRRejected = false;
                             break;
                         }
                     }
-                    $canShowNeedVRButton = $allVRRejected;
+                    $canShowNeedPRButton = $allPRRejected;
                 }
             }
         }
-        // Check if due date is overdue
+
+        // Separate attachments by type
+        $imageAttachments = $ticket->attachments
+            ->filter(function ($attachment) {
+                $extension = strtolower(pathinfo($attachment->file_name, PATHINFO_EXTENSION));
+                return in_array($extension, ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'svg']);
+            })
+            ->values();
+
+        $fileAttachments = $ticket->attachments
+            ->filter(function ($attachment) {
+                $extension = strtolower(pathinfo($attachment->file_name, PATHINFO_EXTENSION));
+                return !in_array($extension, ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'svg']);
+            })
+            ->values();
+
+        $hasImageAttachments = $imageAttachments->count() > 0;
+        $hasFileAttachments = $fileAttachments->count() > 0;
+
         $isOverdue = $ticket->due_date && $ticket->due_date < now();
+
         function getStatusDisplay($status)
         {
             $statusMap = [
@@ -1969,7 +1923,7 @@
                 'received' => 'Received',
                 'pending_om' => 'OM Approval',
                 'in_progress' => 'In Progress',
-                'pending_vr' => 'VR Approval',
+                'pending_vr' => 'PR Approval',
                 'completed' => 'Completed',
                 'pending_gm' => 'GM Approval',
                 'ready_for_closure' => 'Ready for Closure',
@@ -1978,6 +1932,31 @@
             ];
             return $statusMap[$status] ?? str_replace('_', ' ', $status);
         }
+
+        // Check if user can comment
+        $canComment = false;
+
+        if ($user->role === 'admin_eng') {
+            $canComment = true;
+        } elseif ($user->role === 'manager' && $ticket->department_id === $user->department_id) {
+            $canComment = true;
+        } elseif ($ticket->user_id === $user->id) {
+            $canComment = true;
+        } elseif ($user->role === 'technician' && $ticket->assigned_to === $user->id) {
+            $canComment = true;
+        }
+
+        $showComments = in_array($ticket->status, [
+            'received',
+            'pending_om',
+            'in_progress',
+            'pending_vr',
+            'completed',
+            'pending_gm',
+            'ready_for_closure',
+        ]);
+
+        $needsAdminFollowup = $ticket->approval->needs_admin_followup ?? false;
     @endphp
 
     <div class="row">
@@ -2003,22 +1982,20 @@
                     <div class="sidebar-quick-actions">
                         <h6 class="mb-3"><i class="fas fa-bolt me-2"></i> Quick Actions</h6>
                         <div class="list-group list-group-flush mb-4">
-                            {{-- Di bagian Quick Actions sidebar --}}
                             @if ($hasSignature && $canSaveSignature && in_array($user->role, ['admin_eng', 'om', 'gm']))
-                                <!-- Quick Approve Button -->
                                 @php
                                     $canQuickApprove = false;
                                     $quickApproveMessage = '';
 
                                     if ($user->role === 'admin_eng' && $ticket->status === 'open') {
                                         $canQuickApprove = true;
-                                        $quickApproveMessage = 'Quick receive ticket using saved signature';
+                                        $quickApproveMessage = 'Quick receive using saved signature';
                                     } elseif ($user->role === 'om' && $ticket->status === 'pending_om') {
                                         $canQuickApprove = true;
-                                        $quickApproveMessage = 'Quick approve ticket using saved signature';
+                                        $quickApproveMessage = 'Quick approve using saved signature';
                                     } elseif ($user->role === 'gm' && $ticket->status === 'pending_gm') {
                                         $canQuickApprove = true;
-                                        $quickApproveMessage = 'Quick approve ticket using saved signature';
+                                        $quickApproveMessage = 'Quick approve using saved signature';
                                     }
                                 @endphp
 
@@ -2029,36 +2006,30 @@
                                     </a>
                                 @endif
                             @endif
-                            {{-- Di bagian Quick Actions sidebar --}}
+
                             @if ($ticket->status === 'received' && $user->role === 'admin_eng')
-                                <a href="#" class="list-group-item list-group-item-action text-primary"
-                                    onclick="continueToOM()">
+                                <a href="#" class="list-group-item list-group-item-action" onclick="continueToOM()">
                                     <i class="fas fa-forward me-2"></i> Continue to OM
                                 </a>
                             @endif
-                            <!-- HANYA ADMIN_ENG YANG BISA RECEIVE -->
+
                             @if (in_array('receive', $availableActions))
-                                <a href="#" class="list-group-item list-group-item-action text-orange"
+                                <a href="#" class="list-group-item list-group-item-action text-navy"
                                     onclick="openReceiveModal()">
-                                    <i class="fas fa-check-circle me-2"></i> Receive Ticket
+                                    <i class="fas fa-check-circle me-2"></i> Receive Request
                                     @if ($hasSignature && $canSaveSignature)
                                         <small class="d-block text-muted">Click to choose signature option</small>
                                     @endif
                                 </a>
                             @endif
 
-                            <!-- HANYA ADMIN_ENG YANG BISA ASSIGN -->
-
-                            {{-- Di bagian Quick Actions sidebar --}}
-                            @if (in_array('assign', $availableActions))
-                                @if (in_array($ticket->status, ['in_progress', 'pending_vr']))
-                                    <a href="#" class="list-group-item list-group-item-action"
-                                        onclick="openAssignModal()">
-                                        <i class="fas fa-user-plus me-2"></i> Assign Technician
-                                    </a>
-                                @endif
+                            @if (in_array('assign', $availableActions) && in_array($ticket->status, ['in_progress', 'pending_vr']))
+                                <a href="#" class="list-group-item list-group-item-action"
+                                    onclick="openAssignModal()">
+                                    <i class="fas fa-user-plus me-2"></i> Assign Technician
+                                </a>
                             @endif
-                            <!-- HANYA OM YANG BISA APPROVE -->
+
                             @if (in_array('om_approve', $availableActions))
                                 <a href="#" class="list-group-item list-group-item-action"
                                     onclick="openOmApproveModal()">
@@ -2069,7 +2040,6 @@
                                 </a>
                             @endif
 
-                            <!-- HANYA OM YANG BISA REJECT -->
                             @if (in_array('om_reject', $availableActions))
                                 <a href="#" class="list-group-item list-group-item-action"
                                     onclick="openOmRejectModal()">
@@ -2077,44 +2047,37 @@
                                 </a>
                             @endif
 
-                            <!-- HANYA TECHNICIAN YANG BISA COMPLETE -->
                             @if (in_array('complete', $availableActions))
                                 <a href="#" class="list-group-item list-group-item-action"
                                     onclick="openCompleteModal()">
                                     <i class="fas fa-check-double me-2"></i> Mark Complete
                                 </a>
                             @endif
-                            <!-- HANYA TECHNICIAN YANG BISA REQUEST VR -->
-                            @if ($canShowNeedVRButton)
-                                <a href="#" class="list-group-item list-group-item-action" onclick="openVRModal()">
-                                    <i class="fas fa-file-invoice-dollar me-2"></i> Need VR
+
+                            @if ($canShowNeedPRButton)
+                                <a href="#" class="list-group-item list-group-item-action" onclick="openPRModal()">
+                                    <i class="fas fa-file-invoice-dollar me-2"></i> Need PR
                                 </a>
                             @endif
 
-                            <!-- HANYA ADMIN_ENG YANG BISA CREATE VR -->
-                            @if (in_array('create_vr', $availableActions))
+                            @if (in_array('create_pr', $availableActions))
                                 <a href="{{ route('tickets.vr.create', $ticket->id) }}"
                                     class="list-group-item list-group-item-action">
-                                    <i class="fas fa-file-invoice me-2"></i> Create VR
+                                    <i class="fas fa-file-invoice me-2"></i> Create PR
                                 </a>
                             @endif
 
-                            <!-- HANYA USER ATAU ADMIN_ENG YANG CREATE TICKET YANG BISA CHECK -->
-                            @if ($isReporter && $ticket->status === 'completed')
-                                <!-- HANYA REPORTER YANG BISA CHECK ACCEPT -->
+                            @if (($isReporter || $isManagerForDepartment) && $ticket->status === 'completed')
                                 <a href="#" class="list-group-item list-group-item-action"
                                     onclick="openUserCheckAcceptModal()">
                                     <i class="fas fa-clipboard-check me-2"></i> Accept Completion
                                 </a>
-
-                                <!-- HANYA REPORTER YANG BISA CHECK REJECT -->
                                 <a href="#" class="list-group-item list-group-item-action"
                                     onclick="openUserCheckRejectModal()">
                                     <i class="fas fa-times-circle me-2"></i> Reject Completion
                                 </a>
                             @endif
 
-                            <!-- HANYA GM YANG BISA APPROVE -->
                             @if (in_array('gm_approve', $availableActions))
                                 <a href="#" class="list-group-item list-group-item-action"
                                     onclick="openGmApproveModal()">
@@ -2125,7 +2088,6 @@
                                 </a>
                             @endif
 
-                            <!-- HANYA GM YANG BISA REJECT -->
                             @if (in_array('gm_reject', $availableActions))
                                 <a href="#" class="list-group-item list-group-item-action"
                                     onclick="openGmRejectModal()">
@@ -2133,44 +2095,35 @@
                                 </a>
                             @endif
 
-                            <!-- HANYA ADMIN_ENG YANG BISA CLOSE -->
                             @if (in_array('close_admin', $availableActions))
                                 <a href="#" class="list-group-item list-group-item-action"
                                     onclick="closeTicketAdmin()">
-                                    <i class="fas fa-lock me-2"></i> Close Ticket
+                                    <i class="fas fa-lock me-2"></i> Close Request
                                 </a>
                             @endif
 
-                            <!-- DELETE TICKET (SUPERADMIN ONLY) -->
                             @if ($user->role === 'superadmin')
                                 <a href="#" class="list-group-item list-group-item-action text-danger"
                                     onclick="deleteTicket()">
-                                    <i class="fas fa-trash-alt me-2"></i> Delete Ticket
+                                    <i class="fas fa-trash-alt me-2"></i> Delete Request
                                     <small class="d-block text-muted">Permanent deletion</small>
                                 </a>
                             @endif
-                            {{--
-                            <!-- PRINT -->
-                            <a href="#" class="list-group-item list-group-item-action" onclick="window.print()">
-                                <i class="fas fa-print me-2"></i> Print Ticket
-                            </a> --}}
 
-                            <!-- CANCEL -->
                             @if (in_array('cancel', $availableActions))
                                 <a href="#" class="list-group-item list-group-item-action text-danger"
                                     onclick="openCancelModal()">
-                                    <i class="fas fa-ban me-2"></i> Cancel Ticket
+                                    <i class="fas fa-ban me-2"></i> Cancel Request
                                 </a>
                             @endif
 
-                            <!-- BACK -->
                             <a href="{{ route('tickets.index') }}" class="list-group-item list-group-item-action">
                                 <i class="fas fa-arrow-left me-2"></i> Back to List
                             </a>
                         </div>
                     </div>
 
-                    <!-- Ticket Info -->
+                    <!-- Quick Info -->
                     <h6 class="mb-3"><i class="fas fa-info-circle me-2"></i> Quick Info</h6>
                     <div class="small">
                         <div class="d-flex justify-content-between mb-2 pb-2 border-bottom">
@@ -2206,22 +2159,37 @@
 
         <!-- Main Content -->
         <div class="col-lg-9 col-md-8">
-            <!-- VR Alert -->
-            @if ($needsVR && !$hasVR && $ticket->status === 'pending_vr')
-                <div class="voucher-alert">
+            <!-- PR Alert -->
+            @if ($needsPR && !$hasPR && $ticket->status === 'pending_vr')
+                <div class="pr-alert">
                     <div class="d-flex align-items-center">
                         <i class="fas fa-exclamation-triangle fa-2x text-warning me-3"></i>
                         <div>
-                            <h6 class="mb-1"><strong>VR Required</strong></h6>
-                            <p class="mb-0">This ticket requires a Voucher Request (VR) before work can continue.</p>
-                            @if (in_array('create_vr', $availableActions))
+                            <h6 class="mb-1"><strong>Purchase Request Required</strong></h6>
+                            <p class="mb-0">This maintenance request requires a Purchase Request (PR) before work can
+                                continue.</p>
+                            @if (in_array('create_pr', $availableActions))
                                 <a href="{{ route('tickets.vr.create', $ticket->id) }}"
-                                    class="btn btn-warning btn-sm mt-2">
-                                    <i class="fas fa-file-invoice me-1"></i> Create VR
+                                    class="btn btn-warning btn-sm mt-2" style="background: var(--orange); border: none;">
+                                    <i class="fas fa-file-invoice me-1"></i> Create PR
                                 </a>
                             @endif
                         </div>
                     </div>
+                </div>
+            @endif
+
+            <!-- Admin Follow-up Alert -->
+            @if ($needsAdminFollowup && $user->role === 'admin_eng')
+                <div class="followup-alert">
+                    <div>
+                        <i class="fas fa-exclamation-triangle" style="color: var(--orange);"></i>
+                        <strong>Follow-up Notes Required</strong>
+                        <p class="mb-0 small">Technician completed work without follow-up notes. Please add them.</p>
+                    </div>
+                    <button class="btn" onclick="openAddFollowupModal()">
+                        <i class="fas fa-plus me-1"></i> Add Follow-up Notes
+                    </button>
                 </div>
             @endif
 
@@ -2254,7 +2222,6 @@
 
             <!-- Action Buttons Bar -->
             <div class="action-buttons no-print">
-                {{-- Di bagian Action Buttons Bar --}}
                 @if ($hasSignature && $canSaveSignature && in_array($user->role, ['admin_eng', 'om', 'gm']))
                     @php
                         $showQuickApprove = false;
@@ -2278,120 +2245,97 @@
                         </button>
                     @endif
                 @endif
-                {{-- Di bagian Action Buttons Bar --}}
+
                 @if ($ticket->status === 'received' && $user->role === 'admin_eng')
                     <button class="btn-action btn-primary" onclick="continueToOM()">
                         <i class="fas fa-forward me-2"></i><span>Continue to OM</span>
                     </button>
                 @endif
-                <!-- HANYA ADMIN_ENG UNTUK RECEIVE TICKET -->
+
                 @if (in_array('receive', $availableActions))
                     <button class="btn-action btn-primary" onclick="openReceiveModal()">
-                        <i class="fas fa-check-circle"></i><span>Receive TIcket</span>
+                        <i class="fas fa-check-circle"></i><span>Receive Request</span>
                     </button>
                 @endif
 
-                <!-- HANYA OM UNTUK APPROVE -->
                 @if (in_array('om_approve', $availableActions))
                     <button class="btn-action btn-success" onclick="openOmApproveModal()">
                         <i class="fas fa-thumbs-up"></i> <span>OM Approve</span>
                     </button>
                 @endif
 
-                <!-- HANYA OM UNTUK REJECT -->
                 @if (in_array('om_reject', $availableActions))
                     <button class="btn-action btn-danger" onclick="openOmRejectModal()">
                         <i class="fas fa-thumbs-down"></i> <span>OM Reject</span>
                     </button>
                 @endif
 
-                <!-- HANYA TECHNICIAN UNTUK MARK COMPLETE -->
                 @if (in_array('complete', $availableActions))
                     <button class="btn-action btn-success" onclick="openCompleteModal()">
                         <i class="fas fa-check-double"></i> <span>Mark Complete</span>
                     </button>
                 @endif
 
-                <!-- HANYA TECHNICIAN UNTUK REQUEST VR -->
-                @if (in_array('need_vr', $availableActions))
-                    <button class="btn-action btn-warning" onclick="openVRModal()">
-                        <i class="fas fa-file-invoice-dollar"></i><span> Need VR</span>
+                @if ($canShowNeedPRButton)
+                    <button class="btn-action btn-warning" onclick="openPRModal()">
+                        <i class="fas fa-file-invoice-dollar"></i><span> Need PR</span>
                     </button>
                 @endif
 
-                <!-- HANYA REPORTER UNTUK ACCEPT COMPLETION -->
-                @if ($isReporter && $ticket->status === 'completed')
+                @if (($isReporter || $isManagerForDepartment) && $ticket->status === 'completed')
                     <button class="btn-action btn-success" onclick="openUserCheckAcceptModal()">
                         <i class="fas fa-clipboard-check"></i><span> Accept Completion</span>
                     </button>
-                @endif
-
-                <!-- HANYA REPORTER UNTUK REJECT COMPLETION -->
-                @if ($isReporter && $ticket->status === 'completed')
                     <button class="btn-action btn-danger" onclick="openUserCheckRejectModal()">
                         <i class="fas fa-times-circle"></i> <span>Reject Completion</span>
                     </button>
                 @endif
 
-                <!-- HANYA GM UNTUK APPROVE -->
                 @if (in_array('gm_approve', $availableActions))
                     <button class="btn-action btn-success" onclick="openGmApproveModal()">
                         <i class="fas fa-gavel"></i><span> GM Approve</span>
                     </button>
                 @endif
 
-                <!-- HANYA GM UNTUK REJECT -->
                 @if (in_array('gm_reject', $availableActions))
                     <button class="btn-action btn-danger" onclick="openGmRejectModal()">
                         <i class="fas fa-ban"></i> <span>GM Reject</span>
                     </button>
                 @endif
 
-                <!-- HANYA ADMIN_ENG UNTUK CREATE VR -->
-                @if (in_array('create_vr', $availableActions))
+                @if (in_array('create_pr', $availableActions))
                     <a href="{{ route('tickets.vr.create', $ticket->id) }}" class="btn-action btn-warning">
-                        <i class="fas fa-file-invoice"></i> <span> Create VR</span>
+                        <i class="fas fa-file-invoice"></i> <span> Create PR</span>
                     </a>
                 @endif
 
-                <!-- HANYA ADMIN_ENG UNTUK ASSIGN TECHNICIAN -->
-                {{-- Di bagian Action Buttons --}}
-                @if (in_array('assign', $availableActions))
-                    {{-- Cek apakah status sudah in_progress atau pending_vr --}}
-                    @if (in_array($ticket->status, ['in_progress', 'pending_vr']))
-                        <button class="btn-action btn-primary" onclick="openAssignModal()">
-                            <i class="fas fa-user-plus"></i><span> Assign Technician</span>
-                        </button>
-                    @endif
+                @if (in_array('assign', $availableActions) && in_array($ticket->status, ['in_progress', 'pending_vr']))
+                    <button class="btn-action btn-primary" onclick="openAssignModal()">
+                        <i class="fas fa-user-plus"></i><span> Assign Technician</span>
+                    </button>
                 @endif
 
-
-                <!-- CANCEL TICKET -->
                 @if (in_array('cancel', $availableActions))
                     <button class="btn-action btn-danger" onclick="openCancelModal()">
-                        <i class="fas fa-ban"></i><span> Cancel Ticket</span>
+                        <i class="fas fa-ban"></i><span> Cancel Request</span>
                     </button>
                 @endif
 
-                <!-- CLOSE TICKET (ADMIN FINAL) -->
                 @if (in_array('close_admin', $availableActions))
                     <button class="btn-action btn-dark" onclick="closeTicketAdmin()">
-                        <i class="fas fa-lock"></i> <span>Close Ticket</span>
+                        <i class="fas fa-lock"></i> <span>Close Request</span>
                     </button>
                 @endif
 
-                {{-- Tambahkan tombol di Action Buttons --}}
                 @if (in_array($user->role, ['superadmin', 'admin_eng', 'om', 'gm']) ||
                         $ticket->user_id == $user->id ||
                         $ticket->assigned_to == $user->id)
-                    <button class="btn-action btn-info" onclick="generateReport()">
-                        <i class="fas fa-file-pdf"></i><span> Generate Report</span>
-                    </button>
-                    <button class="btn-action btn-secondary" onclick="viewReportModal()">
-                        <i class="fas fa-eye"></i><span> View Report</span>
+                    <button class="btn-action btn-info" type="button" onclick="openReportModal()"
+                        style="display: flex; align-items: center; gap: 8px;">
+                        <i class="fas fa-file-pdf"></i>
+                        <span>Report</span>
                     </button>
                 @endif
-                <!-- BACK TO LIST -->
                 <a href="{{ route('tickets.index') }}" class="btn-action btn-outline-secondary">
                     <i class="fas fa-arrow-left"></i><span> Back to List</span>
                 </a>
@@ -2417,8 +2361,8 @@
                         </div>
                         <div class="info-item">
                             <i class="fas fa-ticket-alt"></i>
-                            <span class="info-label">TICKET NO:</span>
-                            <span class="info-value" style="font-weight: 700; color: var(--primary-color);">
+                            <span class="info-label">REQUEST NO:</span>
+                            <span class="info-value" style="font-weight: 700; color: var(--navy);">
                                 #{{ $ticket->ticket_number }}
                             </span>
                         </div>
@@ -2481,112 +2425,137 @@
                         <div class="ticket-subtitle">{{ $ticket->subtitle }}</div>
                     @endif
                 </div>
+
                 <h5 class="section-title">
                     <i class="fas fa-tools"></i> PLEASE REPAIR:
                 </h5>
-                <div class="description-box">
-                    {!! $ticket->description !!}
+
+                <div class="scroll-hint">(scroll horizontally)
                 </div>
 
-                <!-- Attachments from TICKET -->
-                @if ($ticket->attachments->count() > 0)
-                    <div class="attachments-section">
-                        <h6 class="section-title" style="font-size: 14px;">
-                            <i class="fas fa-paperclip"></i> ATTACHED FILES ({{ $ticket->attachments->count() }})
-                        </h6>
-                        <div class="attachment-list">
-                            @foreach ($ticket->attachments as $attachment)
-                                @php
-                                    $extension = strtolower(pathinfo($attachment->file_name, PATHINFO_EXTENSION));
-                                    $isImage = in_array($extension, ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp']);
-                                @endphp
-
-                                @if ($isImage)
-                                    <!-- Show image preview -->
-                                    <div class="image-preview-container">
-                                        <img src="{{ Storage::url($attachment->file_path) }}"
-                                            alt="{{ $attachment->file_name }}" class="image-attachment me-2 mb-2"
-                                            title="{{ $attachment->file_name }}"
-                                            data-src="{{ Storage::url($attachment->file_path) }}">
-                                    </div>
-                                @else
-                                    <!-- Show file link for non-images -->
-                                    <a href="{{ Storage::url($attachment->file_path) }}" target="_blank"
-                                        class="attachment-item" download>
-                                        <i class="fas fa-file attachment-icon"></i>
-                                        <span>{{ Str::limit($attachment->file_name, 30) }}</span>
-                                        <small class="text-muted">({{ round($attachment->file_size / 1024) }}
-                                            KB)</small>
-                                    </a>
-                                @endif
-                            @endforeach
-                        </div>
+                <div class="description-container">
+                    <div class="description-wrapper">
+                        <div class="description-content">{{ $ticket->description }}</div>
                     </div>
-                @endif
+                </div>
             </div>
 
-            <!-- APPROVAL STATUS -->
-            @if ($ticket->approval)
-                <div class="approval-status">
+            <!-- ATTACHMENTS SECTION - More organized -->
+            @if ($hasImageAttachments || $hasFileAttachments)
+                <div class="attachments-section">
                     <h5 class="section-title">
-                        <i class="fas fa-clipboard-check"></i> APPROVAL STATUS
+                        <i class="fas fa-paperclip"></i> ATTACHED FILES
                     </h5>
-                    <div class="approval-grid">
-                        <div class="approval-item">
-                            <div class="mb-2">Admin Received</div>
-                            @if ($ticket->approval->admin_eng_received)
-                                <span class="approval-status-badge status-approved">Approved</span>
-                                <div class="small mt-1">
-                                    {{ $ticket->approval->admin_eng_received_at ? $ticket->approval->admin_eng_received_at->format('d M Y, H:i') : '' }}
+
+                    @if ($hasImageAttachments)
+                        <h6 class="mb-2"><i class="fas fa-image me-2"></i>Images ({{ $imageAttachments->count() }})
+                        </h6>
+                        <div class="image-gallery">
+                            @foreach ($imageAttachments as $attachment)
+                                <div class="gallery-item">
+                                    <img src="{{ Storage::url($attachment->file_path) }}"
+                                        alt="{{ $attachment->file_name }}"
+                                        data-src="{{ Storage::url($attachment->file_path) }}">
+                                    <div class="gallery-filename">
+                                        {{ Str::limit($attachment->file_name, 20) }}
+                                    </div>
                                 </div>
-                            @else
-                                <span class="approval-status-badge status-pending">Pending</span>
-                            @endif
+                            @endforeach
                         </div>
-                        <div class="approval-item">
-                            <div class="mb-2">OM Approval</div>
-                            @if ($ticket->approval->om_approved)
-                                <span class="approval-status-badge status-approved">Approved</span>
-                                <div class="small mt-1">
-                                    {{ $ticket->approval->om_approved_at ? $ticket->approval->om_approved_at->format('d M Y, H:i') : '' }}
+                    @endif
+
+                    @if ($hasFileAttachments)
+                        <h6 class="mb-2 mt-3"><i class="fas fa-file me-2"></i>Documents ({{ $fileAttachments->count() }})
+                        </h6>
+                        <div class="file-list">
+                            @foreach ($fileAttachments as $attachment)
+                                <div class="file-item">
+                                    <i
+                                        class="fas fa-file-{{ pathinfo($attachment->file_name, PATHINFO_EXTENSION) === 'pdf' ? 'pdf' : 'alt' }}"></i>
+                                    <div class="file-info">
+                                        <div class="file-name">{{ $attachment->file_name }}</div>
+                                        <div class="file-size">{{ round($attachment->file_size / 1024) }} KB</div>
+                                    </div>
+                                    <a href="{{ Storage::url($attachment->file_path) }}" target="_blank"
+                                        class="file-download" download>
+                                        <i class="fas fa-download"></i>
+                                    </a>
                                 </div>
-                            @else
-                                <span class="approval-status-badge status-pending">Pending</span>
-                            @endif
+                            @endforeach
                         </div>
-                        <div class="approval-item">
-                            <div class="mb-2">User Check</div>
-                            @if ($ticket->approval->user_checked)
-                                <span class="approval-status-badge status-approved">Checked</span>
-                                <div class="small mt-1">
-                                    {{ $ticket->approval->user_checked_at ? $ticket->approval->user_checked_at->format('d M Y, H:i') : '' }}
-                                </div>
-                            @else
-                                <span class="approval-status-badge status-pending">Pending</span>
-                            @endif
-                        </div>
-                        <div class="approval-item">
-                            <div class="mb-2">GM Approval</div>
-                            @if ($ticket->approval->gm_approved)
-                                <span class="approval-status-badge status-approved">Approved</span>
-                                <div class="small mt-1">
-                                    {{ $ticket->approval->gm_approved_at ? $ticket->approval->gm_approved_at->format('d M Y, H:i') : '' }}
-                                </div>
-                            @else
-                                <span class="approval-status-badge status-pending">Pending</span>
-                            @endif
-                        </div>
-                    </div>
+                    @endif
                 </div>
             @endif
+        </div>
 
-            <!-- SIGNATURES SECTION -->
-            @if ($ticket->signatures->count() > 0)
-                <div class="signatures-section">
-                    <h5 class="section-title">
-                        <i class="fas fa-signature"></i> SIGNATURES
+        <!-- APPROVAL STATUS -->
+        @if ($ticket->approval)
+            <div class="approval-status">
+                <h5 class="section-title">
+                    <i class="fas fa-clipboard-check"></i> APPROVAL STATUS
+                </h5>
+                <div class="approval-grid">
+                    <div class="approval-item">
+                        <div class="mb-2">Admin Received</div>
+                        @if ($ticket->approval->admin_eng_received)
+                            <span class="approval-status-badge status-approved">Approved</span>
+                            <div class="small mt-1">
+                                {{ $ticket->approval->admin_eng_received_at ? $ticket->approval->admin_eng_received_at->format('d M Y, H:i') : '' }}
+                            </div>
+                        @else
+                            <span class="approval-status-badge status-pending">Pending</span>
+                        @endif
+                    </div>
+                    <div class="approval-item">
+                        <div class="mb-2">OM Approval</div>
+                        @if ($ticket->approval->om_approved)
+                            <span class="approval-status-badge status-approved">Approved</span>
+                            <div class="small mt-1">
+                                {{ $ticket->approval->om_approved_at ? $ticket->approval->om_approved_at->format('d M Y, H:i') : '' }}
+                            </div>
+                        @else
+                            <span class="approval-status-badge status-pending">Pending</span>
+                        @endif
+                    </div>
+                    <div class="approval-item">
+                        <div class="mb-2">User Check</div>
+                        @if ($ticket->approval->user_checked)
+                            <span class="approval-status-badge status-approved">Checked</span>
+                            <div class="small mt-1">
+                                {{ $ticket->approval->user_checked_at ? $ticket->approval->user_checked_at->format('d M Y, H:i') : '' }}
+                            </div>
+                        @else
+                            <span class="approval-status-badge status-pending">Pending</span>
+                        @endif
+                    </div>
+                    <div class="approval-item">
+                        <div class="mb-2">GM Approval</div>
+                        @if ($ticket->approval->gm_approved)
+                            <span class="approval-status-badge status-approved">Approved</span>
+                            <div class="small mt-1">
+                                {{ $ticket->approval->gm_approved_at ? $ticket->approval->gm_approved_at->format('d M Y, H:i') : '' }}
+                            </div>
+                        @else
+                            <span class="approval-status-badge status-pending">Pending</span>
+                        @endif
+                    </div>
+                </div>
+            </div>
+        @endif
+
+        <!-- SIGNATURES SECTION - With Toggle -->
+        @if ($ticket->signatures->count() > 0)
+            <div class="signatures-section collapsed">
+                <div class="signatures-header">
+                    <h5 class="signatures-title">
+                        <i class="fas fa-signature"></i> SIGNATURES ({{ $ticket->signatures->count() }})
                     </h5>
-                    <!-- Di bagian Signatures Section -->
+                    <span class="signatures-toggle-arrow">
+                        <i class="fas fa-chevron-down"></i>
+                    </span>
+                </div>
+
+                <div class="signatures-container">
                     <div class="signature-grid">
                         @foreach ($ticket->signatures->sortBy('stage') as $signature)
                             @if ($user->role === 'user' && $signature->user_id != $user->id)
@@ -2607,13 +2576,6 @@
                                             OM Approved by
                                         @break
 
-                                        {{-- @case(4)
-                                            Completed by (Technician)
-                                        @break
-
-                                        @case(5)
-                                            Checked by (User)
-                                        @break --}}
                                         @case(6)
                                             Completed by
                                         @break
@@ -2637,15 +2599,8 @@
 
                                 @if ($signature->signature_path && Storage::exists('public/' . $signature->signature_path))
                                     <img src="{{ Storage::url($signature->signature_path) }}" alt="Signature"
-                                        class="signature-image">
-                                @else
-                                    {{-- ... signature image ... --}}
-                                    <div class="signature-info">
-                                        <strong>{{ $signature->user->name ?? 'Unknown' }}</strong>
-                                        <div>{{ ucfirst($signature->user->role ?? 'N/A') }}</div>
-                                        <div>{{ $signature->signed_at->format('d M Y, H:i') }}</div>
-                                        <small class="text-muted">Stage {{ $signature->stage }}</small> <!-- DEBUG -->
-                                    </div>
+                                        class="signature-image" data-src="{{ Storage::url($signature->signature_path) }}"
+                                        style="cursor: pointer;">
                                 @endif
                                 <div class="signature-info">
                                     <strong>{{ $signature->user->name ?? 'Unknown' }}</strong>
@@ -2656,245 +2611,295 @@
                         @endforeach
                     </div>
                 </div>
-            @endif
+            </div>
+        @endif
 
-            <!-- VOUCHER REQUESTS -->
-            @if ($ticket->voucherRequests->count() > 0)
-                <div class="ticket-body">
-                    <h5 class="section-title">
-                        <i class="fas fa-file-invoice-dollar"></i> VOUCHER REQUESTS
-                    </h5>
-                    @foreach ($ticket->voucherRequests as $vr)
-                        <div class="card mb-3">
-                            <div class="card-header d-flex justify-content-between align-items-center">
-                                <div>
-                                    <strong>VR #{{ $vr->vr_number }}</strong>
-                                    <span
-                                        class="badge bg-{{ $vr->status === 'approved' ? 'success' : ($vr->status === 'rejected' ? 'danger' : 'warning') }} ms-2">
-                                        {{ ucfirst($vr->status) }}
-                                    </span>
-                                </div>
-                                <div>
-                                    <strong>Total: Rp {{ number_format($vr->total_amount, 0, ',', '.') }}</strong>
-                                </div>
+        <!-- PURCHASE REQUESTS (PR) SECTION - Updated for photos only -->
+        @if ($ticket->voucherRequests->count() > 0)
+            <div class="ticket-body">
+                <h5 class="section-title">
+                    <i class="fas fa-file-invoice-dollar"></i> PURCHASE REQUESTS (PR)
+                </h5>
+                @foreach ($ticket->voucherRequests as $pr)
+                    <div class="pr-card">
+                        <div class="pr-card-header">
+                            <div>
+                                <strong>PR #{{ $pr->vr_number }}</strong>
+                                <span
+                                    class="badge bg-{{ $pr->status === 'paid' ? 'success' : ($pr->status === 'rejected' ? 'danger' : 'warning') }} ms-2">
+                                    {{ ucfirst($pr->status) }}
+                                </span>
                             </div>
-                            <div class="card-body">
-                                <div class="table-responsive">
-                                    <table class="table table-sm">
-                                        <thead>
-                                            <tr>
-                                                <th>Item</th>
-                                                <th>Qty</th>
-                                                <th>Unit Price</th>
-                                                <th>Total</th>
-                                                <th>Vendor</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            @foreach ($vr->items as $item)
-                                                <tr>
-                                                    <td>{{ $item->item_name }}</td>
-                                                    <td>{{ $item->qty }}</td>
-                                                    <td>Rp {{ number_format($item->unit_price, 0, ',', '.') }}</td>
-                                                    <td>Rp
-                                                        {{ number_format($item->qty * $item->unit_price, 0, ',', '.') }}
-                                                    </td>
-                                                    <td>{{ $item->vendor ?? '-' }}</td>
-                                                </tr>
-                                            @endforeach
-                                        </tbody>
-                                    </table>
-                                </div>
+                            <div>
+                                <small>Created: {{ $pr->created_at->format('d M Y, H:i') }}</small>
                             </div>
                         </div>
-                    @endforeach
-                </div>
-            @endif
-            <!-- COMMENTS SECTION dengan Toggle -->
-            <div class="comments-section">
-                <div class="comments-header">
-                    <h5 class="comments-title">
-                        <i class="fas fa-comments"></i> COMMENTS ({{ $ticket->comments->count() }})
-                    </h5>
-                    <span class="comments-toggle-arrow">
-                        <i class="fas fa-chevron-down"></i>
-                    </span>
-                </div>
-
-                <div class="comments-container">
-                    @forelse($ticket->comments->sortByDesc('created_at') as $comment)
-                        <div class="comment-item">
-                            <div class="comment-header">
-                                <div class="comment-avatar"
-                                    style="background-color: {{ $comment->user ? stringToColorPHP($comment->user->name) : '#6c757d' }}">
-                                    {{ $comment->user ? substr($comment->user->name, 0, 1) : '?' }}
+                        <div class="pr-card-body">
+                            <!-- Notes -->
+                            @if ($pr->notes)
+                                <div class="pr-notes">
+                                    <i class="fas fa-sticky-note me-2"></i>
+                                    <strong>Notes:</strong> {{ $pr->notes }}
                                 </div>
-                                <div class="comment-meta">
-                                    <div class="d-flex align-items-center">
-                                        <span class="comment-author">
-                                            {{ $comment->user->name ?? 'System' }}
-                                        </span>
-                                        @if ($comment->user)
-                                            <span class="comment-role">{{ ucfirst($comment->user->role) }}</span>
-                                        @endif
-                                    </div>
-                                    <div class="comment-time">
-                                        {{ $comment->created_at->format('d M Y, H:i') }}
-                                        ({{ $comment->created_at->diffForHumans() }})
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="comment-body">
-                                {!! $comment->comment !!}
+                            @endif
 
-                                @if ($comment->attachments->count() > 0)
-                                    <div class="comment-attachments">
-                                        <small class="text-muted d-block mb-1">Attachments:</small>
-                                        @foreach ($comment->attachments as $attachment)
-                                            @php
-                                                $extension = strtolower(
-                                                    pathinfo($attachment->file_name, PATHINFO_EXTENSION),
-                                                );
-                                                $isImage = in_array($extension, [
-                                                    'jpg',
-                                                    'jpeg',
-                                                    'png',
-                                                    'gif',
-                                                    'bmp',
-                                                    'webp',
-                                                ]);
-                                            @endphp
-
-                                            @if ($isImage)
-                                                <div class="mb-2">
-                                                    <img src="{{ Storage::url($attachment->file_path) }}"
-                                                        alt="{{ $attachment->file_name }}"
-                                                        class="image-attachment comment-image"
-                                                        style="max-width: 150px; max-height: 120px; cursor: pointer;"
-                                                        data-src="{{ Storage::url($attachment->file_path) }}">
-                                                    <br>
-                                                    <a href="javascript:void(0)" class="small view-image-link"
-                                                        data-src="{{ Storage::url($attachment->file_path) }}">
-                                                        {{ $attachment->file_name }}
-                                                    </a>
+                            <!-- Photos (Voucher Attachments) -->
+                            @if ($pr->attachments && $pr->attachments->count() > 0)
+                                <h6 class="mt-3 mb-2"><i class="fas fa-camera me-2"></i>Photos
+                                    ({{ $pr->attachments->count() }})
+                                </h6>
+                                <div class="pr-photos">
+                                    @foreach ($pr->attachments as $photo)
+                                        <div class="pr-photo-item">
+                                            <img src="{{ Storage::url($photo->file_path) }}"
+                                                alt="{{ $photo->file_name }}"
+                                                data-src="{{ Storage::url($photo->file_path) }}">
+                                            @if ($photo->description)
+                                                <div class="photo-description">
+                                                    {{ Str::limit($photo->description, 30) }}
                                                 </div>
                                             @else
-                                                <a href="{{ Storage::url($attachment->file_path) }}" target="_blank"
-                                                    class="attachment-item small d-inline-block mb-1">
-                                                    <i class="fas fa-paperclip"></i> {{ $attachment->file_name }}
-                                                </a>
+                                                <div class="photo-description">
+                                                    {{ Str::limit($photo->file_name, 25) }}
+                                                </div>
                                             @endif
-                                        @endforeach
-                                    </div>
-                                @endif
+                                        </div>
+                                    @endforeach
+                                </div>
+                            @endif
+
+                            <!-- Approval Status Badges -->
+                            <div class="row mt-3">
+                                <div class="col-md-4 col-6 text-center mb-2">
+                                    <small class="text-muted">Admin Engineering</small><br>
+                                    @if ($pr->admin_approved)
+                                        <span class="badge bg-success">Approved</span>
+                                        <small
+                                            class="d-block">{{ $pr->admin_approved_at ? $pr->admin_approved_at->format('d M Y') : '' }}</small>
+                                    @else
+                                        <span class="badge bg-warning">Pending</span>
+                                    @endif
+                                </div>
+                                <div class="col-md-4 col-6 text-center mb-2">
+                                    <small class="text-muted">OM Approval</small><br>
+                                    @if ($pr->om_approved)
+                                        <span class="badge bg-success">Approved</span>
+                                        <small
+                                            class="d-block">{{ $pr->om_approved_at ? $pr->om_approved_at->format('d M Y') : '' }}</small>
+                                    @else
+                                        <span class="badge bg-warning">Pending</span>
+                                    @endif
+                                </div>
+                                <div class="col-md-4 col-6 text-center mb-2">
+                                    <small class="text-muted">GM Approval</small><br>
+                                    @if ($pr->gm_approved)
+                                        <span class="badge bg-success">Approved</span>
+                                        <small
+                                            class="d-block">{{ $pr->gm_approved_at ? $pr->gm_approved_at->format('d M Y') : '' }}</small>
+                                    @else
+                                        <span class="badge bg-warning">Pending</span>
+                                    @endif
+                                </div>
                             </div>
                         </div>
-                    @empty
-                        <div class="text-center text-muted py-4">
-                            <i class="fas fa-comment-slash fa-2x mb-3"></i>
-                            <p>No comments yet</p>
-                        </div>
-                    @endforelse
-
-                    <!-- Add Comment Form - Hanya tampil jika ticket belum selesai -->
-                    @php
-                        // Status yang memungkinkan comment
-                        $allowComments = in_array($ticket->status, [
-                            'open',
-                            'received',
-                            'pending_om',
-                            'in_progress',
-                            'pending_vr',
-                            'completed',
-                        ]);
-
-                        // Role yang boleh comment
-                        // Check if user can comment (termasuk manager)
-                        $canComment =
-                            in_array(auth()->user()->role, ['user', 'admin_eng', 'technician', 'manager']) ||
-                            $ticket->user_id == auth()->id() ||
-                            $ticket->assigned_to == auth()->id() ||
-                            (auth()->user()->role == 'manager' &&
-                                $ticket->department_id == auth()->user()->department_id);
-                    @endphp
-
-                    @if ($allowComments && $canComment)
-                        <div class="comment-form-section" id="commentForm">
-                            <h6 class="mb-3"><i class="fas fa-comment-medical me-2"></i> ADD COMMENT</h6>
-                            <form id="commentFormSubmit" enctype="multipart/form-data">
-                                @csrf
-                                <div class="mb-3">
-                                    <textarea name="comment" id="commentText" class="form-control" rows="4"
-                                        placeholder="Write your comment here..." required></textarea>
-                                </div>
-
-                                <div class="row">
-                                    <div class="col-md-6 mb-3">
-                                        <label class="form-label">Attach Files (Optional)</label>
-                                        <input type="file" name="attachments[]" class="form-control" multiple
-                                            accept=".jpg,.jpeg,.png,.pdf,.doc,.docx,.webp">
-                                        <small class="text-muted">Max 5MB per file. Max 5 files.</small>
-                                    </div>
-                                    <div class="col-md-6 d-flex align-items-end">
-                                        <button type="submit" class="btn btn-primary w-100">
-                                            <i class="fas fa-paper-plane me-2"></i> Post Comment
-                                        </button>
-                                    </div>
-                                </div>
-                            </form>
-                        </div>
-                    @elseif(!$allowComments && $canComment)
-                        <div class="alert alert-info mt-3">
-                            <i class="fas fa-info-circle me-2"></i>
-                            Commenting is disabled because this ticket is
-                            {{ $ticket->status === 'closed' ? 'closed' : 'completed and checked' }}.
-                        </div>
-                    @endif
-                </div>
+                    </div>
+                @endforeach
             </div>
-            <!-- ACTIVITY SECTION -->
-            <div class="activity-section">
-                <div class="activity-header">
-                    <h5 class="activity-title">
-                        <i class="fas fa-history"></i> ACTIVITY TIMELINE
-                    </h5>
-                    <span class="toggle-arrow">
-                        <i class="fas fa-chevron-down"></i>
-                    </span>
-                </div>
+        @endif
 
-                <div class="activity-timeline">
-                    @forelse($ticket->activities->sortByDesc('created_at') as $activity)
-                        <div class="activity-item">
-                            <div class="activity-content">
-                                <div class="activity-item-header">
-                                    <i class="fas fa-{{ getActivityIcon($activity->action) }} activity-icon"></i>
-                                    <span class="activity-user">{{ $activity->user->name ?? 'System' }}</span>
-                                    <span class="activity-time">
-                                        {{ $activity->created_at->format('d M Y, H:i') }}
+        <!-- COMMENTS SECTION -->
+        <div class="comments-section {{ $showComments ? '' : 'collapsed' }}">
+            <div class="comments-header">
+                <h5 class="comments-title">
+                    <i class="fas fa-comments"></i> COMMENTS ({{ $ticket->comments->count() }})
+                </h5>
+                <span class="comments-toggle-arrow">
+                    <i class="fas fa-chevron-down"></i>
+                </span>
+            </div>
+
+            <div class="comments-container">
+                @forelse($ticket->comments->sortByDesc('created_at') as $comment)
+                    <div class="comment-item">
+                        @if ($comment->is_followup)
+                            <span class="follow-up-badge">FOLLOW-UP</span>
+                        @endif
+                        <div class="comment-header">
+                            <div class="comment-avatar"
+                                style="background-color: {{ $comment->user ? stringToColorPHP($comment->user->name) : '#6c757d' }}">
+                                {{ $comment->user ? substr($comment->user->name, 0, 1) : '?' }}
+                            </div>
+                            <div class="comment-meta">
+                                <div class="d-flex align-items-center">
+                                    <span class="comment-author">
+                                        {{ $comment->user->name ?? 'System' }}
                                     </span>
+                                    @if ($comment->user)
+                                        <span class="comment-role">{{ ucfirst($comment->user->role) }}</span>
+                                    @endif
                                 </div>
-                                <div class="activity-description">
-                                    {{ $activity->description }}
+                                <div class="comment-time">
+                                    {{ $comment->created_at->format('d M Y, H:i') }}
+                                    ({{ $comment->created_at->diffForHumans() }})
                                 </div>
                             </div>
                         </div>
-                    @empty
-                        <div class="text-center text-muted py-4">
-                            <i class="fas fa-inbox fa-2x mb-3"></i>
-                            <p>No activity yet</p>
+                        <div class="comment-body">
+                            {!! nl2br(e($comment->comment)) !!}
+
+                            @if ($comment->attachments->count() > 0)
+                                <div class="comment-attachments">
+                                    <small class="text-muted d-block mb-1">Attachments:</small>
+                                    @foreach ($comment->attachments as $attachment)
+                                        @php
+                                            $extension = strtolower(
+                                                pathinfo($attachment->file_name, PATHINFO_EXTENSION),
+                                            );
+                                            $isImage = in_array($extension, [
+                                                'jpg',
+                                                'jpeg',
+                                                'png',
+                                                'gif',
+                                                'bmp',
+                                                'webp',
+                                            ]);
+                                        @endphp
+
+                                        @if ($isImage)
+                                            <div class="mb-2">
+                                                <img src="{{ Storage::url($attachment->file_path) }}"
+                                                    alt="{{ $attachment->file_name }}"
+                                                    class="image-attachment comment-image"
+                                                    style="max-width: 150px; max-height: 120px; cursor: pointer;"
+                                                    data-src="{{ Storage::url($attachment->file_path) }}">
+                                            </div>
+                                        @else
+                                            <a href="{{ Storage::url($attachment->file_path) }}" target="_blank"
+                                                class="attachment-item small d-inline-block mb-1">
+                                                <i class="fas fa-paperclip"></i> {{ $attachment->file_name }}
+                                            </a>
+                                        @endif
+                                    @endforeach
+                                </div>
+                            @endif
                         </div>
-                    @endforelse
+                    </div>
+                @empty
+                    <div class="text-center text-muted py-4">
+                        <i class="fas fa-comment-slash fa-2x mb-3"></i>
+                        <p>No comments yet</p>
+                    </div>
+                @endforelse
+
+                <!-- Add Comment Form -->
+                @if ($canComment && $showComments)
+                    <div class="comment-form-section" id="commentForm">
+                        <h6 class="mb-3"><i class="fas fa-comment-medical me-2"></i> ADD COMMENT</h6>
+                        <form id="commentFormSubmit" enctype="multipart/form-data">
+                            @csrf
+                            <div class="mb-3">
+                                <textarea name="comment" id="commentText" class="comment-textarea" rows="4"
+                                    placeholder="Write your comment here..." required></textarea>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Attach Files (Optional)</label>
+                                    <input type="file" name="attachments[]" class="form-control" multiple
+                                        accept=".jpg,.jpeg,.png,.pdf,.doc,.docx,.webp">
+                                    <small class="text-muted">Max 5MB per file. Max 5 files.</small>
+                                </div>
+                                <div class="col-md-6 d-flex align-items-end">
+                                    <button type="submit" class="btn btn-primary w-100"
+                                        style="background: var(--navy); border: none;">
+                                        <i class="fas fa-paper-plane me-2"></i> Post Comment
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                @endif
+            </div>
+        </div>
+
+        <!-- ACTIVITY SECTION -->
+        <div class="activity-section collapsed">
+            <div class="activity-header">
+                <h5 class="activity-title">
+                    <i class="fas fa-history"></i> ACTIVITY TIMELINE
+                </h5>
+                <span class="toggle-arrow">
+                    <i class="fas fa-chevron-down"></i>
+                </span>
+            </div>
+
+            <div class="activity-timeline">
+                @forelse($ticket->activities->sortByDesc('created_at') as $activity)
+                    <div class="activity-item">
+                        <div class="activity-content">
+                            <div class="activity-item-header">
+                                <i class="fas fa-{{ getActivityIcon($activity->action) }} activity-icon"
+                                    style="color: var(--navy);"></i>
+                                <span class="activity-user">{{ $activity->user->name ?? 'System' }}</span>
+                                <span class="activity-time">
+                                    {{ $activity->created_at->format('d M Y, H:i') }}
+                                </span>
+                            </div>
+                            <div class="activity-description">
+                                {{ $activity->description }}
+                            </div>
+                        </div>
+                    </div>
+                @empty
+                    <div class="text-center text-muted py-4">
+                        <i class="fas fa-inbox fa-2x mb-3"></i>
+                        <p>No activity yet</p>
+                    </div>
+                @endforelse
+            </div>
+        </div>
+    </div>
+    </div>
+
+    <!-- ============================================
+                                            MODALS
+                                        ============================================ -->
+
+    <!-- Add Follow-up Modal -->
+    <div class="modal fade" id="addFollowupModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-pen me-2"></i> Add Follow-up Notes
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
+                <form id="addFollowupForm">
+                    @csrf
+                    <div class="modal-body">
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            Technician completed work without follow-up notes. Please add them here.
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Follow-up Notes *</label>
+                            <textarea name="follow_up_notes" class="form-control" rows="5"
+                                placeholder="Describe what work was done, parts replaced, etc." required></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary" style="background: var(--navy); border: none;">
+                            <i class="fas fa-save me-1"></i> Save Notes
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
 
-    <!-- ============================================
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   MODALS
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                ============================================ -->
-
-    <!-- New Signature Modal (Password Verification) -->
+    <!-- New Signature Modal -->
     <div class="modal fade" id="newSignatureModal" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
             <div class="modal-content">
@@ -2902,7 +2907,7 @@
                     <h5 class="modal-title">
                         <i class="fas fa-key me-2"></i> Create New Signature
                     </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
                 <form id="newSignatureForm">
                     @csrf
@@ -2914,15 +2919,14 @@
                             <i class="fas fa-exclamation-triangle me-2"></i>
                             You already have a saved signature. Creating a new one will replace the old signature.
                         </div>
-
                         <div class="mb-3">
                             <label class="form-label">Enter your password to confirm *</label>
                             <input type="password" name="current_password" class="form-control"
                                 placeholder="Your account password" required>
                         </div>
-
                         <div class="text-center">
-                            <button type="submit" class="btn btn-warning">
+                            <button type="submit" class="btn btn-warning"
+                                style="background: var(--orange); border: none;">
                                 <i class="fas fa-pen me-1"></i> Proceed to Create New Signature
                             </button>
                         </div>
@@ -2943,50 +2947,50 @@
                     <h5 class="modal-title">
                         <i class="fas fa-bolt me-2"></i> Quick Approve
                     </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
                 <form id="quickApproveForm">
                     @csrf
                     <div class="modal-body">
                         <div class="alert alert-info">
                             <i class="fas fa-info-circle me-2"></i>
-                            You are about to approve this ticket using your saved signature.
+                            You are about to approve this request using your saved signature.
                         </div>
                         <div class="text-center mb-3">
                             @if ($user->signature_path && Storage::disk('public')->exists($user->signature_path))
                                 <img src="{{ Storage::url($user->signature_path) }}" alt="Your Signature"
-                                    style="max-height: 80px; border: 1px solid #ddd; padding: 5px;">
+                                    style="max-height: 80px; border: 1px solid #ddd; padding: 5px; background: transparent;">
                                 <p class="small mt-2">Your saved signature will be used</p>
                             @endif
                         </div>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
-                        <button type="submit" class="btn btn-success">Approve with Saved Signature</button>
+                        <button type="submit" class="btn btn-success"
+                            style="background: var(--success); border: none;">Approve with Saved Signature</button>
                     </div>
                 </form>
             </div>
         </div>
     </div>
 
-    <!-- Delete Ticket Modal (Superadmin Only) -->
+    <!-- Delete Ticket Modal -->
     <div class="modal fade" id="deleteTicketModal" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title">
-                        <i class="fas fa-trash-alt me-2 text-danger"></i> Delete Ticket
+                        <i class="fas fa-trash-alt me-2"></i> Delete Maintenance Request
                     </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
                 <form id="deleteTicketForm">
                     @csrf
                     <div class="modal-body">
                         <div class="alert alert-danger">
                             <i class="fas fa-exclamation-triangle me-2"></i>
-                            <strong>WARNING:</strong> This action will permanently delete the ticket and all related
-                            data.
-                            This cannot be undone!
+                            <strong>WARNING:</strong> This action will permanently delete the request and all related
+                            data. This cannot be undone!
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Enter your password to confirm *</label>
@@ -2996,35 +3000,36 @@
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
-                        <button type="submit" class="btn btn-danger">Delete Permanently</button>
+                        <button type="submit" class="btn btn-danger"
+                            style="background: var(--danger); border: none;">Delete Permanently</button>
                     </div>
                 </form>
             </div>
         </div>
     </div>
 
-    <!-- Receive Modal - HANYA ADMIN_ENG -->
+    <!-- Receive Modal -->
     <div class="modal fade" id="receiveModal" tabindex="-1">
-        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg">
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title">
-                        <i class="fas fa-check-circle me-2"></i> Receive Ticket
+                        <i class="fas fa-check-circle me-2"></i> Receive Request
                     </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
                 <form id="receiveForm">
                     @csrf
                     <div class="modal-body">
                         <div class="alert alert-info">
                             <i class="fas fa-info-circle me-2"></i>
-                            You are about to receive this ticket. Please provide your signature.
+                            You are about to receive this request. Please provide your signature.
                         </div>
-
                         <div class="mb-3">
                             <label class="form-label">Draw Your Signature *</label>
                             <div class="signature-canvas-container border rounded mb-3">
-                                <canvas id="receiveSignatureCanvas" class="modal-signature-canvas"></canvas>
+                                <canvas id="receiveSignatureCanvas" class="modal-signature-canvas" width="300"
+                                    height="200" style="background: transparent; width: 100%; height: auto;"></canvas>
                             </div>
                             <div class="signature-actions">
                                 <button type="button" class="btn btn-outline-secondary btn-sm"
@@ -3037,7 +3042,6 @@
                                 </button>
                             </div>
                         </div>
-
                         @if ($canSaveSignature)
                             <div class="form-check">
                                 <input class="form-check-input" type="checkbox" name="save_signature"
@@ -3050,7 +3054,8 @@
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
-                        <button type="submit" class="btn btn-success">Receive Ticket</button>
+                        <button type="submit" class="btn btn-success"
+                            style="background: var(--navy); border: none;">Receive Request</button>
                     </div>
                 </form>
             </div>
@@ -3059,13 +3064,13 @@
 
     <!-- OM Approve Modal -->
     <div class="modal fade" id="omApproveModal" tabindex="-1">
-        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg">
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title">
-                        <i class="fas fa-thumbs-up me-2"></i> OM Approve Ticket
+                        <i class="fas fa-thumbs-up me-2"></i> OM Approve Request
                     </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
                 <form id="omApproveForm">
                     @csrf
@@ -3073,13 +3078,13 @@
                     <div class="modal-body">
                         <div class="alert alert-info">
                             <i class="fas fa-info-circle me-2"></i>
-                            You are about to approve this ticket. Please provide your signature.
+                            You are about to approve this request. Please provide your signature.
                         </div>
-
                         <div class="mb-3">
                             <label class="form-label">Draw Your Signature *</label>
                             <div class="signature-canvas-container border rounded mb-3">
-                                <canvas id="omApproveSignatureCanvas" class="modal-signature-canvas"></canvas>
+                                <canvas id="omApproveSignatureCanvas" class="modal-signature-canvas" width="300"
+                                    height="200" style="background: transparent; width: 100%; height: auto;"></canvas>
                             </div>
                             <div class="signature-actions">
                                 <button type="button" class="btn btn-outline-secondary btn-sm"
@@ -3092,7 +3097,6 @@
                                 </button>
                             </div>
                         </div>
-
                         @if ($canSaveSignature)
                             <div class="form-check">
                                 <input class="form-check-input" type="checkbox" name="save_signature"
@@ -3105,7 +3109,8 @@
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
-                        <button type="submit" class="btn btn-success">Approve Ticket</button>
+                        <button type="submit" class="btn btn-success"
+                            style="background: var(--navy); border: none;">Approve Request</button>
                     </div>
                 </form>
             </div>
@@ -3118,9 +3123,9 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title">
-                        <i class="fas fa-thumbs-down me-2"></i> OM Reject Ticket
+                        <i class="fas fa-thumbs-down me-2"></i> OM Reject Request
                     </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
                 <form id="omRejectForm">
                     @csrf
@@ -3128,9 +3133,8 @@
                     <div class="modal-body">
                         <div class="alert alert-danger">
                             <i class="fas fa-exclamation-triangle me-2"></i>
-                            Are you sure you want to reject this ticket?
+                            Are you sure you want to reject this request?
                         </div>
-
                         <div class="mb-3">
                             <label class="form-label">Rejection Reason *</label>
                             <textarea name="rejection_reason" class="form-control" rows="3"
@@ -3139,49 +3143,63 @@
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
-                        <button type="submit" class="btn btn-danger">Reject Ticket</button>
+                        <button type="submit" class="btn btn-danger"
+                            style="background: var(--danger); border: none;">Reject Request</button>
                     </div>
                 </form>
             </div>
         </div>
     </div>
 
-    <!-- Complete Modal - HANYA TECHNICIAN -->
-    <div class="modal fade" id="completeModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog">
+    <!-- Complete Modal -->
+    <div class="modal fade" id="completeModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
             <div class="modal-content">
-                <div class="modal-header bg-success text-white">
+                <div class="modal-header">
                     <h5 class="modal-title"><i class="fas fa-check-double me-2"></i>Mark Work as Complete</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
-                        aria-label="Close"></button>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
                 <form id="completeForm" method="POST" action="{{ route('tickets.complete', $ticket->id) }}">
                     @csrf
                     <div class="modal-body">
+                        <div class="alert alert-success">
+                            <i class="fas fa-info-circle me-2"></i>
+                            Complete the work and optionally mark as follow-up.
+                        </div>
                         <div class="mb-3">
                             <label for="completion_notes" class="form-label required">
                                 <i class="fas fa-sticky-note me-1"></i>Completion Notes
-                                <small class="text-muted">(This will appear in follow-up section)</small>
                             </label>
-                            <textarea name="completion_notes" id="completion_notes" class="form-control" rows="4"
+                            <textarea name="completion_notes" id="completion_notes" class="comment-textarea" rows="4"
                                 placeholder="Describe what work was done, parts replaced, etc." required></textarea>
                             <div class="form-text">
-                                This note is required and will be visible in the report's follow-up section.
-                                If left empty, Admin Engineering must fill it later.
+                                These notes will be visible in the report.
                             </div>
                         </div>
-
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="is_followup" id="isFollowup"
+                                    value="1" checked>
+                                <label class="form-check-label" for="isFollowup">
+                                    <i class="fas fa-check-circle me-1" style="color: var(--orange);"></i>
+                                    Mark as <strong>FOLLOW-UP</strong> (recommended)
+                                </label>
+                                <div class="form-text">
+                                    If unchecked, Admin will need to add follow-up notes later.
+                                </div>
+                            </div>
+                        </div>
                         <div class="mb-3">
                             <label class="form-label required">
                                 <i class="fas fa-signature me-1"></i>Signature
                             </label>
-                            <div class="signature-container border rounded p-2 bg-light">
-                                <canvas id="completeSignatureCanvas" width="500" height="150" class="w-100 border"
-                                    style="background: white;"></canvas>
+                            <div class="signature-canvas-container border rounded p-2 bg-light">
+                                <canvas id="completeSignatureCanvas" width="300" height="200" class="w-100 border"
+                                    style="background: transparent; width: 100%; height: auto;"></canvas>
                             </div>
                             <div class="mt-2">
                                 <button type="button" class="btn btn-sm btn-outline-secondary"
-                                    onclick="clearSignature('complete')">
+                                    onclick="clearCompleteSignature()">
                                     <i class="fas fa-eraser me-1"></i>Clear
                                 </button>
                             </div>
@@ -3189,8 +3207,8 @@
                         </div>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                        <button type="submit" class="btn btn-success">
+                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-success" style="background: var(--navy); border: none;">
                             <i class="fas fa-check-double me-1"></i>Submit Completion
                         </button>
                     </div>
@@ -3199,36 +3217,33 @@
         </div>
     </div>
 
-    <!-- VR Modal - HANYA TECHNICIAN -->
-    <div class="modal fade" id="vrModal" tabindex="-1">
+    <!-- PR Modal (Purchase Request) -->
+    <div class="modal fade" id="prModal" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title">
-                        <i class="fas fa-file-invoice-dollar me-2"></i> Request VR
+                        <i class="fas fa-file-invoice-dollar me-2"></i> Request PR
                     </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
-                <form id="vrForm">
+                <form id="prForm">
                     @csrf
                     <div class="modal-body">
-                        <div class="alert alert-warning">
+                        <div class="alert alert-warning" style="border-left-color: var(--orange);">
                             <i class="fas fa-exclamation-triangle me-2"></i>
-                            Requesting a VR will pause this ticket until the VR is approved.
+                            Requesting a PR will pause this request until the PR is approved.
                         </div>
-
                         <div class="mb-3">
-                            <label class="form-label">Reason for VR *</label>
+                            <label class="form-label">Reason for PR *</label>
                             <textarea name="vr_reason" class="form-control" rows="3"
-                                placeholder="Explain why you need a voucher request (parts needed, materials, etc.)" required></textarea>
+                                placeholder="Explain why you need a purchase request (parts needed, materials, etc.)" required></textarea>
                         </div>
-
                         <div class="mb-3">
                             <label class="form-label">Estimated Cost (Optional)</label>
                             <input type="number" name="estimated_cost" class="form-control" placeholder="Rp"
                                 min="0" step="1000">
                         </div>
-
                         <div class="mb-3">
                             <label class="form-label">Required Items (Optional)</label>
                             <textarea name="required_items" class="form-control" rows="2"
@@ -3237,7 +3252,8 @@
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
-                        <button type="submit" class="btn btn-warning">Request VR</button>
+                        <button type="submit" class="btn btn-warning"
+                            style="background: var(--orange); border: none;">Request PR</button>
                     </div>
                 </form>
             </div>
@@ -3246,13 +3262,13 @@
 
     <!-- User Check Accept Modal -->
     <div class="modal fade" id="userCheckAcceptModal" tabindex="-1">
-        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg">
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title">
                         <i class="fas fa-clipboard-check me-2"></i> Accept Completion
                     </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
                 <form id="userCheckAcceptForm">
                     @csrf
@@ -3262,11 +3278,11 @@
                             <i class="fas fa-check-circle me-2"></i>
                             Are you satisfied with the completed work?
                         </div>
-
                         <div class="mb-3">
                             <label class="form-label">Your Signature *</label>
                             <div class="signature-canvas-container border rounded mb-3">
-                                <canvas id="userAcceptSignatureCanvas" class="modal-signature-canvas"></canvas>
+                                <canvas id="userAcceptSignatureCanvas" class="modal-signature-canvas" width="300"
+                                    height="200" style="background: transparent; width: 100%; height: auto;"></canvas>
                             </div>
                             <div class="signature-actions">
                                 <button type="button" class="btn btn-outline-secondary btn-sm"
@@ -3282,7 +3298,8 @@
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
-                        <button type="submit" class="btn btn-success">Accept Completion</button>
+                        <button type="submit" class="btn btn-success"
+                            style="background: var(--navy); border: none;">Accept Completion</button>
                     </div>
                 </form>
             </div>
@@ -3297,7 +3314,7 @@
                     <h5 class="modal-title">
                         <i class="fas fa-times-circle me-2"></i> Reject Completion
                     </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
                 <form id="userCheckRejectForm">
                     @csrf
@@ -3307,7 +3324,6 @@
                             <i class="fas fa-exclamation-triangle me-2"></i>
                             Please explain why you are rejecting the completion.
                         </div>
-
                         <div class="mb-3">
                             <label class="form-label">Rejection Reason *</label>
                             <textarea name="rejection_reason" class="form-control" rows="3"
@@ -3316,7 +3332,8 @@
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
-                        <button type="submit" class="btn btn-danger">Reject Completion</button>
+                        <button type="submit" class="btn btn-danger"
+                            style="background: var(--danger); border: none;">Reject Completion</button>
                     </div>
                 </form>
             </div>
@@ -3325,13 +3342,13 @@
 
     <!-- GM Approve Modal -->
     <div class="modal fade" id="gmApproveModal" tabindex="-1">
-        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg">
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title">
-                        <i class="fas fa-gavel me-2"></i> GM Approve Ticket
+                        <i class="fas fa-gavel me-2"></i> GM Approve Request
                     </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
                 <form id="gmApproveForm">
                     @csrf
@@ -3339,13 +3356,13 @@
                     <div class="modal-body">
                         <div class="alert alert-info">
                             <i class="fas fa-info-circle me-2"></i>
-                            You are about to give final approval to this ticket. Please provide your signature.
+                            You are about to give final approval to this request. Please provide your signature.
                         </div>
-
                         <div class="mb-3">
                             <label class="form-label">Draw Your Signature *</label>
                             <div class="signature-canvas-container border rounded mb-3">
-                                <canvas id="gmApproveSignatureCanvas" class="modal-signature-canvas"></canvas>
+                                <canvas id="gmApproveSignatureCanvas" class="modal-signature-canvas" width="300"
+                                    height="200" style="background: transparent; width: 100%; height: auto;"></canvas>
                             </div>
                             <div class="signature-actions">
                                 <button type="button" class="btn btn-outline-secondary btn-sm"
@@ -3358,7 +3375,6 @@
                                 </button>
                             </div>
                         </div>
-
                         @if ($canSaveSignature)
                             <div class="form-check">
                                 <input class="form-check-input" type="checkbox" name="save_signature"
@@ -3371,7 +3387,8 @@
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
-                        <button type="submit" class="btn btn-success">Approve Ticket</button>
+                        <button type="submit" class="btn btn-success"
+                            style="background: var(--navy); border: none;">Approve Request</button>
                     </div>
                 </form>
             </div>
@@ -3384,9 +3401,9 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title">
-                        <i class="fas fa-ban me-2"></i> GM Reject Ticket
+                        <i class="fas fa-ban me-2"></i> GM Reject Request
                     </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
                 <form id="gmRejectForm">
                     @csrf
@@ -3394,9 +3411,8 @@
                     <div class="modal-body">
                         <div class="alert alert-danger">
                             <i class="fas fa-exclamation-triangle me-2"></i>
-                            Are you sure you want to reject this ticket?
+                            Are you sure you want to reject this request?
                         </div>
-
                         <div class="mb-3">
                             <label class="form-label">Rejection Reason *</label>
                             <textarea name="rejection_reason" class="form-control" rows="3"
@@ -3405,14 +3421,15 @@
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
-                        <button type="submit" class="btn btn-danger">Reject Ticket</button>
+                        <button type="submit" class="btn btn-danger"
+                            style="background: var(--danger); border: none;">Reject Request</button>
                     </div>
                 </form>
             </div>
         </div>
     </div>
 
-    <!-- Assign Modal - HANYA ADMIN_ENG -->
+    <!-- Assign Modal -->
     <div class="modal fade" id="assignModal" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
             <div class="modal-content">
@@ -3420,7 +3437,7 @@
                     <h5 class="modal-title">
                         <i class="fas fa-user-plus me-2"></i> Assign Technician
                     </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
                 <form id="assignForm">
                     @csrf
@@ -3455,7 +3472,8 @@
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
-                        <button type="submit" class="btn btn-primary">Assign</button>
+                        <button type="submit" class="btn btn-primary"
+                            style="background: var(--navy); border: none;">Assign</button>
                     </div>
                 </form>
             </div>
@@ -3468,16 +3486,16 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title">
-                        <i class="fas fa-ban me-2"></i> Cancel Ticket
+                        <i class="fas fa-ban me-2"></i> Cancel Request
                     </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
                 <form id="cancelForm">
                     @csrf
                     <div class="modal-body">
                         <div class="alert alert-danger">
                             <i class="fas fa-exclamation-triangle me-2"></i>
-                            Are you sure you want to cancel this ticket? This action cannot be undone.
+                            Are you sure you want to cancel this request? This action cannot be undone.
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Cancellation Reason *</label>
@@ -3487,20 +3505,19 @@
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-light" data-bs-dismiss="modal">Go Back</button>
-                        <button type="submit" class="btn btn-danger">Cancel Ticket</button>
+                        <button type="submit" class="btn btn-danger"
+                            style="background: var(--danger); border: none;">Cancel Request</button>
                     </div>
                 </form>
             </div>
         </div>
     </div>
 
-    {{-- Tambahkan di bagian bawah sebelum @endsection --}}
-
     <!-- Report Preview Modal -->
     <div class="modal fade" id="reportPreviewModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-xl modal-dialog-centered">
             <div class="modal-content">
-                <div class="modal-header bg-primary text-white">
+                <div class="modal-header">
                     <h5 class="modal-title">
                         <i class="fas fa-file-pdf me-2"></i>Report Preview - {{ $ticket->ticket_number }}
                     </h5>
@@ -3514,13 +3531,11 @@
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">
                         <i class="fas fa-times me-1"></i> Close
                     </button>
-                    {{-- <a href="{{ route('tickets.report.generate', $ticket->id) }}" class="btn btn-primary">
-                        <i class="fas fa-download me-1"></i> Download PDF
-                    </a> --}}
-                    <button type="button" class="btn btn-success" onclick="printReport()">
+                    <button type="button" class="btn btn-success" onclick="printReport()"
+                        style="background: var(--navy); border: none;">
                         <i class="fas fa-print me-1"></i> Print Report
                     </button>
                 </div>
@@ -3528,32 +3543,112 @@
         </div>
     </div>
 
+    <!-- Report Options Modal -->
+    <div class="modal fade" id="reportModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header" style="background: var(--navy); color: white; border-bottom: none;">
+                    <h5 class="modal-title">
+                        <i class="fas fa-file-pdf me-2"></i> Pilih Jenis Report
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
+                </div>
+                <div class="modal-body" style="padding: 20px;">
+                    <h6 class="text-muted mb-2" style="font-size: 12px; letter-spacing: 0.5px;">DOWNLOAD</h6>
 
+                    <div class="report-option" onclick="generateReport('full')" data-bs-dismiss="modal"
+                        style="display: flex; align-items: center; gap: 15px; padding: 15px; border: 1px solid #e0e0e0; border-radius: 8px; margin-bottom: 10px; cursor: pointer;">
+                        <div
+                            style="width: 40px; height: 40px; background: #ffebee; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                            <i class="fas fa-file-pdf" style="color: #dc3545; font-size: 20px;"></i>
+                        </div>
+                        <div style="flex: 1;">
+                            <div style="font-weight: 600; color: #333;">Full Report</div>
+                            <div style="font-size: 12px; color: #666;">Dengan semua attachments</div>
+                        </div>
+                        <i class="fas fa-download" style="color: #999;"></i>
+                    </div>
 
+                    <div class="report-option" onclick="generateReport('main')" data-bs-dismiss="modal"
+                        style="display: flex; align-items: center; gap: 15px; padding: 15px; border: 1px solid #e0e0e0; border-radius: 8px; margin-bottom: 10px; cursor: pointer;">
+                        <div
+                            style="width: 40px; height: 40px; background: #e6f2ff; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                            <i class="fas fa-file-alt" style="color: #0d6efd; font-size: 20px;"></i>
+                        </div>
+                        <div style="flex: 1;">
+                            <div style="font-weight: 600; color: #333;">Report Only</div>
+                            <div style="font-size: 12px; color: #666;">Tanpa attachments</div>
+                        </div>
+                        <i class="fas fa-download" style="color: #999;"></i>
+                    </div>
 
+                    @if ($hasImageAttachments)
+                        <div class="report-option" onclick="generateReport('attachments')" data-bs-dismiss="modal"
+                            style="display: flex; align-items: center; gap: 15px; padding: 15px; border: 1px solid #e0e0e0; border-radius: 8px; margin-bottom: 20px; cursor: pointer;">
+                            <div
+                                style="width: 40px; height: 40px; background: #e8f5e9; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                                <i class="fas fa-images" style="color: #198754; font-size: 20px;"></i>
+                            </div>
+                            <div style="flex: 1;">
+                                <div style="font-weight: 600; color: #333;">Attachments Only</div>
+                                <div style="font-size: 12px; color: #666;">{{ $imageAttachments->count() }} foto</div>
+                            </div>
+                            <i class="fas fa-download" style="color: #999;"></i>
+                        </div>
+                    @endif
+
+                    <div class="preview-section">
+                        <h6 class="text-muted mb-2" style="font-size: 12px; letter-spacing: 0.5px;">PREVIEW</h6>
+                        <div class="row g-2">
+                            <div class="col-4">
+                                <div class="report-option preview-option" onclick="viewReportModal('full')"
+                                    data-bs-dismiss="modal"
+                                    style="text-align: center; padding: 12px; border: 1px solid #e0e0e0; border-radius: 8px; cursor: pointer;">
+                                    <i class="fas fa-eye"
+                                        style="color: #17a2b8; font-size: 20px; margin-bottom: 5px; display: block;"></i>
+                                    <span style="font-size: 11px; font-weight: 500;">Full</span>
+                                </div>
+                            </div>
+                            <div class="col-4">
+                                <div class="report-option preview-option" onclick="viewReportModal('main')"
+                                    data-bs-dismiss="modal"
+                                    style="text-align: center; padding: 12px; border: 1px solid #e0e0e0; border-radius: 8px; cursor: pointer;">
+                                    <i class="fas fa-eye"
+                                        style="color: #17a2b8; font-size: 20px; margin-bottom: 5px; display: block;"></i>
+                                    <span style="font-size: 11px; font-weight: 500;">Report</span>
+                                </div>
+                            </div>
+                            <div class="col-4">
+                                @if ($hasImageAttachments)
+                                    <div class="report-option preview-option" onclick="viewReportModal('attachments')"
+                                        data-bs-dismiss="modal"
+                                        style="text-align: center; padding: 12px; border: 1px solid #e0e0e0; border-radius: 8px; cursor: pointer;">
+                                        <i class="fas fa-eye"
+                                            style="color: #17a2b8; font-size: 20px; margin-bottom: 5px; display: block;"></i>
+                                        <span style="font-size: 11px; font-weight: 500;">Photos</span>
+                                    </div>
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
 @endsection
 
 @push('scripts')
-    {{-- <!-- jQuery -->
-    <script src="{{ asset('assets/vendor/jquery/jquery.min.js') }}"></script> --}}
-
-    <!-- Select2 -->
     <script src="{{ asset('assets/vendor/select2/js/select2.full.min.js') }}"></script>
-
-    <!-- Toastr -->
     <script src="{{ asset('assets/vendor/toastr/js/toastr.min.js') }}"></script>
-
-    <!-- SweetAlert2 -->
     <script src="{{ asset('assets/vendor/sweetalert2/dist/sweetalert2.min.js') }}"></script>
-    {{--
-    <!-- Bootstrap Modal -->
-    <script src="{{ asset('assets/vendor/bootstrap/js/bootstrap.bundle.min.js') }}"></script> --}}
-
-    <!-- Signature Pad -->
     <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
 
     <script>
-        // Global variables for signature pads
+        // Global variables
         let receiveSignaturePad = null;
         let omApproveSignaturePad = null;
         let completeSignaturePad = null;
@@ -3561,192 +3656,149 @@
         let gmApproveSignaturePad = null;
         let pendingSignatureAction = null;
 
-        // Toastr configuration
         toastr.options = {
             "closeButton": true,
             "progressBar": true,
             "positionClass": "toast-top-right",
-            "timeOut": "3000",
-            "showMethod": "fadeIn",
-            "hideMethod": "fadeOut"
+            "timeOut": "3000"
         };
 
         $(document).ready(function() {
-            // ============================================
-            // MODAL INITIALIZATION
-            // ============================================
-
-            // Receive Modal
+            // Signature Pad Initializations
             $('#receiveModal').on('shown.bs.modal', function() {
                 const canvas = document.getElementById('receiveSignatureCanvas');
                 if (canvas) {
-                    canvas.width = canvas.offsetWidth;
+                    canvas.width = 300;
                     canvas.height = 200;
-
                     receiveSignaturePad = new SignaturePad(canvas, {
-                        backgroundColor: 'rgb(255, 255, 255)',
+                        backgroundColor: 'rgba(0,0,0,0)',
                         penColor: 'rgb(0, 0, 0)',
                         minWidth: 0.5,
-                        maxWidth: 2.5,
-                        throttle: 16
+                        maxWidth: 2.5
                     });
                 }
             });
 
-            // OM Approve Modal
             $('#omApproveModal').on('shown.bs.modal', function() {
                 const canvas = document.getElementById('omApproveSignatureCanvas');
                 if (canvas) {
-                    canvas.width = canvas.offsetWidth;
+                    canvas.width = 300;
                     canvas.height = 200;
-
                     omApproveSignaturePad = new SignaturePad(canvas, {
-                        backgroundColor: 'rgb(255, 255, 255)',
+                        backgroundColor: 'rgba(0,0,0,0)',
                         penColor: 'rgb(0, 0, 0)',
                         minWidth: 0.5,
-                        maxWidth: 2.5,
-                        throttle: 16
+                        maxWidth: 2.5
                     });
                 }
             });
 
-            // Complete Modal
             $('#completeModal').on('shown.bs.modal', function() {
                 const canvas = document.getElementById('completeSignatureCanvas');
                 if (canvas) {
-                    canvas.width = canvas.offsetWidth;
+                    canvas.width = 300;
                     canvas.height = 200;
-
                     completeSignaturePad = new SignaturePad(canvas, {
-                        backgroundColor: 'rgb(255, 255, 255)',
+                        backgroundColor: 'rgba(0,0,0,0)',
                         penColor: 'rgb(0, 0, 0)',
                         minWidth: 0.5,
-                        maxWidth: 2.5,
-                        throttle: 16
+                        maxWidth: 2.5
                     });
                 }
             });
 
-            // User Accept Modal
             $('#userCheckAcceptModal').on('shown.bs.modal', function() {
                 const canvas = document.getElementById('userAcceptSignatureCanvas');
                 if (canvas) {
-                    canvas.width = canvas.offsetWidth;
+                    canvas.width = 300;
                     canvas.height = 200;
-
                     userAcceptSignaturePad = new SignaturePad(canvas, {
-                        backgroundColor: 'rgb(255, 255, 255)',
+                        backgroundColor: 'rgba(0,0,0,0)',
                         penColor: 'rgb(0, 0, 0)',
                         minWidth: 0.5,
-                        maxWidth: 2.5,
-                        throttle: 16
+                        maxWidth: 2.5
                     });
                 }
             });
 
-            // GM Approve Modal
             $('#gmApproveModal').on('shown.bs.modal', function() {
                 const canvas = document.getElementById('gmApproveSignatureCanvas');
                 if (canvas) {
-                    canvas.width = canvas.offsetWidth;
+                    canvas.width = 300;
                     canvas.height = 200;
-
                     gmApproveSignaturePad = new SignaturePad(canvas, {
-                        backgroundColor: 'rgb(255, 255, 255)',
+                        backgroundColor: 'rgba(0,0,0,0)',
                         penColor: 'rgb(0, 0, 0)',
                         minWidth: 0.5,
-                        maxWidth: 2.5,
-                        throttle: 16
+                        maxWidth: 2.5
                     });
                 }
             });
 
-            // ============================================
-            // FORM HANDLERS
-            // ============================================
-
-            // Receive Ticket Form
+            // Form Submissions
             $('#receiveForm').on('submit', function(e) {
                 e.preventDefault();
-
                 const formData = new FormData(this);
-
                 if (!receiveSignaturePad || receiveSignaturePad.isEmpty()) {
                     toastr.error('Please draw your signature');
                     return;
                 }
                 formData.append('signature_data', receiveSignaturePad.toDataURL());
-
                 submitForm('{{ route('tickets.receive', $ticket->id) }}', formData, '#receiveModal');
             });
 
-            // OM Approve Form
             $('#omApproveForm').on('submit', function(e) {
                 e.preventDefault();
-
                 const formData = new FormData(this);
-
                 if (!omApproveSignaturePad || omApproveSignaturePad.isEmpty()) {
                     toastr.error('Please draw your signature');
                     return;
                 }
                 formData.append('signature_data', omApproveSignaturePad.toDataURL());
-
                 submitForm('{{ route('tickets.om-action', $ticket->id) }}', formData, '#omApproveModal');
             });
 
-            // OM Reject Form
             $('#omRejectForm').on('submit', function(e) {
                 e.preventDefault();
                 const formData = new FormData(this);
                 submitForm('{{ route('tickets.om-action', $ticket->id) }}', formData, '#omRejectModal');
             });
 
-            // Complete Form
             $('#completeForm').submit(function(e) {
+                e.preventDefault();
                 const notes = $('#completion_notes').val().trim();
-                const signature = $('#completeSignatureData').val();
-
                 if (!notes) {
-                    e.preventDefault();
-                    toastr.error('Please fill in completion notes', 'Required Field');
+                    toastr.error('Please fill in completion notes');
                     $('#completion_notes').focus();
-                    return false;
+                    return;
                 }
-
-                if (!signature) {
-                    e.preventDefault();
-                    toastr.error('Please provide your signature', 'Required Field');
-                    return false;
+                if (!completeSignaturePad || completeSignaturePad.isEmpty()) {
+                    toastr.error('Please provide your signature');
+                    return;
                 }
-
-                return true;
+                const formData = new FormData(this);
+                formData.append('signature_data', completeSignaturePad.toDataURL());
+                submitForm('{{ route('tickets.complete', $ticket->id) }}', formData, '#completeModal');
             });
 
-            // VR Form
-            $('#vrForm').on('submit', function(e) {
+            $('#prForm').on('submit', function(e) {
                 e.preventDefault();
                 const formData = new FormData(this);
-                submitForm('{{ route('tickets.request-vr', $ticket->id) }}', formData, '#vrModal');
+                submitForm('{{ route('tickets.request-vr', $ticket->id) }}', formData, '#prModal');
             });
 
-            // User Check Accept Form
             $('#userCheckAcceptForm').on('submit', function(e) {
                 e.preventDefault();
-
                 const formData = new FormData(this);
-
                 if (!userAcceptSignaturePad || userAcceptSignaturePad.isEmpty()) {
                     toastr.error('Please draw your signature');
                     return;
                 }
                 formData.append('signature_data', userAcceptSignaturePad.toDataURL());
-
                 submitForm('{{ route('tickets.user-check', $ticket->id) }}', formData,
                     '#userCheckAcceptModal');
             });
 
-            // User Check Reject Form
             $('#userCheckRejectForm').on('submit', function(e) {
                 e.preventDefault();
                 const formData = new FormData(this);
@@ -3754,60 +3806,47 @@
                     '#userCheckRejectModal');
             });
 
-            // GM Approve Form
             $('#gmApproveForm').on('submit', function(e) {
                 e.preventDefault();
-
                 const formData = new FormData(this);
-
                 if (!gmApproveSignaturePad || gmApproveSignaturePad.isEmpty()) {
                     toastr.error('Please draw your signature');
                     return;
                 }
                 formData.append('signature_data', gmApproveSignaturePad.toDataURL());
-
                 submitForm('{{ route('tickets.gm-action', $ticket->id) }}', formData, '#gmApproveModal');
             });
 
-            // GM Reject Form
             $('#gmRejectForm').on('submit', function(e) {
                 e.preventDefault();
                 const formData = new FormData(this);
                 submitForm('{{ route('tickets.gm-action', $ticket->id) }}', formData, '#gmRejectModal');
             });
 
-            // Assign Form
             $('#assignForm').on('submit', function(e) {
                 e.preventDefault();
                 const formData = new FormData(this);
                 submitForm('{{ route('tickets.assign', $ticket->id) }}', formData, '#assignModal');
             });
 
-            // Cancel Form
             $('#cancelForm').on('submit', function(e) {
                 e.preventDefault();
                 const formData = new FormData(this);
                 submitForm('{{ route('tickets.cancel', $ticket->id) }}', formData, '#cancelModal');
             });
 
-            // Comment Form
             $('#commentFormSubmit').on('submit', function(e) {
                 e.preventDefault();
-
                 const commentContent = $('#commentText').val().trim();
-
                 if (!commentContent) {
                     toastr.error('Please enter a comment');
                     return;
                 }
-
                 const formData = new FormData(this);
                 formData.set('comment', commentContent);
-
                 submitForm('{{ route('tickets.add-comment', $ticket->id) }}', formData, null, true);
             });
 
-            // Quick Approve Form
             $('#quickApproveForm').on('submit', function(e) {
                 e.preventDefault();
                 const formData = new FormData(this);
@@ -3815,73 +3854,17 @@
                     '#quickApproveModal');
             });
 
-            // Delete Ticket Form
-            // Delete Ticket Form - GANTI DARI POST KE DELETE
-            $('#deleteTicketForm').on('submit', function(e) {
+            $('#addFollowupForm').on('submit', function(e) {
                 e.preventDefault();
-
                 const formData = new FormData(this);
-                const password = formData.get('password');
-
-                Swal.fire({
-                    title: 'Are you absolutely sure?',
-                    text: "This will permanently delete the ticket and cannot be recovered!",
-                    icon: 'warning',
-                    showCancelButton: true,
-                    confirmButtonColor: '#dc3545',
-                    cancelButtonColor: '#6c757d',
-                    confirmButtonText: 'Yes, delete permanently!',
-                    cancelButtonText: 'Cancel',
-                    reverseButtons: true
-                }).then((result) => {
-                    if (result.isConfirmed) {
-                        // Gunakan DELETE method dengan CSRF token
-                        $.ajax({
-                            url: '{{ route('tickets.destroy', $ticket->id) }}',
-                            type: 'DELETE',
-                            headers: {
-                                'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                            },
-                            data: {
-                                password: password
-                            },
-                            success: function(response) {
-                                if (response.success) {
-                                    toastr.success(response.message ||
-                                        'Ticket deleted successfully');
-                                    setTimeout(() => {
-                                        if (response.redirect) {
-                                            window.location.href = response
-                                                .redirect;
-                                        }
-                                    }, 1500);
-                                } else {
-                                    toastr.error(response.message ||
-                                        'Failed to delete ticket');
-                                }
-                            },
-                            error: function(xhr) {
-                                let errorMessage = 'Failed to delete ticket';
-                                if (xhr.responseJSON && xhr.responseJSON.message) {
-                                    errorMessage = xhr.responseJSON.message;
-                                }
-                                toastr.error(errorMessage);
-                            }
-                        });
-                    }
-                });
+                submitForm('{{ route('tickets.add-followup', $ticket->id) }}', formData,
+                    '#addFollowupModal');
             });
 
-            function deleteTicket() {
-                $('#deleteTicketModal').modal('show');
-            }
-            // New Signature Form (Password Verification)
             $('#newSignatureForm').on('submit', function(e) {
                 e.preventDefault();
-
                 const formData = new FormData(this);
                 formData.append('action_type', pendingSignatureAction);
-
                 $.ajax({
                     url: '{{ route('tickets.verify-password') }}',
                     type: 'POST',
@@ -3891,8 +3874,6 @@
                     success: function(response) {
                         if (response.success) {
                             $('#newSignatureModal').modal('hide');
-
-                            // Buka modal signature yang sesuai
                             switch (pendingSignatureAction) {
                                 case 'receive':
                                     $('#receiveModal').modal('show');
@@ -3909,71 +3890,53 @@
                         }
                     },
                     error: function(xhr) {
-                        let errorMessage = 'Password verification failed';
-                        if (xhr.responseJSON && xhr.responseJSON.message) {
-                            errorMessage = xhr.responseJSON.message;
-                        }
-                        toastr.error(errorMessage);
+                        toastr.error(xhr.responseJSON?.message ||
+                            'Password verification failed');
                     }
                 });
             });
 
-            // ============================================
-            // IMAGE VIEWER
-            // ============================================
-
-            // Handle image clicks
-            $(document).on('click', '.image-attachment, .comment-image, .view-image-link', function(e) {
+            // Image viewer
+            $(document).on('click', '.gallery-item img, .pr-photo-item img, .comment-image', function(e) {
                 e.preventDefault();
                 e.stopPropagation();
-
-                let imageSrc = $(this).data('src') || $(this).attr('src') || $(this).attr('href');
-
+                let imageSrc = $(this).data('src') || $(this).attr('src');
                 if (!imageSrc) return;
-
-                // Create image modal
                 const modalHtml = `
                     <div class="image-modal-backdrop" id="imageModal">
                         <div class="image-modal-content">
                             <div class="image-modal-close" onclick="closeImageModal()">
                                 <i class="fas fa-times"></i>
                             </div>
-                            <img src="${imageSrc}" alt="Preview"
-                                 onerror="this.onerror=null; this.src='{{ asset('assets/images/no-image.png') }}'">
+                            <img src="${imageSrc}" alt="Preview">
                         </div>
                     </div>
                 `;
-
                 $('body').append(modalHtml);
-
-                // Close on backdrop click
                 $('#imageModal').on('click', function(e) {
-                    if (e.target === this) {
-                        closeImageModal();
-                    }
+                    if (e.target === this) closeImageModal();
                 });
-
-                // Close on escape key
                 $(document).on('keydown', function(e) {
-                    if (e.key === 'Escape') {
-                        closeImageModal();
-                    }
+                    if (e.key === 'Escape') closeImageModal();
                 });
+            });
+
+            // Toggle sections
+            $('.activity-header').on('click', function() {
+                const $section = $(this).closest('.activity-section');
+                $section.toggleClass('collapsed');
+            });
+            $('.comments-header').on('click', function() {
+                const $section = $(this).closest('.comments-section');
+                $section.toggleClass('collapsed');
             });
         });
 
-        // ============================================
-        // HELPER FUNCTIONS
-        // ============================================
-
         function submitForm(url, formData, modalId = null, reload = true) {
-            const form = modalId ? $(modalId + ' form') : $('form:last');
-            const submitBtn = form.find('button[type="submit"]');
+            const submitBtn = modalId ? $(modalId + ' form button[type="submit"]') : $(
+                '#commentFormSubmit button[type="submit"]');
             const originalText = submitBtn.html();
-
-            submitBtn.prop('disabled', true).html(
-                '<i class="fas fa-spinner fa-spin me-2"></i>Processing...');
-
+            submitBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-2"></i>Processing...');
             $.ajax({
                 url: url,
                 type: 'POST',
@@ -3983,185 +3946,148 @@
                 success: function(response) {
                     if (response.success) {
                         toastr.success(response.message);
-
-                        if (modalId) {
-                            $(modalId).modal('hide');
-                        }
-
-                        if (reload) {
-                            setTimeout(() => {
-                                if (response.redirect) {
-                                    window.location.href = response.redirect;
-                                } else {
-                                    location.reload();
-                                }
-                            }, 1000);
-                        }
+                        if (modalId) $(modalId).modal('hide');
+                        if (reload) setTimeout(() => location.reload(), 1000);
                     } else {
                         toastr.error(response.message || 'Operation failed');
                     }
                 },
                 error: function(xhr) {
-                    submitBtn.prop('disabled', false).html(originalText);
-
-                    let message = 'An error occurred. Please try again.';
-
-                    if (xhr.responseJSON) {
-                        if (xhr.responseJSON.message) {
-                            message = xhr.responseJSON.message;
-                        } else if (xhr.responseJSON.error) {
-                            message = xhr.responseJSON.error;
-                        }
-
-                        // Show validation errors
-                        if (xhr.responseJSON.errors) {
-                            Object.values(xhr.responseJSON.errors).forEach(error => {
-                                if (Array.isArray(error)) {
-                                    error.forEach(err => toastr.error(err));
-                                } else {
-                                    toastr.error(error);
-                                }
-                            });
-                        }
-                    }
-
+                    let message = 'An error occurred';
+                    if (xhr.responseJSON?.message) message = xhr.responseJSON.message;
                     toastr.error(message);
                 },
                 complete: function() {
-                    setTimeout(() => {
-                        submitBtn.prop('disabled', false).html(originalText);
-                    }, 1000);
+                    setTimeout(() => submitBtn.prop('disabled', false).html(originalText), 1000);
                 }
             });
         }
+        // Toggle Signatures Section
+        $(document).ready(function() {
+            // Signature toggle
+            $('.signatures-header').on('click', function() {
+                const $section = $(this).closest('.signatures-section');
+                $section.toggleClass('collapsed');
 
-        // ============================================
-        // SIGNATURE FUNCTIONS
-        // ============================================
+                const $container = $section.find('.signatures-container');
+                if ($section.hasClass('collapsed')) {
+                    $container.css('max-height', '0');
+                } else {
+                    $container.css('max-height', $container[0].scrollHeight + 'px');
+                }
+            });
 
-        // Receive signature functions
-        window.clearReceiveSignature = function() {
-            if (receiveSignaturePad) {
-                receiveSignaturePad.clear();
+            // Initialize collapsed state for signatures on mobile
+            function checkSignatureToggle() {
+                const $signaturesSection = $('.signatures-section');
+                const $signaturesContainer = $signaturesSection.find('.signatures-container');
+
+                if ($(window).width() <= 768) {
+                    if (!$signaturesSection.hasClass('collapsed')) {
+                        $signaturesSection.addClass('collapsed');
+                        $signaturesContainer.css('max-height', '0');
+                    }
+                } else {
+                    // Desktop bisa tetap collapsed atau expanded, terserah user
+                    // Tidak otomatis berubah
+                }
             }
-        };
 
-        window.undoReceiveSignature = function() {
+            checkSignatureToggle();
+            $(window).on('resize', checkSignatureToggle);
+
+            // Click signature image to enlarge
+            $(document).on('click', '.signature-image', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                let imageSrc = $(this).data('src') || $(this).attr('src');
+                if (!imageSrc) return;
+
+                const modalHtml = `
+            <div class="image-modal-backdrop" id="signatureImageModal">
+                <div class="image-modal-content">
+                    <div class="image-modal-close" onclick="closeSignatureImageModal()">
+                        <i class="fas fa-times"></i>
+                    </div>
+                    <img src="${imageSrc}" alt="Signature Preview">
+                </div>
+            </div>
+        `;
+                $('body').append(modalHtml);
+
+                $('#signatureImageModal').on('click', function(e) {
+                    if (e.target === this) closeSignatureImageModal();
+                });
+                $(document).on('keydown', function(e) {
+                    if (e.key === 'Escape') closeSignatureImageModal();
+                });
+            });
+        });
+
+        function closeSignatureImageModal() {
+            $('#signatureImageModal').remove();
+            $(document).off('keydown');
+        }
+        // Signature functions
+        window.clearReceiveSignature = () => receiveSignaturePad?.clear();
+        window.undoReceiveSignature = () => {
             if (receiveSignaturePad) {
                 const data = receiveSignaturePad.toData();
-                if (data.length > 0) {
-                    data.pop();
-                    receiveSignaturePad.fromData(data);
-                }
+                if (data.length) data.pop();
+                receiveSignaturePad.fromData(data);
             }
         };
-
-        // OM Approve signature functions
-        window.clearOmApproveSignature = function() {
-            if (omApproveSignaturePad) {
-                omApproveSignaturePad.clear();
-            }
-        };
-
-        window.undoOmApproveSignature = function() {
+        window.clearOmApproveSignature = () => omApproveSignaturePad?.clear();
+        window.undoOmApproveSignature = () => {
             if (omApproveSignaturePad) {
                 const data = omApproveSignaturePad.toData();
-                if (data.length > 0) {
-                    data.pop();
-                    omApproveSignaturePad.fromData(data);
-                }
+                if (data.length) data.pop();
+                omApproveSignaturePad.fromData(data);
             }
         };
-
-        // Complete signature functions
-        window.clearCompleteSignature = function() {
-            if (completeSignaturePad) {
-                completeSignaturePad.clear();
-            }
-        };
-
-        window.undoCompleteSignature = function() {
-            if (completeSignaturePad) {
-                const data = completeSignaturePad.toData();
-                if (data.length > 0) {
-                    data.pop();
-                    completeSignaturePad.fromData(data);
-                }
-            }
-        };
-
-        // User Accept signature functions
-        window.clearUserAcceptSignature = function() {
-            if (userAcceptSignaturePad) {
-                userAcceptSignaturePad.clear();
-            }
-        };
-
-        window.undoUserAcceptSignature = function() {
+        window.clearCompleteSignature = () => completeSignaturePad?.clear();
+        window.clearUserAcceptSignature = () => userAcceptSignaturePad?.clear();
+        window.undoUserAcceptSignature = () => {
             if (userAcceptSignaturePad) {
                 const data = userAcceptSignaturePad.toData();
-                if (data.length > 0) {
-                    data.pop();
-                    userAcceptSignaturePad.fromData(data);
-                }
+                if (data.length) data.pop();
+                userAcceptSignaturePad.fromData(data);
             }
         };
-
-        // GM Approve signature functions
-        window.clearGmApproveSignature = function() {
-            if (gmApproveSignaturePad) {
-                gmApproveSignaturePad.clear();
-            }
-        };
-
-        window.undoGmApproveSignature = function() {
+        window.clearGmApproveSignature = () => gmApproveSignaturePad?.clear();
+        window.undoGmApproveSignature = () => {
             if (gmApproveSignaturePad) {
                 const data = gmApproveSignaturePad.toData();
-                if (data.length > 0) {
-                    data.pop();
-                    gmApproveSignaturePad.fromData(data);
-                }
+                if (data.length) data.pop();
+                gmApproveSignaturePad.fromData(data);
             }
         };
 
-        // ============================================
-        // MODAL OPEN FUNCTIONS
-        // ============================================
-
-        // Quick Approve Function
+        // Modal open functions
         function quickApprove() {
             Swal.fire({
                 title: 'Quick Approve?',
-                text: "Use your saved signature to approve this ticket",
+                text: "Use your saved signature to approve this request",
                 icon: 'question',
                 showCancelButton: true,
                 confirmButtonColor: '#28a745',
                 cancelButtonColor: '#6c757d',
-                confirmButtonText: 'Yes, approve it!',
-                cancelButtonText: 'Cancel',
-                reverseButtons: true
+                confirmButtonText: 'Yes, approve it!'
             }).then((result) => {
-                if (result.isConfirmed) {
-                    $('#quickApproveModal').modal('show');
-                }
+                if (result.isConfirmed) $('#quickApproveModal').modal('show');
             });
         }
 
-        // Delete Ticket Function
         function deleteTicket() {
             $('#deleteTicketModal').modal('show');
         }
 
-        // Open signature modal with password verification
-        function openSignatureModalWithPassword(actionType) {
-            pendingSignatureAction = actionType;
-            $('#newSignatureModal').modal('show');
+        function openAddFollowupModal() {
+            $('#addFollowupModal').modal('show');
         }
 
-        // Modified modal open functions
         function openReceiveModal() {
             @if ($hasSignature && $canSaveSignature)
-                // Jika sudah punya signature, tawarkan opsi
                 Swal.fire({
                     title: 'How do you want to sign?',
                     showDenyButton: true,
@@ -4169,13 +4095,12 @@
                     confirmButtonText: 'Use Saved Signature',
                     denyButtonText: 'Create New Signature',
                     cancelButtonText: 'Cancel',
-                    icon: 'question',
-                    reverseButtons: true
+                    icon: 'question'
                 }).then((result) => {
-                    if (result.isConfirmed) {
-                        quickApprove();
-                    } else if (result.isDenied) {
-                        openSignatureModalWithPassword('receive');
+                    if (result.isConfirmed) quickApprove();
+                    else if (result.isDenied) {
+                        pendingSignatureAction = 'receive';
+                        $('#newSignatureModal').modal('show');
                     }
                 });
             @else
@@ -4192,13 +4117,12 @@
                     confirmButtonText: 'Use Saved Signature',
                     denyButtonText: 'Create New Signature',
                     cancelButtonText: 'Cancel',
-                    icon: 'question',
-                    reverseButtons: true
+                    icon: 'question'
                 }).then((result) => {
-                    if (result.isConfirmed) {
-                        quickApprove();
-                    } else if (result.isDenied) {
-                        openSignatureModalWithPassword('om_approve');
+                    if (result.isConfirmed) quickApprove();
+                    else if (result.isDenied) {
+                        pendingSignatureAction = 'om_approve';
+                        $('#newSignatureModal').modal('show');
                     }
                 });
             @else
@@ -4215,13 +4139,12 @@
                     confirmButtonText: 'Use Saved Signature',
                     denyButtonText: 'Create New Signature',
                     cancelButtonText: 'Cancel',
-                    icon: 'question',
-                    reverseButtons: true
+                    icon: 'question'
                 }).then((result) => {
-                    if (result.isConfirmed) {
-                        quickApprove();
-                    } else if (result.isDenied) {
-                        openSignatureModalWithPassword('gm_approve');
+                    if (result.isConfirmed) quickApprove();
+                    else if (result.isDenied) {
+                        pendingSignatureAction = 'gm_approve';
+                        $('#newSignatureModal').modal('show');
                     }
                 });
             @else
@@ -4229,7 +4152,6 @@
             @endif
         }
 
-        // Other modal functions (unchanged)
         function openOmRejectModal() {
             $('#omRejectModal').modal('show');
         }
@@ -4238,8 +4160,8 @@
             $('#completeModal').modal('show');
         }
 
-        function openVRModal() {
-            $('#vrModal').modal('show');
+        function openPRModal() {
+            $('#prModal').modal('show');
         }
 
         function openUserCheckAcceptModal() {
@@ -4269,14 +4191,12 @@
 
         function closeTicketAdmin() {
             Swal.fire({
-                title: 'Close Ticket Administratively?',
-                text: "This will mark the ticket as administratively closed after GM approval.",
+                title: 'Close Request Administratively?',
+                text: "This will mark the request as administratively closed after GM approval.",
                 icon: 'question',
                 showCancelButton: true,
                 confirmButtonColor: '#343a40',
-                confirmButtonText: 'Yes, close it',
-                cancelButtonText: 'Cancel',
-                reverseButtons: true
+                confirmButtonText: 'Yes, close it'
             }).then((result) => {
                 if (result.isConfirmed) {
                     $.ajax({
@@ -4285,58 +4205,28 @@
                         headers: {
                             'X-CSRF-TOKEN': '{{ csrf_token() }}'
                         },
-                        dataType: 'json',
                         success: function(response) {
                             if (response.success) {
-                                toastr.success(response.message || 'Ticket closed administratively');
-                                setTimeout(() => {
-                                    if (response.redirect) {
-                                        window.location.href = response.redirect;
-                                    } else {
-                                        location.reload();
-                                    }
-                                }, 1500);
-                            } else {
-                                toastr.error(response.message || 'Failed to close ticket');
-                            }
+                                toastr.success(response.message);
+                                setTimeout(() => location.reload(), 1500);
+                            } else toastr.error(response.message);
                         },
                         error: function(xhr) {
-                            console.error('Close ticket error:', xhr);
-                            let errorMessage = 'Failed to close ticket. Please try again.';
-
-                            if (xhr.responseJSON) {
-                                if (xhr.responseJSON.message) {
-                                    errorMessage = xhr.responseJSON.message;
-                                } else if (xhr.responseJSON.error) {
-                                    errorMessage = xhr.responseJSON.error;
-                                }
-                            }
-
-                            toastr.error(errorMessage);
+                            toastr.error('Failed to close request');
                         }
                     });
                 }
             });
         }
 
-        function scrollToCommentForm() {
-            document.getElementById('commentForm').scrollIntoView({
-                behavior: 'smooth'
-            });
-        }
-
-        // Tambahkan di bagian JavaScript functions
         function continueToOM() {
             Swal.fire({
                 title: 'Continue to OM?',
-                text: "Send this ticket to Operation Manager for approval",
+                text: "Send this request to Operation Manager for approval",
                 icon: 'question',
                 showCancelButton: true,
                 confirmButtonColor: '#28a745',
-                cancelButtonColor: '#6c757d',
-                confirmButtonText: 'Yes, continue',
-                cancelButtonText: 'Cancel',
-                reverseButtons: true
+                confirmButtonText: 'Yes, continue'
             }).then((result) => {
                 if (result.isConfirmed) {
                     $.ajax({
@@ -4345,208 +4235,71 @@
                         headers: {
                             'X-CSRF-TOKEN': '{{ csrf_token() }}'
                         },
-                        dataType: 'json',
-                        beforeSend: function() {
-                            Swal.fire({
-                                title: 'Processing...',
-                                text: 'Sending to OM',
-                                allowOutsideClick: false,
-                                didOpen: () => {
-                                    Swal.showLoading();
-                                }
-                            });
-                        },
                         success: function(response) {
                             if (response.success) {
-                                Swal.fire({
-                                    icon: 'success',
-                                    title: 'Success!',
-                                    text: response.message,
-                                    timer: 1500,
-                                    showConfirmButton: false
-                                }).then(() => {
-                                    location.reload();
-                                });
-                            } else {
-                                Swal.fire({
-                                    icon: 'error',
-                                    title: 'Failed',
-                                    text: response.message
-                                });
-                            }
+                                toastr.success(response.message);
+                                setTimeout(() => location.reload(), 1000);
+                            } else toastr.error(response.message);
                         },
                         error: function(xhr) {
-                            Swal.fire({
-                                icon: 'error',
-                                title: 'Error',
-                                text: xhr.responseJSON?.message || 'Failed to continue to OM'
-                            });
+                            toastr.error('Failed to continue to OM');
                         }
                     });
                 }
             });
         }
-        // Tambahkan di bagian script
-        $(document).ready(function() {
-            // Prevent double-tap zoom on buttons
-            $('.btn-action').on('touchstart', function(e) {
-                if ($(this).hasClass('disabled')) {
-                    e.preventDefault();
-                    return false;
-                }
-                $(this).addClass('active');
-            }).on('touchend', function() {
-                $(this).removeClass('active');
-            });
 
-            // Improve scrolling for signature sections
-            $('.signature-grid, .approval-grid').on('touchmove', function(e) {
-                e.stopPropagation();
-            });
+        function openReportModal() {
+            $('#reportModal').modal('show');
+        }
 
-            // Close modals on backdrop tap for mobile
-            $('.modal').on('show.bs.modal', function() {
-                $('body').addClass('modal-open');
-            });
-
-            $('.modal').on('hidden.bs.modal', function() {
-                $('body').removeClass('modal-open');
-            });
-
-            // Fix for iOS input focus in modal
-            $(document).on('focus', 'input, textarea, select', function() {
-                setTimeout(function() {
-                    window.scrollTo(0, 0);
-                }, 100);
-            });
-        });
-        $(document).ready(function() {
-            // Toggle Activity Timeline
-            $('.activity-header').on('click', function() {
-                const $activitySection = $(this).closest('.activity-section');
-                $activitySection.toggleClass('collapsed');
-
-                const $timeline = $activitySection.find('.activity-timeline');
-                if ($activitySection.hasClass('collapsed')) {
-                    $timeline.css('max-height', '0');
-                } else {
-                    $timeline.css('max-height', $timeline[0].scrollHeight + 'px');
-                }
-            });
-
-            // Toggle Comments Section
-            $('.comments-header').on('click', function() {
-                const $commentsSection = $(this).closest('.comments-section');
-                $commentsSection.toggleClass('collapsed');
-
-                const $commentsContainer = $commentsSection.find('.comments-container');
-                if ($commentsSection.hasClass('collapsed')) {
-                    $commentsContainer.css('max-height', '0');
-                } else {
-                    $commentsContainer.css('max-height', $commentsContainer[0].scrollHeight + 'px');
-                }
-            });
-
-            // Cek status ticket untuk comment form
-            function checkCommentFormStatus() {
-                const ticketStatus = '{{ $ticket->status }}';
-                const $commentForm = $('#commentForm');
-
-                // Status yang tidak boleh comment
-                const disabledStatuses = ['closed', 'cancelled', 'ready_for_closure', 'pending_gm'];
-
-                if (disabledStatuses.includes(ticketStatus)) {
-                    $commentForm.addClass('disabled').prop('disabled', true);
-                    $commentForm.find('textarea, input, button').prop('disabled', true);
-
-                    // Jika sudah completed dan checked (user sudah check done)
-                    if (ticketStatus === 'pending_gm' || '{{ $ticket->approval->user_checked ?? false }}') {
-                        $commentForm.addClass('hidden');
-                    }
-                }
+        function generateReport(type) {
+            $('#reportModal').modal('hide');
+            let url = '';
+            switch (type) {
+                case 'full':
+                    url = '{{ route('tickets.report.download', $ticket->id) }}?type=full';
+                    break;
+                case 'main':
+                    url = '{{ route('tickets.report.download', $ticket->id) }}?type=main';
+                    break;
+                case 'attachments':
+                    url = '{{ route('tickets.report.download', $ticket->id) }}?type=attachments';
+                    break;
             }
-
-            // Panggil saat halaman dimuat
-            checkCommentFormStatus();
-
-            // Cek ukuran layar untuk collapse/expand
-            function checkScreenSize() {
-                const $activitySection = $('.activity-section');
-                const $activityTimeline = $activitySection.find('.activity-timeline');
-
-                const $commentsSection = $('.comments-section');
-                const $commentsContainer = $commentsSection.find('.comments-container');
-
-                if ($(window).width() <= 768) {
-                    // Di mobile, default collapsed
-                    if (!$activitySection.hasClass('collapsed')) {
-                        $activitySection.addClass('collapsed');
-                        $activityTimeline.css('max-height', '0');
-                    }
-                    if (!$commentsSection.hasClass('collapsed')) {
-                        $commentsSection.addClass('collapsed');
-                        $commentsContainer.css('max-height', '0');
-                    }
-                } else {
-                    // Di desktop, default expanded
-                    if ($activitySection.hasClass('collapsed')) {
-                        $activitySection.removeClass('collapsed');
-                        $activityTimeline.css('max-height', 'none');
-                    }
-                    if ($commentsSection.hasClass('collapsed')) {
-                        $commentsSection.removeClass('collapsed');
-                        $commentsContainer.css('max-height', 'none');
-                    }
-                }
-            }
-
-            // Panggil saat halaman dimuat dan saat resize
-            checkScreenSize();
-            $(window).on('resize', checkScreenSize);
-        });
-
-        function generateReport() {
             Swal.fire({
-                title: 'Download PDF Report',
-                text: "Download detailed PDF report for this ticket?",
-                icon: 'question',
-                showCancelButton: true,
-                confirmButtonColor: '#17a2b8',
-                cancelButtonColor: '#6c757d',
-                confirmButtonText: 'Download PDF',
-                cancelButtonText: 'Cancel',
-                reverseButtons: true
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    // Show loading
-                    Swal.fire({
-                        title: 'Generating Report',
-                        text: 'Please wait while we generate the PDF...',
-                        allowOutsideClick: false,
-                        didOpen: () => {
-                            Swal.showLoading();
-                        }
-                    });
-
-                    // Download PDF
-                    window.location.href = '{{ route('tickets.report.download', $ticket->id) }}';
-
-                    // Close loading after 2 seconds
-                    setTimeout(() => {
-                        Swal.close();
-                    }, 2000);
-                }
+                title: 'Generating Report',
+                text: 'Please wait...',
+                allowOutsideClick: false,
+                didOpen: () => Swal.showLoading()
             });
+            window.location.href = url;
+            setTimeout(() => Swal.close(), 3000);
         }
 
-
-        function viewReportModal() {
+        function viewReportModal(type) {
+            $('#reportModal').modal('hide');
+            let url = '';
+            switch (type) {
+                case 'full':
+                    url = '{{ route('tickets.report.view', $ticket->id) }}?type=full';
+                    break;
+                case 'main':
+                    url = '{{ route('tickets.report.view', $ticket->id) }}?type=main';
+                    break;
+                case 'attachments':
+                    url = '{{ route('tickets.report.view', $ticket->id) }}?type=attachments';
+                    break;
+            }
+            $('#reportPreviewFrame').attr('src', 'about:blank');
             $('#reportPreviewModal').modal('show');
+            setTimeout(() => $('#reportPreviewFrame').attr('src', url), 100);
         }
 
         function printReport() {
             const iframe = document.getElementById('reportPreviewFrame');
-            iframe.contentWindow.print();
+            if (iframe.contentWindow) iframe.contentWindow.print();
+            else toastr.error('Cannot print: Report not loaded yet');
         }
     </script>
 @endpush
@@ -4569,13 +4322,7 @@
             'commented' => 'comment',
             'cancelled' => 'ban',
             'admin_closed' => 'lock',
-            'login' => 'sign-in-alt',
-            'logout' => 'sign-out-alt',
-            'admin_eng_approved_quick' => 'bolt',
-            'om_approved_quick' => 'bolt',
-            'gm_approved_quick' => 'bolt',
         ];
-
         return $icons[$action] ?? 'info-circle';
     }
 @endphp

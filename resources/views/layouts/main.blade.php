@@ -7,6 +7,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="author" content="DexignZone">
     <meta name="robots" content="">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="keywords"
         content="admin dashboard, admin template, administration, analytics, bootstrap, bootstrap admin, coupon, deal, modern, responsive admin dashboard, ticket, ticket dashboard, ticket system">
     <meta name="description"
@@ -17,13 +18,11 @@
     <meta property="og:image" content="https://acara.dexignzone.com/xhtml/social-image.png">
     <meta name="format-detection" content="telephone=no">
     <!-- Meta  end-->
-
-    <!-- Favicons Icon -->
-    <link rel="icon" href="{{ asset('assets/images/favicon.ico') }}" type="image/x-icon">
-    <link rel="shortcut icon" type="image/x-icon" href="{{ asset('assets/images/favicon.png') }}">
+    <link rel="icon" href="{{ asset('assets/images/logo-main.png') }}" type="image/x-icon">
+    <link rel="shortcut icon" type="image/x-icon" href="{{ asset('assets/images/logo-main.png') }}">
 
     <!-- PAGE TITLE HERE -->
-    <title>@yield('title', 'Acara - Ticketing Admin Dashboard')</title>
+    <title>@yield('title', 'Harris Hotel - Ticketing System')</title>
 
     <!-- MOBILE SPECIFIC -->
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -32,6 +31,7 @@
     <link href="{{ asset('assets/vendor/fullcalendar/css/main.min.css') }}" rel="stylesheet">
     <link href="{{ asset('assets/vendor/bootstrap-select/dist/css/bootstrap-select.min.css') }}" rel="stylesheet">
     <link href="{{ asset('assets/css/style.css') }}" rel="stylesheet">
+    <link rel="stylesheet" href="{{ asset('assets/vendor/sweetalert2/dist/sweetalert2.min.css') }}">
     <link
         href="https://fonts.googleapis.com/css2?family=Poppins:wght@100;200;300;400;500;600;700;800;900&family=Roboto:wght@100;300;400;500;700;900&display=swap"
         rel="stylesheet">
@@ -66,7 +66,7 @@
         ***********************************-->
         <div class="nav-header">
             <a href="{{ route('dashboard') }}" class="brand-logo">
-                <img class="logo-abbr" src="{{ asset('assets/images/logo-helpdesk.png') }}" alt="">
+                <img class="logo-abbr" src="{{ asset('assets/images/logo-main.png') }}" alt="">
                 <img class="logo-compact" src="{{ asset('assets/images/logo-text.png') }}" alt="">
                 <img class="brand-title" src="{{ asset('assets/images/logo-text.png') }}" alt=""
                     style="height: 22px; width: auto;">
@@ -170,7 +170,7 @@
     <script src="{{ asset('assets/vendor/bootstrap-select/dist/js/bootstrap-select.min.js') }}"></script>
     <script src="{{ asset('assets/js/custom.min.js') }}"></script>
     <script src="{{ asset('assets/js/deznav-init.js') }}"></script>
-
+    <script src="{{ asset('assets/vendor/sweetalert2/dist/sweetalert2.min.js') }}"></script>
     <!-- Additional Scripts -->
     <script src="{{ asset('assets/vendor/jqueryui/js/jquery-ui.min.js') }}"></script>
     <script src="{{ asset('assets/vendor/moment/moment.min.js') }}"></script>

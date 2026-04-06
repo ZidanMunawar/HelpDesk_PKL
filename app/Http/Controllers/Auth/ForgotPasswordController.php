@@ -1,12 +1,18 @@
 <?php
+// app/Http/Controllers/Auth/ForgotPasswordController.php
 
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\ActivityLog;
+use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Validation\ValidationException;
+use Carbon\Carbon;
+use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Hash;
 
 class ForgotPasswordController extends Controller
 {
@@ -26,51 +32,56 @@ class ForgotPasswordController extends Controller
         $request->validate([
             'email' => 'required|email|exists:users,email',
             'captcha' => 'required|captcha',
-        ], [
-            'email.exists' => 'We could not find a user with that email address.',
-            'captcha.captcha' => 'Invalid captcha code.',
         ]);
 
-        // Check if user role is 'user' (restrict to user role only)
-        $user = \App\Models\User::where('email', $request->email)->first();
+        $user = User::where('email', $request->email)->first();
 
+        // Restrict to user role only
         if ($user && $user->role !== 'user') {
-            // Log attempt
             ActivityLog::create([
                 'user_id' => null,
-                'ticket_id' => null,
                 'action' => 'password_reset_failed',
-                'description' => 'Password reset attempt for non-user role: ' . $request->email . ' (Role: ' . $user->role . ')',
+                'description' => 'Non-user role attempted reset: ' . $request->email . ' (Role: ' . $user->role . ')',
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->userAgent(),
             ]);
 
             throw ValidationException::withMessages([
-                'email' => ['Password reset is only available for regular users. Admin/Staff please contact administrator.'],
+                'email' => ['Password reset is only available for regular users.'],
             ]);
         }
 
-        // Send password reset link
-        $status = Password::sendResetLink(
-            $request->only('email')
-        );
+        // Generate token
+        $token = Str::random(64);
 
-        if ($status === Password::RESET_LINK_SENT) {
-            // Log successful send
+        // Delete old token
+        DB::table('password_resets')->where('email', $request->email)->delete();
+
+        // Insert new token
+        DB::table('password_resets')->insert([
+            'email' => $request->email,
+            'token' => Hash::make($token),
+            'created_at' => Carbon::now()
+        ]);
+
+        // Send email menggunakan method dari model User
+        try {
+            $user->sendPasswordResetNotification($token);
+
             ActivityLog::create([
-                'user_id' => $user->id ?? null,
-                'ticket_id' => null,
+                'user_id' => $user->id,
                 'action' => 'password_reset_requested',
-                'description' => 'Password reset link sent to: ' . $request->email,
+                'description' => 'Reset link sent from login page to: ' . $request->email,
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->userAgent(),
             ]);
 
-            return back()->with('status', 'We have emailed your password reset link! Please check your inbox.');
-        }
+            return back()->with('status', 'We have emailed your password reset link!');
 
-        throw ValidationException::withMessages([
-            'email' => [__($status)],
-        ]);
+        } catch (\Exception $e) {
+            throw ValidationException::withMessages([
+                'email' => ['Failed to send reset link. Please try again later.'],
+            ]);
+        }
     }
 }

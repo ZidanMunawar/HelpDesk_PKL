@@ -71,5 +71,8 @@ class Kernel extends HttpKernel
         'active' => \App\Http\Middleware\ActiveUserMiddleware::class,
         'superadmin' => \App\Http\Middleware\SuperAdmin::class,
         'admin_or_superadmin' => \App\Http\Middleware\AdminOrSuperAdmin::class,
+        'department_access' => \App\Http\Middleware\DepartmentAccess::class,
+        // Tambahkan middleware manager di sini
+        'manager' => \App\Http\Middleware\Manager::class,
     ];
 }

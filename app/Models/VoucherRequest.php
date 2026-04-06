@@ -10,12 +10,14 @@ class VoucherRequest extends Model
 {
     use HasFactory, SoftDeletes;
 
+    protected $table = 'voucher_requests';
+
     protected $fillable = [
         'vr_number',
         'ticket_id',
-        'total_amount',
         'status',
         'notes',
+        'rejection_reason',
         'created_by',
         'admin_approved',
         'admin_approved_by',
@@ -26,55 +28,113 @@ class VoucherRequest extends Model
         'gm_approved',
         'gm_approved_by',
         'gm_approved_at',
-        'notes',
-        'rejection_reason',
     ];
 
     protected $casts = [
         'admin_approved' => 'boolean',
         'om_approved' => 'boolean',
         'gm_approved' => 'boolean',
-        'total_amount' => 'decimal:2',
         'admin_approved_at' => 'datetime',
         'om_approved_at' => 'datetime',
         'gm_approved_at' => 'datetime',
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime',
+        'deleted_at' => 'datetime',
     ];
 
-    // Relationships
+    // ==================== RELATIONSHIPS ====================
+
+    /**
+     * Get the ticket associated with this VR
+     */
     public function ticket()
     {
         return $this->belongsTo(Ticket::class);
     }
 
+    /**
+     * Get the user who created this VR
+     */
     public function creator()
     {
         return $this->belongsTo(User::class, 'created_by');
     }
 
+    /**
+     * Get the admin who approved this VR
+     */
     public function adminApprover()
     {
         return $this->belongsTo(User::class, 'admin_approved_by');
     }
 
-
-
-    // ============================================
-    // NEW METHODS - TAMBAHKAN INI
-    // ============================================
+    /**
+     * Get the OM who approved this VR
+     */
+    public function omApprover()
+    {
+        return $this->belongsTo(User::class, 'om_approved_by');
+    }
 
     /**
-     * Calculate total amount from items
+     * Get the GM who approved this VR
+     */
+    public function gmApprover()
+    {
+        return $this->belongsTo(User::class, 'gm_approved_by');
+    }
+
+    /**
+     * Get all attachments (photos) for this VR
+     */
+    public function attachments()
+    {
+        return $this->hasMany(VoucherAttachment::class, 'voucher_request_id');
+    }
+
+    /**
+     * Get all items in this VR (DEPRECATED - will be removed)
+     * @deprecated VR now uses photos instead of items
+     */
+    public function items()
+    {
+        return $this->hasMany(VoucherItem::class, 'voucher_request_id');
+    }
+
+    /**
+     * Get signatures related to this VR (through ticket, filtered by stage)
+     */
+    public function signatures()
+    {
+        return $this->hasManyThrough(
+            Signature::class,
+            Ticket::class,
+            'id', // Foreign key on tickets table
+            'ticket_id', // Foreign key on signatures table
+            'ticket_id', // Local key on voucher_requests table
+            'id' // Local key on tickets table
+        )->whereIn('stage', [6, 7, 8]); // VR stages only
+    }
+
+    // ==================== HELPER METHODS ====================
+
+    /**
+     * Calculate total amount from items (DEPRECATED - returns 0)
+     * @deprecated VR now uses photos, not items
      */
     public function calculateTotal()
     {
-        $total = $this->items->sum(function ($item) {
-            return $item->qty * $item->unit_price;
-        });
+        // VR sekarang berbasis foto, tidak perlu total_amount
+        return 0;
+    }
 
-        // Update the total amount in the database
-        $this->update(['total_amount' => $total]);
-
-        return $total;
+    /**
+     * Get formatted total (DEPRECATED)
+     * @deprecated VR now uses photos
+     */
+    public function getFormattedTotal()
+    {
+        return 'N/A (Photo-based VR)';
     }
 
     /**
@@ -111,10 +171,15 @@ class VoucherRequest extends Model
 
     /**
      * Generate VR number automatically
+     * Format: VR-YYYYMMDD-XXXX
      */
     public static function generateVrNumber()
     {
-        $prefix = 'VR-' . date('Ymd');
+        $year = date('Y');
+        $month = date('m');
+        $day = date('d');
+
+        $prefix = 'VR-' . $year . $month . $day;
 
         $lastVR = self::where('vr_number', 'like', $prefix . '-%')
             ->orderBy('vr_number', 'desc')
@@ -131,7 +196,7 @@ class VoucherRequest extends Model
     }
 
     /**
-     * Get approval status badge
+     * Get status badge HTML
      */
     public function getStatusBadge()
     {
@@ -145,20 +210,30 @@ class VoucherRequest extends Model
         ];
 
         $color = $badges[$this->status] ?? 'secondary';
+        $label = str_replace('_', ' ', ucfirst($this->status));
 
-        return '<span class="badge bg-' . $color . '">' . str_replace('_', ' ', $this->status) . '</span>';
+        return '<span class="badge bg-' . $color . '">' . $label . '</span>';
     }
 
     /**
-     * Get formatted total amount
+     * Get photo count
      */
-    public function getFormattedTotal()
+    public function getPhotoCountAttribute()
     {
-        return 'Rp ' . number_format($this->total_amount, 0, ',', '.');
+        return $this->attachments()->count();
     }
 
     /**
-     * Scope for pending approval
+     * Get first photo for thumbnail
+     */
+    public function getThumbnailAttribute()
+    {
+        $firstPhoto = $this->attachments()->first();
+        return $firstPhoto ? $firstPhoto->url : null;
+    }
+
+    /**
+     * Scope for pending approval based on user role
      */
     public function scopePendingApproval($query, $userRole)
     {
@@ -175,7 +250,7 @@ class VoucherRequest extends Model
     }
 
     /**
-     * Get approval timeline
+     * Get approval timeline array
      */
     public function getApprovalTimeline()
     {
@@ -234,21 +309,106 @@ class VoucherRequest extends Model
 
         return $timeline;
     }
-    // App\Models\VoucherRequest
-    public function omApprover()
+
+    /**
+     * Check if VR is fully approved
+     */
+    public function isFullyApproved()
     {
-        return $this->belongsTo(User::class, 'om_approved_by');
+        return $this->admin_approved && $this->om_approved && $this->gm_approved;
     }
 
-    public function gmApprover()
+    /**
+     * Check if VR is pending payment
+     */
+    public function isPendingPayment()
     {
-        return $this->belongsTo(User::class, 'gm_approved_by');
+        return $this->status === 'gm_approved';
     }
 
-
-
-    public function items()
+    /**
+     * Check if VR is completed (paid)
+     */
+    public function isCompleted()
     {
-        return $this->hasMany(VoucherItem::class);
+        return $this->status === 'paid';
+    }
+
+    /**
+     * Get current approver role
+     */
+    public function getCurrentApproverRole()
+    {
+        if (!$this->admin_approved) {
+            return 'admin_eng';
+        } elseif (!$this->om_approved) {
+            return 'om';
+        } elseif (!$this->gm_approved) {
+            return 'gm';
+        }
+        return null;
+    }
+
+    /**
+     * Check if user can approve this VR
+     */
+    public function canApprove($user)
+    {
+        $role = $user->role;
+
+        if ($role === 'admin_eng' && $this->status === 'pending') {
+            return true;
+        }
+        if ($role === 'om' && $this->status === 'admin_approved') {
+            return true;
+        }
+        if ($role === 'gm' && $this->status === 'om_approved') {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Check if user can reject this VR
+     */
+    public function canReject($user)
+    {
+        $role = $user->role;
+
+        if ($role === 'admin_eng' && $this->status === 'pending') {
+            return true;
+        }
+        if ($role === 'om' && $this->status === 'admin_approved') {
+            return true;
+        }
+        if ($role === 'gm' && $this->status === 'om_approved') {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Check if user can mark as paid
+     */
+    public function canMarkPaid($user)
+    {
+        return in_array($user->role, ['admin_eng', 'superadmin']) && $this->status === 'gm_approved';
+    }
+
+    /**
+     * Boot the model
+     */
+    protected static function boot()
+    {
+        parent::boot();
+
+        // Auto-generate VR number if not set
+        static::creating(function ($vr) {
+            if (empty($vr->vr_number)) {
+                $vr->vr_number = self::generateVrNumber();
+            }
+        });
     }
 }

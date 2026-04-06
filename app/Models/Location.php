@@ -5,7 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
-
+use Illuminate\Support\Str;
 class Location extends Model
 {
     use HasFactory, SoftDeletes;
@@ -121,27 +121,11 @@ class Location extends Model
     }
 
     /**
-     * Get floor display name
+     * Get hotel badge color
      */
-    public function getFloorDisplayAttribute()
+    public function getHotelBadgeColorAttribute()
     {
-        if (!$this->floor_number) {
-            return '-';
-        }
-
-        $floorNames = [
-            'GF' => 'Ground Floor',
-            'M' => 'Mezzanine',
-            '3A' => '3A Floor',
-            '4' => '4th Floor',
-            '5' => '5th Floor',
-            '6' => '6th Floor',
-            '7' => '7th Floor',
-            '8' => '8th Floor',
-            '9' => '9th Floor',
-        ];
-
-        return $floorNames[$this->floor_number] ?? 'Floor ' . $this->floor_number;
+        return $this->hotel === 'harris' ? 'primary' : 'success';
     }
 
     /**
@@ -153,10 +137,54 @@ class Location extends Model
     }
 
     /**
-     * Get hotel badge color
+     * Get available floors for this hotel
      */
-    public function getHotelBadgeColorAttribute()
+    public function getAvailableFloorsAttribute()
     {
-        return $this->hotel === 'harris' ? 'primary' : 'success';
+        if ($this->hotel === 'harris') {
+            return ['GF', '3', '3A', '5', '6', '7', '8', '9'];
+        } else {
+            return ['GF', 'M', '3A', '5', '6', '7', '8', '9'];
+        }
+    }
+
+    /**
+     * Get floor display name
+     */
+    public function getFloorDisplayAttribute()
+    {
+        if (!$this->floor_number) {
+            return '-';
+        }
+
+        $floorNames = [
+            'GF' => 'Ground Floor',
+            'M' => 'Mezzanine',
+            '3' => '3rd Floor',
+            '3A' => '3A Floor',
+            '5' => '5th Floor',
+            '6' => '6th Floor',
+            '7' => '7th Floor',
+            '8' => '8th Floor',
+            '9' => '9th Floor',
+        ];
+
+        return $floorNames[$this->floor_number] ?? 'Floor ' . $this->floor_number;
+    }
+
+    /**
+     * Check if location can be deleted
+     */
+    public function canBeDeleted()
+    {
+        return $this->tickets()->count() === 0;
+    }
+
+    /**
+     * Get truncated description
+     */
+    public function getTruncatedDescriptionAttribute()
+    {
+        return $this->description ? Str::limit($this->description, 50) : '-';
     }
 }

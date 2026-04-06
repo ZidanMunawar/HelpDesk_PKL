@@ -2,92 +2,125 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\VoucherRequest;
-use App\Models\VoucherItem;
 use App\Models\Ticket;
 use App\Models\User;
+use App\Models\VoucherRequest;
+use App\Models\VoucherAttachment;
+use App\Models\Signature;
 use App\Models\ActivityLog;
 use App\Models\Notification;
-use App\Models\Signature;
-use App\Models\TicketComment;
+use App\Models\TicketApproval;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
-use App\Mail\VRNotification;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class VoucherController extends Controller
 {
     /**
-     * Display listing of VRs - SIMPLE tanpa filter
+     * Display a listing of voucher requests.
      */
     public function index()
     {
-        $user = Auth::user();
-
-        // Check permission - HANYA superadmin, admin_eng, om, gm
-        if (!in_array($user->role, ['superadmin', 'admin_eng', 'om', 'gm'])) {
-            abort(403, 'Unauthorized access to voucher requests');
-        }
-
-        $query = VoucherRequest::with([
-            'ticket',
-            'creator',
-            'items',
-            'adminApprover',
-            'omApprover',
-            'gmApprover'
-        ])->latest();
-
-        // Filter berdasarkan role
-        switch ($user->role) {
-            case 'admin_eng':
-                // Admin bisa lihat semua VR yang dia buat atau pending untuk dia approve
-                $query->where('created_by', $user->id)
-                    ->orWhere(function ($q) use ($user) {
-                        $q->where('status', 'pending');
-                    });
-                break;
-
-            case 'om':
-                // OM bisa lihat VR yang sudah di-approve admin
-                $query->where('status', 'admin_approved')
-                    ->where('admin_approved', true);
-                break;
-
-            case 'gm':
-                // GM bisa lihat VR yang sudah di-approve OM
-                $query->where('status', 'om_approved')
-                    ->where('om_approved', true);
-                break;
-
-            // Superadmin bisa lihat semua (no filter)
-        }
-
-        $vrs = $query->paginate(20);
-
-        return view('vouchers.index', compact('vrs'));
+        return view('vouchers.index');
     }
 
     /**
-     * Show modal for creating VR - HANYA admin_eng
+     * Get PR list for AJAX with pagination and filtering.
+     */
+    public function list(Request $request)
+    {
+        $user = Auth::user();
+        $filter = $request->get('filter', 'all');
+        $perPage = $request->get('per_page', 15);
+
+        $query = VoucherRequest::with(['ticket', 'creator', 'attachments'])
+            ->orderBy('created_at', 'desc');
+
+        // Apply filter
+        if ($filter !== 'all') {
+            $query->where('status', $filter);
+        }
+
+        // Filter berdasarkan role
+        switch ($user->role) {
+            case 'superadmin':
+                // Lihat semua
+                break;
+            case 'admin_eng':
+                $query->where(function ($q) use ($user) {
+                    $q->where('created_by', $user->id)
+                        ->orWhereIn('status', ['pending', 'admin_approved', 'gm_approved', 'paid', 'rejected']);
+                });
+                break;
+            case 'om':
+                $query->where(function ($q) use ($user) {
+                    $q->where('status', 'admin_approved')
+                        ->orWhere('om_approved_by', $user->id)
+                        ->orWhere('created_by', $user->id);
+                });
+                break;
+            case 'gm':
+                $query->where(function ($q) use ($user) {
+                    $q->where('status', 'om_approved')
+                        ->orWhere('gm_approved_by', $user->id)
+                        ->orWhere('created_by', $user->id);
+                });
+                break;
+            case 'technician':
+                $query->whereHas('ticket', function ($q) use ($user) {
+                    $q->where('assigned_to', $user->id);
+                });
+                break;
+            default:
+                $query->whereHas('ticket', function ($q) use ($user) {
+                    $q->where('user_id', $user->id);
+                });
+        }
+
+        $vrs = $query->paginate($perPage);
+
+        $data = [];
+        foreach ($vrs as $vr) {
+            $firstPhoto = $vr->attachments->first();
+            $data[] = [
+                'id' => $vr->id,
+                'vr_number' => $vr->vr_number,
+                'status' => $vr->status,
+                'ticket_number' => $vr->ticket->ticket_number,
+                'ticket_title' => $vr->ticket->title,
+                'created_by_name' => $vr->creator->name,
+                'created_at' => $vr->created_at->toISOString(),
+                'photo_count' => $vr->attachments->count(),
+                'first_photo' => $firstPhoto ? Storage::url($firstPhoto->file_path) : null,
+                'created_by' => $vr->created_by,
+            ];
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => $data,
+            'pagination' => [
+                'current_page' => $vrs->currentPage(),
+                'last_page' => $vrs->lastPage(),
+                'per_page' => $vrs->perPage(),
+                'total' => $vrs->total(),
+                'from' => $vrs->firstItem(),
+                'to' => $vrs->lastItem(),
+            ]
+        ]);
+    }
+
+    /**
+     * Show modal for ticket selection or VR creation.
      */
     public function createModal($ticketId = null)
     {
-        $user = Auth::user();
-
-        if ($user->role !== 'admin_eng') {
-            return response()->json([
-                'success' => false,
-                'message' => 'Only Admin Engineering can create VRs'
-            ], 403);
-        }
-
         if ($ticketId === 'ticket-select') {
-            // Show ticket selection
+            // Return ticket selection modal
             $html = view('vouchers.partials.ticket-selection')->render();
 
             return response()->json([
@@ -96,44 +129,32 @@ class VoucherController extends Controller
             ]);
         }
 
-        // Load specific ticket
-        $ticket = Ticket::with(['user', 'category', 'priority', 'approval'])
-            ->findOrFail($ticketId);
+        $ticket = Ticket::with(['category', 'priority'])->findOrFail($ticketId);
 
-        // Validasi: ticket harus pending_vr
+        // Check if ticket is in pending_vr status
         if ($ticket->status !== 'pending_vr') {
             return response()->json([
                 'success' => false,
-                'message' => 'Ticket is not in pending VR status. Current status: ' . $ticket->status
+                'message' => 'Ticket is not in pending PR status. Current status: ' . $ticket->status
             ], 422);
         }
 
-        // Check if ticket needs VR
-        if (!$ticket->approval || !$ticket->approval->needs_vr) {
-            return response()->json([
-                'success' => false,
-                'message' => 'This ticket does not require a VR'
-            ], 422);
-        }
-
-        // Check if VR already exists for this ticket
-        $existingVR = VoucherRequest::where('ticket_id', $ticket->id)
-            ->whereIn('status', ['pending', 'admin_approved', 'om_approved', 'gm_approved', 'paid'])
+        // Check if there's already a pending PR for this ticket
+        $existingPR = VoucherRequest::where('ticket_id', $ticket->id)
+            ->whereIn('status', ['pending', 'admin_approved', 'om_approved', 'gm_approved'])
             ->first();
 
-        if ($existingVR) {
+        if ($existingPR) {
             return response()->json([
                 'success' => false,
-                'message' => 'A VR already exists for this ticket: #' . $existingVR->vr_number
+                'message' => 'This ticket already has an active Purchase Request: #' . $existingPR->vr_number
             ], 422);
         }
 
-        // Generate VR number
-        $today = date('Ymd');
-        $count = VoucherRequest::whereDate('created_at', today())->count() + 1;
-        $vrNumber = 'VR-' . $today . '-' . str_pad($count, 4, '0', STR_PAD_LEFT);
+        // Generate PR number
+        $prNumber = $this->generatePRNumber();
 
-        $html = view('vouchers.partials.create-form', compact('ticket', 'vrNumber'))->render();
+        $html = view('vouchers.partials.create-form', compact('ticket', 'prNumber'))->render();
 
         return response()->json([
             'success' => true,
@@ -142,126 +163,80 @@ class VoucherController extends Controller
     }
 
     /**
-     * Search tickets for VR creation
+     * Search tickets for PR creation (AJAX).
      */
     public function searchTickets(Request $request)
     {
-        $user = Auth::user();
-
-        if ($user->role !== 'admin_eng') {
-            return response()->json([
-                'success' => false,
-                'message' => 'Unauthorized'
-            ], 403);
-        }
-
         $search = $request->get('search', '');
         $page = $request->get('page', 1);
-        $perPage = 10;
 
-        $query = Ticket::with(['user', 'category', 'priority'])
+        $query = Ticket::with(['category', 'priority'])
             ->where('status', 'pending_vr')
-            ->whereHas('approval', function ($q) {
-                $q->where('needs_vr', true);
+            ->where(function ($q) use ($search) {
+                $q->where('ticket_number', 'LIKE', "%{$search}%")
+                    ->orWhere('title', 'LIKE', "%{$search}%");
             })
-            ->whereDoesntHave('voucherRequests', function ($q) {
-                $q->whereIn('status', ['pending', 'admin_approved', 'om_approved', 'gm_approved', 'paid']);
-            });
+            ->orderBy('created_at', 'desc');
 
-        if ($search) {
-            $query->where(function ($q) use ($search) {
-                $q->where('ticket_number', 'like', "%{$search}%")
-                    ->orWhere('title', 'like', "%{$search}%");
-            });
-        }
+        $tickets = $query->paginate(10, ['*'], 'page', $page);
 
-        $tickets = $query->orderBy('created_at', 'desc')
-            ->skip(($page - 1) * $perPage)
-            ->take($perPage)
-            ->get();
-
-        $results = $tickets->map(function ($ticket) {
-            return [
+        $results = [];
+        foreach ($tickets as $ticket) {
+            $results[] = [
                 'id' => $ticket->ticket_number,
-                'text' => '#' . $ticket->ticket_number . ' - ' . $ticket->title,
+                'ticket_id' => $ticket->id,
                 'ticket_number' => $ticket->ticket_number,
                 'title' => $ticket->title,
                 'category' => $ticket->category->name,
                 'priority' => $ticket->priority->name,
-                'ticket_id' => $ticket->id
+                'text' => $ticket->ticket_number . ' - ' . $ticket->title
             ];
-        });
+        }
 
         return response()->json([
             'results' => $results,
             'pagination' => [
-                'more' => count($results) === $perPage
-            ],
-            'total_count' => $query->count()
+                'more' => $tickets->hasMorePages()
+            ]
         ]);
     }
 
     /**
-     * Find ticket by number
+     * Find ticket by number for manual search.
      */
     public function findTicketByNumber($ticketNumber)
     {
-        $user = Auth::user();
-
-        if ($user->role !== 'admin_eng') {
-            return response()->json([
-                'success' => false,
-                'message' => 'Unauthorized'
-            ], 403);
-        }
-
-        $ticket = Ticket::with(['user', 'category', 'priority', 'approval'])
-            ->where('ticket_number', $ticketNumber)
+        $ticket = Ticket::where('ticket_number', $ticketNumber)
+            ->where('status', 'pending_vr')
             ->first();
 
         if (!$ticket) {
             return response()->json([
                 'success' => false,
-                'message' => 'Ticket not found'
+                'message' => 'Ticket not found or not in pending PR status'
             ], 404);
         }
 
-        // Validasi: ticket harus pending_vr dan butuh VR
-        if ($ticket->status !== 'pending_vr') {
-            return response()->json([
-                'success' => false,
-                'message' => 'Ticket is not in pending VR status. Current status: ' . $ticket->status
-            ], 422);
-        }
-
-        if (!$ticket->approval || !$ticket->approval->needs_vr) {
-            return response()->json([
-                'success' => false,
-                'message' => 'This ticket does not require a VR'
-            ], 422);
-        }
-
-        // Check if VR already exists
-        $existingVR = VoucherRequest::where('ticket_id', $ticket->id)
-            ->whereIn('status', ['pending', 'admin_approved', 'om_approved', 'gm_approved', 'paid'])
+        // Check if there's already a pending PR for this ticket
+        $existingPR = VoucherRequest::where('ticket_id', $ticket->id)
+            ->whereIn('status', ['pending', 'admin_approved', 'om_approved', 'gm_approved'])
             ->first();
 
-        if ($existingVR) {
+        if ($existingPR) {
             return response()->json([
                 'success' => false,
-                'message' => 'A VR already exists for this ticket: #' . $existingVR->vr_number
+                'message' => 'This ticket already has an active Purchase Request: #' . $existingPR->vr_number
             ], 422);
         }
 
         return response()->json([
             'success' => true,
-            'ticket_id' => $ticket->id,
-            'ticket' => $ticket
+            'ticket_id' => $ticket->id
         ]);
     }
 
     /**
-     * Store new VR - HANYA admin_eng
+     * Store a newly created voucher request with photos.
      */
     public function store(Request $request)
     {
@@ -270,7 +245,7 @@ class VoucherController extends Controller
         if ($user->role !== 'admin_eng') {
             return response()->json([
                 'success' => false,
-                'message' => 'Only Admin Engineering can create VRs'
+                'message' => 'Only Admin Engineering can create Purchase Requests'
             ], 403);
         }
 
@@ -278,124 +253,118 @@ class VoucherController extends Controller
             'ticket_id' => 'required|exists:tickets,id',
             'vr_number' => 'required|string|unique:voucher_requests,vr_number',
             'notes' => 'nullable|string',
-            'items' => 'required|array|min:1',
-            'items.*.item_name' => 'required|string|max:255',
-            'items.*.qty' => 'required|integer|min:1',
-            'items.*.unit_price' => 'required|numeric|min:0',
-            'items.*.vendor' => 'nullable|string|max:255',
-            'items.*.description' => 'nullable|string',
+            'photos.*' => 'nullable|file|mimes:jpg,jpeg,png|max:5120',
+            'photos' => 'nullable|array|max:5',
         ]);
 
-        $ticket = Ticket::with(['approval'])->findOrFail($request->ticket_id);
+        $ticket = Ticket::findOrFail($request->ticket_id);
+
+        // Double check ticket status
+        if ($ticket->status !== 'pending_vr') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Ticket is not in pending PR status'
+            ], 422);
+        }
 
         DB::beginTransaction();
         try {
-            // Create VR
+            // Create voucher request
             $vr = VoucherRequest::create([
                 'vr_number' => $request->vr_number,
-                'ticket_id' => $ticket->id,
-                'total_amount' => 0,
-                'status' => 'pending',
+                'ticket_id' => $request->ticket_id,
                 'notes' => $request->notes,
+                'status' => 'pending',
                 'created_by' => $user->id,
             ]);
 
-            // Create items
-            $totalAmount = 0;
-            foreach ($request->items as $itemData) {
-                $item = VoucherItem::create([
-                    'voucher_request_id' => $vr->id,
-                    'item_name' => $itemData['item_name'],
-                    'qty' => $itemData['qty'],
-                    'unit_price' => $itemData['unit_price'],
-                    'vendor' => $itemData['vendor'] ?? null,
-                    'description' => $itemData['description'] ?? null,
-                ]);
-                $totalAmount += $item->qty * $item->unit_price;
+            // Upload photos
+            if ($request->hasFile('photos')) {
+                foreach ($request->file('photos') as $photo) {
+                    $fileName = time() . '_' . Str::random(10) . '_' . $photo->getClientOriginalName();
+                    $filePath = $photo->storeAs('vouchers/photos', $fileName, 'public');
+
+                    VoucherAttachment::create([
+                        'voucher_request_id' => $vr->id,
+                        'file_name' => $photo->getClientOriginalName(),
+                        'file_path' => $filePath,
+                        'file_type' => $photo->getClientMimeType(),
+                        'file_size' => $photo->getSize(),
+                        'uploaded_by' => $user->id,
+                    ]);
+                }
             }
 
-            // Update total
-            $vr->update(['total_amount' => $totalAmount]);
-
-            // Update ticket approval record
-            if ($ticket->approval) {
-                $ticket->approval->update([
-                    'vr_created_at' => now(),
-                    'vr_created_by' => $user->id,
-                ]);
-            }
-
-            // Update ticket status ke in_progress (karena VR sudah dibuat)
-            $ticket->update(['status' => 'in_progress']);
+            // Update ticket approval
+            $approval = TicketApproval::firstOrCreate(['ticket_id' => $ticket->id]);
+            $approval->update([
+                'needs_vr' => true,
+                'vr_created_at' => now(),
+                'vr_created_by' => $user->id,
+            ]);
 
             // Log activity
             ActivityLog::create([
                 'user_id' => $user->id,
                 'ticket_id' => $ticket->id,
                 'action' => 'vr_created',
-                'description' => 'Created VR #' . $vr->vr_number . ' with ' . count($request->items) . ' items. Total: Rp ' . number_format($totalAmount, 0, ',', '.'),
+                'description' => 'Purchase Request #' . $vr->vr_number . ' created with ' . ($request->hasFile('photos') ? count($request->file('photos')) : 0) . ' photos',
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->userAgent(),
             ]);
 
-            // Notify technician (jika ada yang assigned)
-            if ($ticket->assigned_to) {
-                $technician = User::find($ticket->assigned_to);
-                if ($technician) {
-                    $this->sendNotification(
-                        $technician,
-                        $ticket,
-                        'VR Created - Work Can Continue',
-                        'VR #' . $vr->vr_number . ' has been created for ticket #' . $ticket->ticket_number . '. You can now continue work.',
-                        'vr_created'
-                    );
-                }
+            // Add comment to ticket
+            $ticket->comments()->create([
+                'user_id' => $user->id,
+                'comment' => "Purchase Request #{$vr->vr_number} created with " . ($request->hasFile('photos') ? count($request->file('photos')) : 0) . " photos.",
+                'is_internal' => 0,
+                'is_followup' => true,
+            ]);
+
+            // Notify other admin engineers
+            $adminUsers = User::where('role', 'admin_eng')->where('status', 'active')->where('id', '!=', $user->id)->get();
+            foreach ($adminUsers as $adminUser) {
+                $this->sendNotification(
+                    $adminUser,
+                    $ticket,
+                    $vr,
+                    'New Purchase Request Created',
+                    'Purchase Request #' . $vr->vr_number . ' has been created and needs approval',
+                    'vr_request'
+                );
             }
 
             DB::commit();
 
             return response()->json([
                 'success' => true,
-                'message' => 'VR created successfully',
-                'vr_id' => $vr->id
+                'message' => 'Purchase Request created successfully',
+                'vr' => $vr
             ]);
 
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Create VR error: ' . $e->getMessage());
+            Log::error('Create PR error: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to create VR: ' . $e->getMessage()
+                'message' => 'Failed to create Purchase Request: ' . $e->getMessage()
             ], 500);
         }
     }
 
     /**
-     * Show VR details in modal
+     * Show modal with PR details.
      */
     public function showModal($id)
     {
         $vr = VoucherRequest::with([
-            'ticket.user',
-            'ticket.category',
-            'ticket.priority',
-            'ticket.assignedUser',
+            'ticket',
             'creator',
+            'attachments',
             'adminApprover',
             'omApprover',
             'gmApprover',
-            'items'
         ])->findOrFail($id);
-
-        $user = Auth::user();
-
-        // Check permission
-        if (!$this->canViewVR($user, $vr)) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Unauthorized access to this VR'
-            ], 403);
-        }
 
         $html = view('vouchers.partials.view-details', compact('vr'))->render();
 
@@ -406,57 +375,93 @@ class VoucherController extends Controller
     }
 
     /**
-     * Approve VR (Admin, OM, GM) dengan signature option
+     * Show approve modal.
+     */
+    public function approveModal(Request $request)
+    {
+        $vrId = $request->get('vr_id');
+        $vr = VoucherRequest::findOrFail($vrId);
+        $user = Auth::user();
+
+        $hasSignature = !empty($user->signature_path) && Storage::disk('public')->exists($user->signature_path);
+
+        $html = view('vouchers.partials.approve-modal', compact('vr', 'hasSignature'))->render();
+
+        return response()->json([
+            'success' => true,
+            'html' => $html
+        ]);
+    }
+
+    /**
+     * Approve voucher request with signature.
      */
     public function approve(Request $request, $id)
     {
         $user = Auth::user();
-        $vr = VoucherRequest::with(['ticket'])->findOrFail($id);
+        $vr = VoucherRequest::with('ticket')->findOrFail($id);
 
-        // Check permission
+        // Check permission based on current status
         $canApprove = false;
+        $nextStatus = '';
         $stage = 0;
 
         if ($user->role === 'admin_eng' && $vr->status === 'pending') {
             $canApprove = true;
-            $stage = 2; // Admin approval stage
+            $nextStatus = 'admin_approved';
+            $stage = 1;
         } elseif ($user->role === 'om' && $vr->status === 'admin_approved') {
             $canApprove = true;
-            $stage = 3; // OM approval stage
+            $nextStatus = 'om_approved';
+            $stage = 2;
         } elseif ($user->role === 'gm' && $vr->status === 'om_approved') {
             $canApprove = true;
-            $stage = 4; // GM approval stage
+            $nextStatus = 'gm_approved';
+            $stage = 3;
         }
 
         if (!$canApprove) {
             return response()->json([
                 'success' => false,
-                'message' => 'You cannot approve this VR. Current status: ' . $vr->status
+                'message' => 'You are not authorized to approve this Purchase Request at its current stage'
             ], 403);
         }
 
         $request->validate([
-            'signature_data' => 'nullable|string',
-            'use_saved_signature' => 'nullable|boolean',
+            'signature_data' => 'required_without:use_saved_signature|string',
+            'use_saved_signature' => 'nullable|string',
             'save_signature' => 'nullable|boolean',
-            'current_password' => 'nullable|string',
+            'current_password' => 'required_if:save_signature,1|nullable|string',
             'notes' => 'nullable|string',
         ]);
 
+        // Verify password if saving new signature
+        if ($request->boolean('save_signature')) {
+            if (!Hash::check($request->current_password, $user->password)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Current password is incorrect'
+                ], 422);
+            }
+        }
+
         DB::beginTransaction();
         try {
-            // Handle signature
             $signaturePath = null;
-            $hasSignature = !empty($user->signature_path) && Storage::disk('public')->exists($user->signature_path);
 
-            // Jika user memilih pakai saved signature
-            if ($request->has('use_saved_signature') && $request->boolean('use_saved_signature') && $hasSignature) {
-                // Copy dari saved signature
-                $signaturePath = 'signatures/vr_' . $vr->vr_number . '_stage' . $stage . '_user' . $user->id . '_' . time() . '.png';
+            // Handle signature
+            if ($request->use_saved_signature) {
+                if (empty($user->signature_path) || !Storage::disk('public')->exists($user->signature_path)) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'You do not have a saved signature'
+                    ], 422);
+                }
+
+                $signaturePath = 'signatures/vr/' . $vr->vr_number . '_' . $user->role . '_' . time() . '.png';
                 Storage::disk('public')->copy($user->signature_path, $signaturePath);
 
-            } elseif ($request->has('signature_data')) {
-                // Buat signature baru
+            } else {
                 $signaturePath = $this->saveSignature(
                     $request->signature_data,
                     $vr->vr_number,
@@ -464,17 +469,8 @@ class VoucherController extends Controller
                     $stage
                 );
 
-                // Save ke profile jika diminta
-                if ($request->has('save_signature') && $request->boolean('save_signature')) {
-                    // Verifikasi password jika ingin replace signature lama
-                    if ($hasSignature && $request->has('current_password')) {
-                        if (!Hash::check($request->current_password, $user->password)) {
-                            throw new \Exception('Current password is incorrect');
-                        }
-                    }
-
-                    // Hapus signature lama jika ada
-                    if ($hasSignature && $user->signature_path) {
+                if ($request->boolean('save_signature')) {
+                    if ($user->signature_path) {
                         Storage::disk('public')->delete($user->signature_path);
                     }
 
@@ -486,151 +482,117 @@ class VoucherController extends Controller
                 }
             }
 
-            // Save signature record
-            if ($signaturePath) {
-                Signature::create([
-                    'ticket_id' => $vr->ticket_id,
-                    'user_id' => $user->id,
-                    'signature_type' => 'approver',
-                    'stage' => $stage,
-                    'signature_path' => $signaturePath,
-                    'signed_at' => now(),
-                    'ip_address' => $request->ip(),
-                ]);
-            }
+            // Create signature record
+            Signature::create([
+                'ticket_id' => $vr->ticket_id,
+                'user_id' => $user->id,
+                'signature_type' => 'approver',
+                'stage' => $stage + 6,
+                'signature_path' => $signaturePath,
+                'signed_at' => now(),
+                'ip_address' => $request->ip(),
+            ]);
 
-            // Update VR berdasarkan role
-            $oldStatus = $vr->status;
-            $newStatus = '';
+            // Update VR status
+            $updateData = [
+                'status' => $nextStatus,
+                'notes' => $vr->notes . ($request->notes ? "\n\n" . $user->role . " notes: " . $request->notes : '')
+            ];
 
             switch ($user->role) {
                 case 'admin_eng':
-                    $vr->update([
-                        'admin_approved' => true,
-                        'admin_approved_by' => $user->id,
-                        'admin_approved_at' => now(),
-                        'status' => 'admin_approved',
-                    ]);
-                    $newStatus = 'admin_approved';
-
-                    // Notify OM
-                    $omUsers = User::where('role', 'om')->where('status', 'active')->get();
-                    foreach ($omUsers as $omUser) {
-                        $this->sendNotification(
-                            $omUser,
-                            $vr->ticket,
-                            'VR Needs OM Approval',
-                            'VR #' . $vr->vr_number . ' needs your approval for ticket #' . $vr->ticket->ticket_number,
-                            'vr_approval'
-                        );
-                    }
+                    $updateData['admin_approved'] = true;
+                    $updateData['admin_approved_by'] = $user->id;
+                    $updateData['admin_approved_at'] = now();
                     break;
-
                 case 'om':
-                    $vr->update([
-                        'om_approved' => true,
-                        'om_approved_by' => $user->id,
-                        'om_approved_at' => now(),
-                        'status' => 'om_approved',
-                    ]);
-                    $newStatus = 'om_approved';
+                    $updateData['om_approved'] = true;
+                    $updateData['om_approved_by'] = $user->id;
+                    $updateData['om_approved_at'] = now();
+                    break;
+                case 'gm':
+                    $updateData['gm_approved'] = true;
+                    $updateData['gm_approved_by'] = $user->id;
+                    $updateData['gm_approved_at'] = now();
+                    break;
+            }
 
-                    // Notify GM
-                    $gmUsers = User::where('role', 'gm')->where('status', 'active')->get();
-                    foreach ($gmUsers as $gmUser) {
+            $vr->update($updateData);
+
+            // If GM approved, update ticket status back to in_progress
+            if ($user->role === 'gm') {
+                $vr->ticket->update([
+                    'status' => 'in_progress',
+                    'current_stage' => 4,
+                ]);
+
+                $approval = TicketApproval::firstOrCreate(['ticket_id' => $vr->ticket_id]);
+                $approval->update([
+                    'needs_vr' => false,
+                ]);
+
+                if ($vr->ticket->assigned_to) {
+                    $technician = User::find($vr->ticket->assigned_to);
+                    if ($technician) {
                         $this->sendNotification(
-                            $gmUser,
+                            $technician,
                             $vr->ticket,
-                            'VR Needs GM Approval',
-                            'VR #' . $vr->vr_number . ' needs your final approval for ticket #' . $vr->ticket->ticket_number,
-                            'vr_approval'
+                            $vr,
+                            'PR Approved - Work Can Continue',
+                            'Purchase Request #' . $vr->vr_number . ' has been fully approved. You can continue work on ticket #' . $vr->ticket->ticket_number,
+                            'success'
                         );
                     }
-                    break;
-
-                case 'gm':
-                    $vr->update([
-                        'gm_approved' => true,
-                        'gm_approved_by' => $user->id,
-                        'gm_approved_at' => now(),
-                        'status' => 'gm_approved',
-                    ]);
-                    $newStatus = 'gm_approved';
-
-                    // Notify creator dan technician
-                    $this->sendNotification(
-                        $vr->creator,
-                        $vr->ticket,
-                        'VR Fully Approved',
-                        'VR #' . $vr->vr_number . ' has been fully approved by GM for ticket #' . $vr->ticket->ticket_number,
-                        'vr_approved'
-                    );
-
-                    if ($vr->ticket->assigned_to) {
-                        $technician = User::find($vr->ticket->assigned_to);
-                        if ($technician) {
-                            $this->sendNotification(
-                                $technician,
-                                $vr->ticket,
-                                'VR Fully Approved',
-                                'VR #' . $vr->vr_number . ' has been fully approved by GM for ticket #' . $vr->ticket->ticket_number,
-                                'vr_approved'
-                            );
-                        }
-                    }
-                    break;
+                }
             }
 
-            // Add notes
-            if ($request->notes) {
-                $vr->update([
-                    'notes' => $vr->notes . "\n\n[" . strtoupper($user->role) . " Approved: " . now()->format('Y-m-d H:i') . " - " . $user->name . "]" .
-                        "\nNotes: " . $request->notes
-                ]);
-            }
+            // Add comment to ticket
+            $vr->ticket->comments()->create([
+                'user_id' => $user->id,
+                'comment' => "Purchase Request #{$vr->vr_number} approved by " . ucfirst($user->role) .
+                    ($request->notes ? "\nNotes: " . $request->notes : ''),
+                'is_internal' => 0,
+                'is_followup' => true,
+            ]);
 
             // Log activity
             ActivityLog::create([
                 'user_id' => $user->id,
                 'ticket_id' => $vr->ticket_id,
-                'action' => 'vr_approved',
-                'description' => ucfirst($user->role) . ' ' . $user->name . ' approved VR #' . $vr->vr_number . ' (' . $oldStatus . ' → ' . $newStatus . ')',
+                'action' => 'vr_' . $user->role . '_approved',
+                'description' => 'Purchase Request #' . $vr->vr_number . ' approved by ' . ucfirst($user->role),
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->userAgent(),
             ]);
+
+            // Notify next approver
+            $this->notifyNextApprover($vr, $user->role);
 
             DB::commit();
 
             return response()->json([
                 'success' => true,
-                'message' => 'VR approved successfully',
-                'vr_id' => $vr->id
+                'message' => 'Purchase Request approved successfully'
             ]);
 
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Approve VR error: ' . $e->getMessage());
+            Log::error('Approve PR error: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to approve VR: ' . $e->getMessage()
+                'message' => 'Failed to approve Purchase Request: ' . $e->getMessage()
             ], 500);
         }
     }
 
     /**
-     * Reject VR (Admin, OM, GM)
+     * Reject voucher request.
      */
     public function reject(Request $request, $id)
     {
-        $request->validate([
-            'rejection_reason' => 'required|string|min:10',
-            'notes' => 'nullable|string'
-        ]);
-
-        $vr = VoucherRequest::with(['ticket'])->findOrFail($id);
         $user = Auth::user();
+        $vr = VoucherRequest::with('ticket')->findOrFail($id);
 
-        // Check permission
         $canReject = false;
 
         if ($user->role === 'admin_eng' && $vr->status === 'pending') {
@@ -644,304 +606,243 @@ class VoucherController extends Controller
         if (!$canReject) {
             return response()->json([
                 'success' => false,
-                'message' => 'You cannot reject this VR. Current status: ' . $vr->status
+                'message' => 'You are not authorized to reject this Purchase Request'
             ], 403);
         }
 
+        $request->validate([
+            'rejection_reason' => 'required|string',
+            'notes' => 'nullable|string',
+        ]);
+
         DB::beginTransaction();
         try {
-            $oldStatus = $vr->status;
-
             $vr->update([
                 'status' => 'rejected',
-                'notes' => $vr->notes . "\n\n[Rejected by " . strtoupper($user->role) . " " . $user->name . ": " . now()->format('Y-m-d H:i') . "]" .
+                'rejection_reason' => $request->rejection_reason,
+                'notes' => $vr->notes . "\n\nRejected by " . ucfirst($user->role) .
                     "\nReason: " . $request->rejection_reason .
-                    ($request->notes ? "\nAdditional Notes: " . $request->notes : "")
+                    ($request->notes ? "\nNotes: " . $request->notes : '')
             ]);
 
-            // Log activity
+            $vr->ticket->comments()->create([
+                'user_id' => $user->id,
+                'comment' => "Purchase Request #{$vr->vr_number} rejected by " . ucfirst($user->role) .
+                    "\nReason: " . $request->rejection_reason,
+                'is_internal' => 0,
+                'is_followup' => true,
+            ]);
+
             ActivityLog::create([
                 'user_id' => $user->id,
                 'ticket_id' => $vr->ticket_id,
-                'action' => 'vr_rejected',
-                'description' => ucfirst($user->role) . ' ' . $user->name . ' rejected VR #' . $vr->vr_number . '. Reason: ' . $request->rejection_reason,
+                'action' => 'vr_' . $user->role . '_rejected',
+                'description' => 'Purchase Request #' . $vr->vr_number . ' rejected by ' . ucfirst($user->role),
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->userAgent(),
             ]);
 
-            // Notify creator
             $this->sendNotification(
                 $vr->creator,
                 $vr->ticket,
-                'VR Rejected',
-                'VR #' . $vr->vr_number . ' for ticket #' . $vr->ticket->ticket_number . ' was rejected by ' . $user->name . '. Reason: ' . $request->rejection_reason,
-                'vr_rejected'
-            );
-
-            // Update ticket status jika perlu
-            if ($vr->ticket->status === 'in_progress') {
-                $vr->ticket->update(['status' => 'pending_vr']);
-
-                // Notify technician
-                if ($vr->ticket->assigned_to) {
-                    $technician = User::find($vr->ticket->assigned_to);
-                    if ($technician) {
-                        $this->sendNotification(
-                            $technician,
-                            $vr->ticket,
-                            'VR Rejected - Need Revision',
-                            'VR #' . $vr->vr_number . ' was rejected. Please contact Admin Engineering for revision.',
-                            'vr_rejected'
-                        );
-                    }
-                }
-            }
-
-            DB::commit();
-
-            return response()->json([
-                'success' => true,
-                'message' => 'VR rejected successfully',
-                'vr_id' => $vr->id
-            ]);
-
-        } catch (\Exception $e) {
-            DB::rollBack();
-            Log::error('Reject VR error: ' . $e->getMessage());
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to reject VR: ' . $e->getMessage()
-            ], 500);
-        }
-    }
-    public function markPaid(Request $request, $id)
-    {
-        $vr = VoucherRequest::with(['ticket'])->findOrFail($id);
-        $user = Auth::user();
-
-        if (!in_array($user->role, ['admin_eng', 'superadmin'])) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Only Admin Engineering can mark VR as paid'
-            ], 403);
-        }
-
-        // Hanya bisa mark as paid jika status gm_approved atau pending payment
-        $allowedStatuses = ['gm_approved', 'pending_payment'];
-        if (!in_array($vr->status, $allowedStatuses)) {
-            return response()->json([
-                'success' => false,
-                'message' => 'VR must be fully approved by GM before marking as paid. Current status: ' . $vr->status
-            ], 422);
-        }
-
-        DB::beginTransaction();
-        try {
-            $oldStatus = $vr->status;
-            $vr->update([
-                'status' => 'paid',
-                'notes' => $vr->notes . "\n\n[Marked as paid: " . now()->format('Y-m-d H:i') . " - " . $user->name . "]" .
-                    ($request->notes ? "\nPayment Notes: " . $request->notes : "")
-            ]);
-
-            // ✅ FIX: Update ticket status ke in_progress (stage 4)
-            $ticket = $vr->ticket;
-            $ticket->update([
-                'status' => 'in_progress',
-                'current_stage' => 4, // Kembali ke stage 4: In Progress
-            ]);
-
-            // Log activity
-            ActivityLog::create([
-                'user_id' => $user->id,
-                'ticket_id' => $ticket->id,
-                'action' => 'vr_paid',
-                'description' => 'Marked VR #' . $vr->vr_number . ' as paid (' . $oldStatus . ' → paid). Ticket returned to in_progress stage.',
-                'ip_address' => $request->ip(),
-                'user_agent' => $request->userAgent(),
-            ]);
-
-            // Add comment to ticket
-            TicketComment::create([
-                'ticket_id' => $ticket->id,
-                'user_id' => $user->id,
-                'comment' => "VR #" . $vr->vr_number . " has been marked as paid. Ticket returned to in progress status. Technician can continue work.",
-                'is_internal' => 0,
-            ]);
-
-            // ✅ FIX: Notify creator
-            $this->sendNotification(
-                $vr->creator,
-                $ticket,
-                'VR Marked as Paid',
-                'VR #' . $vr->vr_number . ' for ticket #' . $ticket->ticket_number . ' has been marked as paid.',
-                'vr_paid'
-            );
-
-            // ✅ FIX: Notify technician untuk lanjut kerja
-            if ($ticket->assigned_to) {
-                $technician = User::find($ticket->assigned_to);
-                if ($technician) {
-                    $this->sendNotification(
-                        $technician,
-                        $ticket,
-                        'VR Paid - Continue Work',
-                        'VR #' . $vr->vr_number . ' has been paid. Please continue work on ticket #' . $ticket->ticket_number,
-                        'assignment'
-                    );
-                }
-            }
-
-            // ✅ FIX: Also notify reporter
-            $this->sendNotification(
-                $ticket->user,
-                $ticket,
-                'VR Paid - Work Resuming',
-                'VR #' . $vr->vr_number . ' for your ticket #' . $ticket->ticket_number . ' has been paid. Technician will continue work.',
-                'info'
+                $vr,
+                'Purchase Request Rejected',
+                'Your Purchase Request #' . $vr->vr_number . ' was rejected by ' . ucfirst($user->role) .
+                "\nReason: " . $request->rejection_reason,
+                'rejection'
             );
 
             DB::commit();
 
             return response()->json([
                 'success' => true,
-                'message' => 'VR marked as paid successfully. Ticket returned to in progress stage.',
-                'vr_id' => $vr->id,
-                'ticket_status' => 'in_progress'
+                'message' => 'Purchase Request rejected successfully'
             ]);
 
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Mark VR paid error: ' . $e->getMessage());
+            Log::error('Reject PR error: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to mark VR as paid: ' . $e->getMessage()
+                'message' => 'Failed to reject Purchase Request: ' . $e->getMessage()
             ], 500);
         }
     }
 
     /**
-     * Delete VR - HANYA superadmin dan creator (jika status pending/rejected)
+     * Mark voucher request as paid.
+     */
+    public function markPaid(Request $request, $id)
+    {
+        $user = Auth::user();
+
+        if (!in_array($user->role, ['admin_eng', 'superadmin'])) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Only Admin Engineering or Superadmin can mark Purchase Request as paid'
+            ], 403);
+        }
+
+        $vr = VoucherRequest::with('ticket')->findOrFail($id);
+
+        if ($vr->status !== 'gm_approved') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Purchase Request must be GM approved before marking as paid'
+            ], 422);
+        }
+
+        $request->validate([
+            'notes' => 'nullable|string',
+        ]);
+
+        DB::beginTransaction();
+        try {
+            $vr->update([
+                'status' => 'paid',
+                'notes' => $vr->notes . "\n\nMarked as paid by " . $user->name .
+                    ($request->notes ? "\nPayment notes: " . $request->notes : '')
+            ]);
+
+            $vr->ticket->comments()->create([
+                'user_id' => $user->id,
+                'comment' => "Purchase Request #{$vr->vr_number} marked as paid" .
+                    ($request->notes ? "\nPayment notes: " . $request->notes : ''),
+                'is_internal' => 0,
+                'is_followup' => true,
+            ]);
+
+            ActivityLog::create([
+                'user_id' => $user->id,
+                'ticket_id' => $vr->ticket_id,
+                'action' => 'vr_paid',
+                'description' => 'Purchase Request #' . $vr->vr_number . ' marked as paid',
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->userAgent(),
+            ]);
+
+            $this->sendNotification(
+                $vr->creator,
+                $vr->ticket,
+                $vr,
+                'Purchase Request Paid',
+                'Purchase Request #' . $vr->vr_number . ' has been marked as paid',
+                'success'
+            );
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Purchase Request marked as paid successfully'
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Mark paid PR error: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to mark Purchase Request as paid: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Delete voucher request.
      */
     public function destroy(Request $request, $id)
     {
-        $vr = VoucherRequest::with(['ticket'])->findOrFail($id);
         $user = Auth::user();
+        $vr = VoucherRequest::with('ticket')->findOrFail($id);
 
-        // Superadmin bisa delete semua
-        // Creator bisa delete hanya jika status pending atau rejected
-        if ($user->role !== 'superadmin') {
-            if ($vr->created_by !== $user->id) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'You can only delete VRs that you created'
-                ], 403);
-            }
+        $canDelete = false;
 
-            if (!in_array($vr->status, ['pending', 'rejected'])) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'You can only delete VRs in pending or rejected status'
-                ], 403);
-            }
-        }
-
-        // Verifikasi password untuk superadmin
-        if ($user->role === 'superadmin' && $request->has('password')) {
-            if (!Hash::check($request->password, $user->password)) {
+        if ($user->role === 'superadmin') {
+            $canDelete = true;
+            if (!$request->has('password') || !Hash::check($request->password, $user->password)) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Password verification failed'
                 ], 422);
             }
+        } elseif ($vr->created_by === $user->id && in_array($vr->status, ['pending', 'rejected'])) {
+            $canDelete = true;
+        }
+
+        if (!$canDelete) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You are not authorized to delete this Purchase Request'
+            ], 403);
         }
 
         DB::beginTransaction();
         try {
-            // Delete items
-            $vr->items()->delete();
-
-            // Update ticket status jika perlu
-            if ($vr->ticket->status === 'in_progress' && $vr->ticket->approval && $vr->ticket->approval->needs_vr) {
-                $vr->ticket->update(['status' => 'pending_vr']);
+            // Delete attachments
+            foreach ($vr->attachments as $attachment) {
+                Storage::disk('public')->delete($attachment->file_path);
+                $attachment->delete();
             }
 
-            // Log activity sebelum delete
+            $vr->ticket->comments()->create([
+                'user_id' => $user->id,
+                'comment' => "Purchase Request #{$vr->vr_number} deleted by " . $user->name,
+                'is_internal' => 0,
+            ]);
+
             ActivityLog::create([
                 'user_id' => $user->id,
                 'ticket_id' => $vr->ticket_id,
                 'action' => 'vr_deleted',
-                'description' => ucfirst($user->role) . ' ' . $user->name . ' deleted VR #' . $vr->vr_number,
+                'description' => 'Purchase Request #' . $vr->vr_number . ' deleted',
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->userAgent(),
             ]);
 
-            // Delete VR
             $vr->delete();
 
             DB::commit();
 
             return response()->json([
                 'success' => true,
-                'message' => 'VR deleted successfully'
+                'message' => 'Purchase Request deleted successfully'
             ]);
 
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Delete VR error: ' . $e->getMessage());
+            Log::error('Delete PR error: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to delete VR: ' . $e->getMessage()
+                'message' => 'Failed to delete Purchase Request: ' . $e->getMessage()
             ], 500);
         }
     }
 
     /**
-     * Print VR
+     * Print PR (dummy for now - will implement PDF later).
      */
     public function print($id)
     {
-        $vr = VoucherRequest::with([
-            'ticket.user',
-            'ticket.category',
-            'ticket.priority',
-            'ticket.assignedUser',
-            'creator',
-            'adminApprover',
-            'omApprover',
-            'gmApprover',
-            'items'
-        ])->findOrFail($id);
+        $vr = VoucherRequest::with(['ticket', 'creator', 'attachments'])->findOrFail($id);
 
-        $user = Auth::user();
-
-        if (!$this->canViewVR($user, $vr)) {
-            abort(403, 'Unauthorized access to this VR');
-        }
-
-        return view('vouchers.print', compact('vr'));
+        // TODO: Implement PDF generation
+        return response()->json([
+            'success' => true,
+            'message' => 'Print feature coming soon'
+        ]);
     }
 
     /**
-     * Verify password for new signature
+     * Verify password for signature update.
      */
     public function verifyPassword(Request $request)
     {
         $request->validate([
-            'current_password' => 'required|string'
+            'current_password' => 'required|string',
         ]);
 
         $user = Auth::user();
 
-        // Hanya AdminEng, OM, GM yang bisa ganti signature
-        if (!in_array($user->role, ['admin_eng', 'om', 'gm'])) {
-            return response()->json([
-                'success' => false,
-                'message' => 'You are not authorized to create new signatures'
-            ], 403);
-        }
-
-        // Verifikasi password
         if (!Hash::check($request->current_password, $user->password)) {
             return response()->json([
                 'success' => false,
@@ -956,42 +857,32 @@ class VoucherController extends Controller
     }
 
     /**
-     * Helper: Check if user can view VR
+     * Generate unique PR number.
      */
-    private function canViewVR($user, $vr)
+    private function generatePRNumber()
     {
-        // Superadmin can view all
-        if ($user->role === 'superadmin') {
-            return true;
+        $year = date('Y');
+        $month = date('m');
+
+        $lastPR = VoucherRequest::whereYear('created_at', $year)
+            ->whereMonth('created_at', $month)
+            ->orderBy('id', 'desc')
+            ->first();
+
+        if ($lastPR) {
+            $lastNumber = intval(substr($lastPR->vr_number, -4));
+            $newNumber = str_pad($lastNumber + 1, 4, '0', STR_PAD_LEFT);
+        } else {
+            $newNumber = '0001';
         }
 
-        // Creator can always view
-        if ($vr->created_by === $user->id) {
-            return true;
-        }
-
-        // Admin Eng can view if they created or if pending/admin_approved
-        if ($user->role === 'admin_eng') {
-            return in_array($vr->status, ['pending', 'admin_approved']) || $vr->created_by === $user->id;
-        }
-
-        // OM can view if admin_approved atau om_approved
-        if ($user->role === 'om') {
-            return in_array($vr->status, ['admin_approved', 'om_approved']);
-        }
-
-        // GM can view if om_approved atau gm_approved
-        if ($user->role === 'gm') {
-            return in_array($vr->status, ['om_approved', 'gm_approved', 'paid']);
-        }
-
-        return false;
+        return 'PR-' . $year . $month . '-' . $newNumber;
     }
 
     /**
-     * Helper: Save signature from data URL
+     * Save signature from data URL.
      */
-    private function saveSignature($signatureData, $vrNumber, $userId, $stage)
+    private function saveSignature($signatureData, $prNumber, $userId, $stage)
     {
         if (!preg_match('#^data:image/\w+;base64,#i', $signatureData)) {
             throw new \Exception('Invalid signature data URL format');
@@ -1003,10 +894,36 @@ class VoucherController extends Controller
             throw new \Exception('Failed to decode base64 signature data');
         }
 
-        $fileName = 'signature_vr_' . $vrNumber . '_stage' . $stage . '_user' . $userId . '_' . time() . '.png';
-        $filePath = 'signatures/' . $fileName;
+        $image = imagecreatefromstring($imageData);
+        if (!$image) {
+            throw new \Exception('Failed to create image from data');
+        }
 
-        Storage::disk('public')->makeDirectory('signatures', 0755, true);
+        $width = imagesx($image);
+        $height = imagesy($image);
+
+        $targetWidth = 300;
+        $targetHeight = 200;
+
+        $newImage = imagecreatetruecolor($targetWidth, $targetHeight);
+
+        imagesavealpha($newImage, true);
+        $transparent = imagecolorallocatealpha($newImage, 0, 0, 0, 127);
+        imagefill($newImage, 0, 0, $transparent);
+
+        imagecopyresampled($newImage, $image, 0, 0, 0, 0, $targetWidth, $targetHeight, $width, $height);
+
+        ob_start();
+        imagepng($newImage);
+        $imageData = ob_get_clean();
+
+        imagedestroy($image);
+        imagedestroy($newImage);
+
+        $fileName = 'pr_signature_' . $prNumber . '_stage' . $stage . '_user' . $userId . '_' . time() . '.png';
+        $filePath = 'signatures/pr/' . $fileName;
+
+        Storage::disk('public')->makeDirectory('signatures/pr', 0755, true);
         $saved = Storage::disk('public')->put($filePath, $imageData);
 
         if (!$saved) {
@@ -1017,12 +934,46 @@ class VoucherController extends Controller
     }
 
     /**
-     * Helper: Send notification
+     * Send notification to next approver.
      */
-    private function sendNotification($user, $ticket, $title, $message, $type = 'info', $vr = null)
+    private function notifyNextApprover($vr, $currentRole)
+    {
+        $nextRole = '';
+        $statusMessage = '';
+
+        switch ($currentRole) {
+            case 'admin_eng':
+                $nextRole = 'om';
+                $statusMessage = 'pending OM approval';
+                break;
+            case 'om':
+                $nextRole = 'gm';
+                $statusMessage = 'pending GM approval';
+                break;
+            default:
+                return;
+        }
+
+        $nextApprovers = User::where('role', $nextRole)->where('status', 'active')->get();
+
+        foreach ($nextApprovers as $approver) {
+            $this->sendNotification(
+                $approver,
+                $vr->ticket,
+                $vr,
+                'Purchase Request Needs Your Approval',
+                'Purchase Request #' . $vr->vr_number . ' for ticket #' . $vr->ticket->ticket_number . ' is ' . $statusMessage,
+                'approval'
+            );
+        }
+    }
+
+    /**
+     * Send notification (in-app and email).
+     */
+    private function sendNotification($user, $ticket, $vr, $title, $message, $type = 'info')
     {
         try {
-            // Create in-app notification
             Notification::create([
                 'user_id' => $user->id,
                 'ticket_id' => $ticket->id,
@@ -1032,24 +983,16 @@ class VoucherController extends Controller
                 'is_read' => false,
             ]);
 
-            // Send email notification
             if (config('mail.mailers.smtp.host')) {
                 try {
-                    Mail::to($user->email)->queue(new VRNotification(
-                        $user,
-                        $ticket,
-                        $title,
-                        $message,
-                        $type,
-                        $vr  // ✅ Kirim data VR juga
-                    ));
+                    // Mail::to($user->email)->queue(new PurchaseRequestNotification($user, $ticket, $vr, $title, $message, $type));
                 } catch (\Exception $e) {
-                    \Log::warning('Email notification failed: ' . $e->getMessage());
+                    Log::warning('Email notification failed: ' . $e->getMessage());
                 }
             }
 
         } catch (\Exception $e) {
-            \Log::error('Notification creation failed: ' . $e->getMessage());
+            Log::error('Notification creation failed: ' . $e->getMessage());
         }
     }
 }

@@ -15,7 +15,7 @@ class TicketNotification extends Mailable
     public $user;
     public $ticket;
     public $title;
-    public $message;
+    public $messageText;  // ← UBAH DARI $message JADI $messageText
     public $type;
 
     /**
@@ -26,7 +26,7 @@ class TicketNotification extends Mailable
         $this->user = $user;
         $this->ticket = $ticket;
         $this->title = $title;
-        $this->message = $message;
+        $this->messageText = $message;  // ← UBAH
         $this->type = $type;
     }
 
@@ -41,7 +41,7 @@ class TicketNotification extends Mailable
                 'user' => $this->user,
                 'ticket' => $this->ticket,
                 'title' => $this->title,
-                'message' => $this->message,
+                'messageText' => $this->messageText,  // ← UBAH
                 'type' => $this->type,
             ]);
     }

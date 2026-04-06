@@ -1,3 +1,4 @@
+{{-- resources/views/admin/locations/index.blade.php --}}
 @extends('layouts.main')
 
 @section('title', 'Location Management | ' . config('app.name'))
@@ -132,8 +133,9 @@
             width: 50px;
         }
 
-        #locationsTable thead th:nth-child(4) {
-            width: 100px;
+        #locationsTable thead th:nth-child(4),
+        #locationsTable thead th:nth-child(5) {
+            width: 80px;
         }
 
         #locationsTable thead th:nth-child(6) {
@@ -157,10 +159,8 @@
             text-align: center;
         }
 
-        #locationsTable tbody td:nth-child(4) {
-            text-align: center;
-        }
-
+        #locationsTable tbody td:nth-child(4),
+        #locationsTable tbody td:nth-child(5),
         #locationsTable tbody td:nth-child(6) {
             text-align: center;
         }
@@ -241,6 +241,17 @@
             color: white;
         }
 
+        /* Hotel Badges */
+        .badge-harris {
+            background-color: #007bff;
+            color: white;
+        }
+
+        .badge-pop {
+            background-color: #28a745;
+            color: white;
+        }
+
         /* Button Action Styling */
         .btn-xs.sharp {
             width: 32px;
@@ -294,6 +305,54 @@
                 padding: 8px 5px;
             }
         }
+
+        /* Error styling */
+        .is-invalid {
+            border-color: #dc3545 !important;
+        }
+
+        .invalid-feedback {
+            display: block;
+            width: 100%;
+            margin-top: 0.25rem;
+            font-size: 0.875em;
+            color: #dc3545;
+        }
+
+        /* Hotel radio styling */
+        .hotel-radio-group {
+            display: flex;
+            gap: 15px;
+        }
+
+        .hotel-radio-item {
+            flex: 1;
+        }
+
+        .hotel-radio-item input[type="radio"] {
+            display: none;
+        }
+
+        .hotel-radio-item label {
+            display: block;
+            padding: 10px 15px;
+            text-align: center;
+            border: 2px solid #e9ecef;
+            border-radius: 0.75rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .hotel-radio-item input[type="radio"]:checked+label {
+            border-color: var(--primary);
+            background-color: rgba(var(--primary-rgb), 0.1);
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        .hotel-radio-item label:hover {
+            border-color: #adb5bd;
+        }
     </style>
 @endpush
 
@@ -306,7 +365,7 @@
                     <h5 class="modal-title">Add New Location</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
-                <form id="addLocationForm">
+                <form id="addLocationForm" novalidate>
                     @csrf
                     <div class="modal-body">
                         <div class="row">
@@ -315,6 +374,26 @@
                                 <label class="form-label">Location Name <span class="text-danger">*</span></label>
                                 <input type="text" class="form-control" name="name"
                                     placeholder="e.g., Lobby, Room 101" required>
+                                <div class="invalid-feedback"></div>
+                            </div>
+
+                            <!-- Hotel -->
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Hotel <span class="text-danger">*</span></label>
+                                <div class="hotel-radio-group">
+                                    <div class="hotel-radio-item">
+                                        <input type="radio" id="add_hotel_harris" name="hotel" value="harris" checked>
+                                        <label for="add_hotel_harris">
+                                            <i class="fas fa-hotel me-1"></i> Harris Hotel
+                                        </label>
+                                    </div>
+                                    <div class="hotel-radio-item">
+                                        <input type="radio" id="add_hotel_pop" name="hotel" value="pop">
+                                        <label for="add_hotel_pop">
+                                            <i class="fas fa-building me-1"></i> Pop Hotel
+                                        </label>
+                                    </div>
+                                </div>
                                 <div class="invalid-feedback"></div>
                             </div>
 
@@ -337,25 +416,35 @@
                                 <label class="form-label">Floor Number</label>
                                 <select class="form-control" name="floor_number" id="add_floor_number">
                                     <option value="">Select Floor</option>
-                                    <option value="G">Ground Floor (G)</option>
-                                    <option value="1">1st Floor</option>
-                                    <option value="2">2nd Floor</option>
-                                    <option value="3">3rd Floor</option>
-                                    <option value="3A">3A Floor</option>
-                                    <option value="4">4th Floor</option>
-                                    <option value="5">5th Floor</option>
-                                    <option value="6">6th Floor</option>
-                                    <option value="7">7th Floor</option>
-                                    <option value="8">8th Floor</option>
-                                    <option value="9">9th Floor</option>
-                                    <option value="10">10th Floor</option>
+                                    <!-- Harris Hotel Floors -->
+                                    <optgroup label="Harris Hotel">
+                                        <option value="GF">Ground Floor (GF)</option>
+                                        <option value="3">3rd Floor</option>
+                                        <option value="3A">3A Floor</option>
+                                        <option value="5">5th Floor</option>
+                                        <option value="6">6th Floor</option>
+                                        <option value="7">7th Floor</option>
+                                        <option value="8">8th Floor</option>
+                                        <option value="9">9th Floor</option>
+                                    </optgroup>
+                                    <!-- Pop Hotel Floors -->
+                                    <optgroup label="Pop Hotel">
+                                        <option value="GF">Ground Floor (GF)</option>
+                                        <option value="M">Mezzanine (M)</option>
+                                        <option value="3A">3A Floor</option>
+                                        <option value="5">5th Floor</option>
+                                        <option value="6">6th Floor</option>
+                                        <option value="7">7th Floor</option>
+                                        <option value="8">8th Floor</option>
+                                        <option value="9">9th Floor</option>
+                                    </optgroup>
                                 </select>
                                 <small class="text-muted">Optional - for all location types</small>
                                 <div class="invalid-feedback"></div>
                             </div>
 
                             <!-- Status -->
-                            <div class="col-md-6 mb-3">
+                            <div class="col-md-12 mb-3">
                                 <label class="form-label">Status <span class="text-danger">*</span></label>
                                 <select class="form-control" name="status" required>
                                     <option value="active" selected>Active</option>
@@ -391,16 +480,36 @@
                     <h5 class="modal-title">Edit Location</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
-                <form id="editLocationForm">
+                <form id="editLocationForm" novalidate>
                     @csrf
                     @method('PUT')
-                    <input type="hidden" id="edit_location_id">
+                    <input type="hidden" id="edit_location_id" name="id">
                     <div class="modal-body">
                         <div class="row">
                             <!-- Location Name -->
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">Location Name <span class="text-danger">*</span></label>
                                 <input type="text" class="form-control" id="edit_name" name="name" required>
+                                <div class="invalid-feedback"></div>
+                            </div>
+
+                            <!-- Hotel -->
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Hotel <span class="text-danger">*</span></label>
+                                <div class="hotel-radio-group">
+                                    <div class="hotel-radio-item">
+                                        <input type="radio" id="edit_hotel_harris" name="hotel" value="harris">
+                                        <label for="edit_hotel_harris">
+                                            <i class="fas fa-hotel me-1"></i> Harris Hotel
+                                        </label>
+                                    </div>
+                                    <div class="hotel-radio-item">
+                                        <input type="radio" id="edit_hotel_pop" name="hotel" value="pop">
+                                        <label for="edit_hotel_pop">
+                                            <i class="fas fa-building me-1"></i> Pop Hotel
+                                        </label>
+                                    </div>
+                                </div>
                                 <div class="invalid-feedback"></div>
                             </div>
 
@@ -422,25 +531,35 @@
                                 <label class="form-label">Floor Number</label>
                                 <select class="form-control" id="edit_floor_number" name="floor_number">
                                     <option value="">Select Floor</option>
-                                    <option value="G">Ground Floor (G)</option>
-                                    <option value="1">1st Floor</option>
-                                    <option value="2">2nd Floor</option>
-                                    <option value="3">3rd Floor</option>
-                                    <option value="3A">3A Floor</option>
-                                    <option value="4">4th Floor</option>
-                                    <option value="5">5th Floor</option>
-                                    <option value="6">6th Floor</option>
-                                    <option value="7">7th Floor</option>
-                                    <option value="8">8th Floor</option>
-                                    <option value="9">9th Floor</option>
-                                    <option value="10">10th Floor</option>
+                                    <!-- Harris Hotel Floors -->
+                                    <optgroup label="Harris Hotel">
+                                        <option value="GF">Ground Floor (GF)</option>
+                                        <option value="3">3rd Floor</option>
+                                        <option value="3A">3A Floor</option>
+                                        <option value="5">5th Floor</option>
+                                        <option value="6">6th Floor</option>
+                                        <option value="7">7th Floor</option>
+                                        <option value="8">8th Floor</option>
+                                        <option value="9">9th Floor</option>
+                                    </optgroup>
+                                    <!-- Pop Hotel Floors -->
+                                    <optgroup label="Pop Hotel">
+                                        <option value="GF">Ground Floor (GF)</option>
+                                        <option value="M">Mezzanine (M)</option>
+                                        <option value="3A">3A Floor</option>
+                                        <option value="5">5th Floor</option>
+                                        <option value="6">6th Floor</option>
+                                        <option value="7">7th Floor</option>
+                                        <option value="8">8th Floor</option>
+                                        <option value="9">9th Floor</option>
+                                    </optgroup>
                                 </select>
                                 <small class="text-muted">Optional - for all location types</small>
                                 <div class="invalid-feedback"></div>
                             </div>
 
                             <!-- Status -->
-                            <div class="col-md-6 mb-3">
+                            <div class="col-md-12 mb-3">
                                 <label class="form-label">Status <span class="text-danger">*</span></label>
                                 <select class="form-control" id="edit_status" name="status" required>
                                     <option value="active">Active</option>
@@ -474,10 +593,12 @@
             <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h4 class="card-title">Location List</h4>
-                    <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal"
-                        data-bs-target="#addLocationModal">
-                        <i class="fas fa-plus me-1"></i> Add New Location
-                    </button>
+                    @if (auth()->user()->role === 'superadmin')
+                        <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal"
+                            data-bs-target="#addLocationModal">
+                            <i class="fas fa-plus me-1"></i> Add New Location
+                        </button>
+                    @endif
                 </div>
                 <div class="card-body">
                     <div class="table-responsive">
@@ -486,6 +607,7 @@
                                 <tr>
                                     <th>No</th>
                                     <th>Location Name</th>
+                                    <th>Hotel</th>
                                     <th>Type</th>
                                     <th>Floor</th>
                                     <th>Description</th>
@@ -504,11 +626,21 @@
                                             'facility' => 'badge-facility',
                                             'department' => 'badge-department',
                                         ];
+
+                                        $hotelBadges = [
+                                            'harris' => 'badge-harris',
+                                            'pop' => 'badge-pop',
+                                        ];
                                     @endphp
                                     <tr>
                                         <td>{{ $index + 1 }}</td>
                                         <td>
                                             <strong>{{ $location->name }}</strong>
+                                        </td>
+                                        <td>
+                                            <span class="badge {{ $hotelBadges[$location->hotel] ?? 'badge-secondary' }}">
+                                                {{ $location->hotel === 'harris' ? 'Harris Hotel' : 'Pop Hotel' }}
+                                            </span>
                                         </td>
                                         <td>
                                             <span
@@ -523,7 +655,8 @@
                                                 <span class="text-muted">-</span>
                                             @endif
                                         </td>
-                                        <td>{{ Str::limit($location->description, 50) ?? '-' }}</td>
+                                        <td>{{ $location->description ? Str::limit($location->description, 50) : '-' }}
+                                        </td>
                                         <td>
                                             @php
                                                 $statusBadge = [
@@ -535,39 +668,44 @@
                                                 {{ ucfirst($location->status) }}
                                             </span>
                                         </td>
-                                        <td>{{ $location->created_at->format('d M Y') }}</td>
+                                        <td>{{ $location->created_at ? $location->created_at->format('d M Y') : '-' }}</td>
                                         <td>
-                                            <div class="d-flex justify-content-center">
-                                                <button type="button"
-                                                    class="btn btn-primary btn-sm shadow btn-xs sharp me-1 edit-location"
-                                                    data-id="{{ $location->id }}" data-name="{{ $location->name }}"
-                                                    data-location_type="{{ $location->location_type }}"
-                                                    data-floor_number="{{ $location->floor_number }}"
-                                                    data-description="{{ $location->description }}"
-                                                    data-status="{{ $location->status }}">
-                                                    <i class="fas fa-pencil-alt"></i>
-                                                </button>
+                                            @if (auth()->user()->role === 'superadmin')
+                                                <div class="d-flex justify-content-center">
+                                                    <button type="button"
+                                                        class="btn btn-primary btn-sm shadow btn-xs sharp me-1 edit-location"
+                                                        data-id="{{ $location->id }}" data-name="{{ $location->name }}"
+                                                        data-hotel="{{ $location->hotel }}"
+                                                        data-location_type="{{ $location->location_type }}"
+                                                        data-floor_number="{{ $location->floor_number }}"
+                                                        data-description="{{ $location->description }}"
+                                                        data-status="{{ $location->status }}" title="Edit">
+                                                        <i class="fas fa-pencil-alt"></i>
+                                                    </button>
 
-                                                <button type="button"
-                                                    class="btn btn-{{ $location->status === 'active' ? 'warning' : 'success' }} btn-sm shadow btn-xs sharp me-1 toggle-status"
-                                                    data-id="{{ $location->id }}" data-name="{{ $location->name }}"
-                                                    data-status="{{ $location->status }}">
-                                                    <i
-                                                        class="fas fa-{{ $location->status === 'active' ? 'ban' : 'check' }}"></i>
-                                                </button>
+                                                    <button type="button"
+                                                        class="btn btn-{{ $location->status === 'active' ? 'warning' : 'success' }} btn-sm shadow btn-xs sharp me-1 toggle-status"
+                                                        data-id="{{ $location->id }}" data-name="{{ $location->name }}"
+                                                        data-status="{{ $location->status }}"
+                                                        title="{{ $location->status === 'active' ? 'Deactivate' : 'Activate' }}">
+                                                        <i
+                                                            class="fas fa-{{ $location->status === 'active' ? 'ban' : 'check' }}"></i>
+                                                    </button>
 
-                                                <button type="button"
-                                                    class="btn btn-danger btn-sm shadow btn-xs sharp delete-location"
-                                                    data-id="{{ $location->id }}" data-name="{{ $location->name }}">
-                                                    <i class="fas fa-trash"></i>
-                                                </button>
-                                            </div>
+                                                    <button type="button"
+                                                        class="btn btn-danger btn-sm shadow btn-xs sharp delete-location"
+                                                        data-id="{{ $location->id }}" data-name="{{ $location->name }}"
+                                                        title="Delete">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                </div>
+                                            @else
+                                                <span class="text-muted">No Actions</span>
+                                            @endif
                                         </td>
                                     </tr>
                                 @empty
-                                    <tr>
-                                        <td colspan="8" class="text-center">No locations found</td>
-                                    </tr>
+                                    {{-- JANGAN TARUH TR KOSONG DI SINI --}}
                                 @endforelse
                             </tbody>
                         </table>
@@ -604,7 +742,7 @@
                 "hideMethod": "fadeOut"
             };
 
-            // Initialize DataTable
+            // Initialize DataTable dengan empty table handling
             var table = $('#locationsTable').DataTable({
                 "pageLength": 10,
                 "ordering": true,
@@ -631,80 +769,46 @@
                 },
                 "columnDefs": [{
                         "orderable": false,
-                        "targets": [7]
+                        "targets": [8]
                     },
                     {
                         "className": "text-center",
-                        "targets": [0, 3, 5, 6, 7]
+                        "targets": [0, 2, 3, 4, 6, 7, 8]
                     }
                 ],
                 "dom": '<"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6"f>>rtip',
-                "drawCallback": function() {
+                "drawCallback": function(settings) {
+                    // Handle empty table on draw
+                    var api = this.api();
+                    if (api.rows().count() === 0) {
+                        var tbody = $(this).find('tbody');
+                        if (tbody.find('tr').length === 0) {
+                            tbody.html(
+                                '<tr><td colspan="9" class="text-center">No locations found</td></tr>'
+                            );
+                        }
+                    }
                     $('.dataTables_paginate > .pagination').addClass(
                         'pagination-gutter pagination-primary');
+                },
+                "initComplete": function(settings, json) {
+                    // Handle empty table on init
+                    if (this.api().rows().count() === 0) {
+                        var tbody = $('#locationsTable tbody');
+                        if (tbody.find('tr').length === 0) {
+                            tbody.html(
+                                '<tr><td colspan="9" class="text-center">No locations found</td></tr>'
+                            );
+                        }
+                    }
                 }
             });
 
-            // Add Location Form Submit
-            $('#addLocationForm').on('submit', function(e) {
-                e.preventDefault();
-
-                var formData = $(this).serialize();
-                var submitBtn = $(this).find('button[type="submit"]');
-                var originalText = submitBtn.html();
-
-                submitBtn.prop('disabled', true).html(
-                    '<i class="fa fa-spinner fa-spin me-1"></i>Saving...');
-
-                $.ajax({
-                    url: "{{ route('admin.locations.store') }}",
-                    type: 'POST',
-                    data: formData,
-                    success: function(response) {
-                        if (response.success) {
-                            $('#addLocationModal').modal('hide');
-                            $('#addLocationForm')[0].reset();
-                            $('.form-control').removeClass('is-invalid');
-
-                            Swal.fire({
-                                icon: 'success',
-                                title: 'Success!',
-                                text: response.message,
-                                showConfirmButton: false,
-                                timer: 1500
-                            }).then(() => {
-                                location.reload();
-                            });
-                        }
-                    },
-                    error: function(xhr) {
-                        submitBtn.prop('disabled', false).html(originalText);
-
-                        if (xhr.status === 422) {
-                            var errors = xhr.responseJSON.errors;
-                            $('.form-control').removeClass('is-invalid');
-                            $('.invalid-feedback').text('');
-                            $.each(errors, function(key, value) {
-                                var $input = $('[name="' + key + '"]');
-                                $input.addClass('is-invalid')
-                                    .siblings('.invalid-feedback').text(value[0]);
-                            });
-                            toastr.error('Please check the form for errors');
-                        } else {
-                            Swal.fire({
-                                icon: 'error',
-                                title: 'Oops...',
-                                text: xhr.responseJSON.message || 'An error occurred'
-                            });
-                        }
-                    }
-                });
-            });
-
-            // Edit Location Button Click
+            // Delegasi event untuk edit, toggle, delete
             $(document).on('click', '.edit-location', function() {
                 var id = $(this).data('id');
                 var name = $(this).data('name');
+                var hotel = $(this).data('hotel');
                 var locationType = $(this).data('location_type');
                 var floorNumber = $(this).data('floor_number');
                 var description = $(this).data('description');
@@ -712,6 +816,7 @@
 
                 $('#edit_location_id').val(id);
                 $('#edit_name').val(name);
+                $('#edit_hotel_' + hotel).prop('checked', true);
                 $('#edit_location_type').val(locationType);
                 $('#edit_floor_number').val(floorNumber || '');
                 $('#edit_description').val(description);
@@ -722,77 +827,15 @@
                 $('#editLocationModal').modal('show');
             });
 
-            // Edit Location Form Submit
-            $('#editLocationForm').on('submit', function(e) {
-                e.preventDefault();
-
-                var locationId = $('#edit_location_id').val();
-                var formData = $(this).serialize();
-                var submitBtn = $(this).find('button[type="submit"]');
-                var originalText = submitBtn.html();
-
-                submitBtn.prop('disabled', true).html(
-                    '<i class="fa fa-spinner fa-spin me-1"></i>Updating...');
-
-                $.ajax({
-                    url: "{{ route('admin.locations.update', ':id') }}".replace(':id', locationId),
-                    type: 'PUT',
-                    data: formData,
-                    success: function(response) {
-                        if (response.success) {
-                            $('#editLocationModal').modal('hide');
-                            $('#editLocationForm')[0].reset();
-                            $('.form-control').removeClass('is-invalid');
-
-                            Swal.fire({
-                                icon: 'success',
-                                title: 'Success!',
-                                text: response.message,
-                                showConfirmButton: false,
-                                timer: 1500
-                            }).then(() => {
-                                location.reload();
-                            });
-                        }
-                    },
-                    error: function(xhr) {
-                        submitBtn.prop('disabled', false).html(originalText);
-
-                        if (xhr.status === 422) {
-                            var errors = xhr.responseJSON.errors;
-                            $('.form-control').removeClass('is-invalid');
-                            $('.invalid-feedback').text('');
-                            $.each(errors, function(key, value) {
-                                $('#edit_' + key).addClass('is-invalid')
-                                    .siblings('.invalid-feedback').text(value[0]);
-                            });
-                            toastr.error('Please check the form for errors');
-                        } else {
-                            Swal.fire({
-                                icon: 'error',
-                                title: 'Oops...',
-                                text: xhr.responseJSON.message || 'An error occurred'
-                            });
-                        }
-                    }
-                });
-            });
-
-            // Toggle Status
             $(document).on('click', '.toggle-status', function() {
                 var locationId = $(this).data('id');
                 var locationName = $(this).data('name');
                 var currentStatus = $(this).data('status');
                 var newStatus = currentStatus === 'active' ? 'inactive' : 'active';
 
-                var statusColors = {
-                    'active': '#28a745',
-                    'inactive': '#dc3545'
-                };
-
                 Swal.fire({
                     title: 'Change Location Status?',
-                    html: `Are you sure you want to change <strong>${locationName}</strong>'s status to <span style="color: ${statusColors[newStatus]}">${newStatus.toUpperCase()}</span>?`,
+                    html: `Are you sure you want to change <strong>${locationName}</strong>'s status?`,
                     icon: 'question',
                     showCancelButton: true,
                     confirmButtonColor: '#3085d6',
@@ -801,42 +844,38 @@
                     cancelButtonText: 'Cancel'
                 }).then((result) => {
                     if (result.isConfirmed) {
-                        Swal.fire({
-                            title: 'Processing...',
-                            html: 'Please wait',
-                            allowOutsideClick: false,
-                            didOpen: () => {
-                                Swal.showLoading();
-                            }
-                        });
-
                         $.ajax({
                             url: "{{ route('admin.locations.toggle-status', ':id') }}"
                                 .replace(':id', locationId),
                             type: 'POST',
                             data: {
-                                _token: '{{ csrf_token() }}',
-                                _method: 'PATCH'
+                                _token: '{{ csrf_token() }}'
                             },
                             success: function(response) {
                                 if (response.success) {
                                     Swal.fire({
                                         icon: 'success',
-                                        title: 'Status Changed!',
+                                        title: 'Success!',
                                         text: response.message,
                                         showConfirmButton: false,
                                         timer: 1500
                                     }).then(() => {
                                         location.reload();
                                     });
+                                } else {
+                                    Swal.fire({
+                                        icon: 'error',
+                                        title: 'Error!',
+                                        text: response.message
+                                    });
                                 }
                             },
                             error: function(xhr) {
                                 Swal.fire({
                                     icon: 'error',
-                                    title: 'Failed!',
-                                    text: xhr.responseJSON.message ||
-                                        'An error occurred'
+                                    title: 'Error!',
+                                    text: xhr.responseJSON?.message ||
+                                        'An error occurred. Please try again.'
                                 });
                             }
                         });
@@ -844,7 +883,6 @@
                 });
             });
 
-            // Delete Location
             $(document).on('click', '.delete-location', function() {
                 var locationId = $(this).data('id');
                 var locationName = $(this).data('name');
@@ -860,15 +898,6 @@
                     cancelButtonText: 'Cancel'
                 }).then((result) => {
                     if (result.isConfirmed) {
-                        Swal.fire({
-                            title: 'Deleting...',
-                            html: 'Please wait',
-                            allowOutsideClick: false,
-                            didOpen: () => {
-                                Swal.showLoading();
-                            }
-                        });
-
                         $.ajax({
                             url: "{{ route('admin.locations.destroy', ':id') }}".replace(
                                 ':id',
@@ -892,20 +921,159 @@
                                     Swal.fire({
                                         icon: 'warning',
                                         title: 'Cannot Delete',
-                                        text: response.message ||
-                                            'This location cannot be deleted.'
+                                        text: response.message
                                     });
                                 }
                             },
                             error: function(xhr) {
                                 Swal.fire({
                                     icon: 'error',
-                                    title: 'Failed!',
-                                    text: xhr.responseJSON.message ||
-                                        'An error occurred'
+                                    title: 'Error!',
+                                    text: xhr.responseJSON?.message ||
+                                        'An error occurred. Please try again.'
                                 });
                             }
                         });
+                    }
+                });
+            });
+
+            // Add Location Form Submit - SIMPLE VERSION
+            $('#addLocationForm').on('submit', function(e) {
+                e.preventDefault();
+
+                var formData = $(this).serialize();
+                var submitBtn = $(this).find('button[type="submit"]');
+                var originalText = submitBtn.html();
+
+                submitBtn.prop('disabled', true).html(
+                    '<i class="fa fa-spinner fa-spin me-1"></i>Saving...');
+
+                $.ajax({
+                    url: "{{ route('admin.locations.store') }}",
+                    type: 'POST',
+                    data: formData,
+                    success: function(response) {
+                        submitBtn.prop('disabled', false).html(originalText);
+
+                        if (response.success) {
+                            $('#addLocationModal').modal('hide');
+                            $('#addLocationForm')[0].reset();
+                            $('.form-control').removeClass('is-invalid');
+                            $('.invalid-feedback').text('');
+                            $('#add_hotel_harris').prop('checked', true);
+
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Success!',
+                                text: response.message,
+                                showConfirmButton: false,
+                                timer: 1500
+                            }).then(() => {
+                                location.reload();
+                            });
+                        } else {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Error!',
+                                text: response.message
+                            });
+                        }
+                    },
+                    error: function(xhr) {
+                        submitBtn.prop('disabled', false).html(originalText);
+
+                        if (xhr.status === 422) {
+                            var errors = xhr.responseJSON.errors;
+                            $('.form-control').removeClass('is-invalid');
+                            $('.invalid-feedback').text('');
+
+                            $.each(errors, function(key, value) {
+                                var input = $('[name="' + key + '"]',
+                                    '#addLocationForm');
+                                input.addClass('is-invalid');
+                                input.siblings('.invalid-feedback').text(value[0]);
+                            });
+
+                            toastr.error('Please check the form for errors');
+                        } else {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Error!',
+                                text: xhr.responseJSON?.message ||
+                                    'An error occurred. Please try again.'
+                            });
+                        }
+                    }
+                });
+            });
+
+            // Edit Location Form Submit - SIMPLE VERSION
+            $('#editLocationForm').on('submit', function(e) {
+                e.preventDefault();
+
+                var locationId = $('#edit_location_id').val();
+                var formData = $(this).serialize();
+                var submitBtn = $(this).find('button[type="submit"]');
+                var originalText = submitBtn.html();
+
+                submitBtn.prop('disabled', true).html(
+                    '<i class="fa fa-spinner fa-spin me-1"></i>Updating...');
+
+                $.ajax({
+                    url: "{{ route('admin.locations.update', ':id') }}".replace(':id', locationId),
+                    type: 'POST', // Use POST with _method
+                    data: formData + '&_method=PUT',
+                    success: function(response) {
+                        submitBtn.prop('disabled', false).html(originalText);
+
+                        if (response.success) {
+                            $('#editLocationModal').modal('hide');
+                            $('#editLocationForm')[0].reset();
+                            $('.form-control').removeClass('is-invalid');
+                            $('.invalid-feedback').text('');
+
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Success!',
+                                text: response.message,
+                                showConfirmButton: false,
+                                timer: 1500
+                            }).then(() => {
+                                location.reload();
+                            });
+                        } else {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Error!',
+                                text: response.message
+                            });
+                        }
+                    },
+                    error: function(xhr) {
+                        submitBtn.prop('disabled', false).html(originalText);
+
+                        if (xhr.status === 422) {
+                            var errors = xhr.responseJSON.errors;
+                            $('.form-control').removeClass('is-invalid');
+                            $('.invalid-feedback').text('');
+
+                            $.each(errors, function(key, value) {
+                                var input = $('[name="' + key + '"]',
+                                    '#editLocationForm');
+                                input.addClass('is-invalid');
+                                input.siblings('.invalid-feedback').text(value[0]);
+                            });
+
+                            toastr.error('Please check the form for errors');
+                        } else {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Error!',
+                                text: xhr.responseJSON?.message ||
+                                    'An error occurred. Please try again.'
+                            });
+                        }
                     }
                 });
             });
@@ -915,15 +1083,15 @@
                 $(this).find('form')[0].reset();
                 $('.form-control').removeClass('is-invalid');
                 $('.invalid-feedback').text('');
+                if ($(this).attr('id') === 'addLocationModal') {
+                    $('#add_hotel_harris').prop('checked', true);
+                }
             });
 
-            // Auto-focus on first input when modal opens
-            $('#addLocationModal').on('shown.bs.modal', function() {
-                $(this).find('input[name="name"]').focus();
-            });
-
-            $('#editLocationModal').on('shown.bs.modal', function() {
-                $(this).find('#edit_name').focus();
+            // Form validation on input
+            $('.form-control').on('input', function() {
+                $(this).removeClass('is-invalid');
+                $(this).siblings('.invalid-feedback').text('');
             });
         });
     </script>

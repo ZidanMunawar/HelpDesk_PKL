@@ -1,419 +1,15 @@
-<!--**********************************
-    Sidebar dengan Mobile Bottom Navigation
-***********************************-->
-
-<!-- CSS Styles -->
-<style>
-    /* ========================================
-   MOBILE BOTTOM NAVIGATION BAR STYLES
-======================================== */
-
-    /* Hide bottom nav on desktop, show sidebar */
-    .mobile-bottom-nav {
-        display: none;
-    }
-
-    .desktop-sidebar {
-        display: block;
-    }
-
-    /* Mobile Menu Modal - Hidden by default */
-    .mobile-menu-modal {
-        display: none;
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: #fff;
-        z-index: 9999;
-        overflow-y: auto;
-    }
-
-    .mobile-menu-modal.active {
-        display: block;
-        animation: slideInFromBottom 0.3s ease-out;
-    }
-
-    @keyframes slideInFromBottom {
-        from {
-            transform: translateY(100%);
-            opacity: 0;
-        }
-
-        to {
-            transform: translateY(0);
-            opacity: 1;
-        }
-    }
-
-    /* ========================================
-   MOBILE RESPONSIVE (MAX-WIDTH: 768px)
-======================================== */
-    @media screen and (max-width: 768px) {
-
-        /* Hide desktop sidebar on mobile */
-        .desktop-sidebar {
-            display: none !important;
-        }
-
-        /* Show mobile bottom nav */
-        .mobile-bottom-nav {
-            display: block;
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background: #fff;
-            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
-            z-index: 1000;
-            height: 65px;
-            padding-bottom: env(safe-area-inset-bottom);
-            border-top: 1px solid #e9ecef;
-        }
-
-        .mobile-nav-container {
-            display: flex;
-            justify-content: space-around;
-            align-items: center;
-            height: 100%;
-            padding: 0 10px;
-        }
-
-        .mobile-nav-item {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            text-decoration: none;
-            color: #6c757d;
-            font-size: 11px;
-            transition: all 0.3s ease;
-            position: relative;
-            flex: 1;
-            padding: 5px;
-            min-width: 50px;
-        }
-
-        .mobile-nav-item i {
-            font-size: 22px;
-            margin-bottom: 3px;
-            transition: all 0.3s ease;
-        }
-
-        .mobile-nav-item span {
-            font-size: 10px;
-            font-weight: 500;
-            text-align: center;
-            display: block;
-        }
-
-        .mobile-nav-item:hover,
-        .mobile-nav-item.active {
-            color: #7e74f1;
-        }
-
-        .mobile-nav-item.active i {
-            transform: scale(1.1);
-        }
-
-        /* Floating Action Button (FAB) */
-        .mobile-nav-item.mobile-fab {
-            position: relative;
-            top: -20px;
-        }
-
-        .fab-button {
-            width: 56px;
-            height: 56px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, #7e74f1 0%, #5e54e3 100%);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 4px 12px rgba(126, 116, 241, 0.4);
-            transition: all 0.3s ease;
-        }
-
-        .fab-button i {
-            color: #fff;
-            font-size: 24px;
-            margin-bottom: 0;
-        }
-
-        .fab-button:active {
-            transform: scale(0.95);
-            box-shadow: 0 2px 8px rgba(126, 116, 241, 0.4);
-        }
-
-        /* Mobile Badge */
-        .mobile-badge {
-            position: absolute;
-            top: 2px;
-            right: 15%;
-            background: #dc3545;
-            color: #fff;
-            font-size: 9px;
-            font-weight: 700;
-            padding: 2px 5px;
-            border-radius: 10px;
-            min-width: 16px;
-            text-align: center;
-            line-height: 1.2;
-        }
-
-        /* Add padding to content to prevent overlap with bottom nav */
-        .content-body {
-            padding-bottom: 80px !important;
-        }
-
-        /* ========================================
-       MOBILE MENU MODAL STYLES
-    ======================================== */
-        .mobile-menu-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 20px;
-            background: linear-gradient(135deg, #7e74f1 0%, #5e54e3 100%);
-            color: #fff;
-            position: sticky;
-            top: 0;
-            z-index: 10;
-        }
-
-        .mobile-menu-header h4 {
-            margin: 0;
-            font-size: 20px;
-            font-weight: 600;
-        }
-
-        .close-mobile-menu {
-            background: transparent;
-            border: none;
-            color: #fff;
-            font-size: 24px;
-            cursor: pointer;
-            padding: 5px;
-            transition: transform 0.3s ease;
-            width: 40px;
-            height: 40px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 50%;
-        }
-
-        .close-mobile-menu:active {
-            transform: scale(0.9);
-            background: rgba(255, 255, 255, 0.1);
-        }
-
-        .mobile-menu-content {
-            padding: 20px;
-            padding-bottom: 100px;
-        }
-
-        .mobile-menu-user-info {
-            display: flex;
-            align-items: center;
-            padding: 20px;
-            background: #f8f9fa;
-            border-radius: 12px;
-            margin-bottom: 20px;
-        }
-
-        .user-avatar {
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, #7e74f1 0%, #5e54e3 100%);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-right: 15px;
-            flex-shrink: 0;
-        }
-
-        .user-avatar i {
-            font-size: 28px;
-            color: #fff;
-        }
-
-        .user-details h5 {
-            margin: 0 0 5px 0;
-            font-size: 16px;
-            font-weight: 600;
-            color: #333;
-        }
-
-        .user-details p {
-            margin: 0;
-            font-size: 13px;
-            color: #6c757d;
-        }
-
-        .mobile-menu-list {
-            margin-top: 10px;
-        }
-
-        .mobile-menu-link {
-            display: flex;
-            align-items: center;
-            padding: 15px 20px;
-            margin-bottom: 8px;
-            background: #fff;
-            border-radius: 10px;
-            text-decoration: none;
-            color: #333;
-            font-size: 15px;
-            font-weight: 500;
-            transition: all 0.3s ease;
-            border: 1px solid #e9ecef;
-            position: relative;
-        }
-
-        .mobile-menu-link i {
-            font-size: 20px;
-            margin-right: 15px;
-            color: #7e74f1;
-            width: 24px;
-            text-align: center;
-            flex-shrink: 0;
-        }
-
-        .mobile-menu-link span {
-            flex: 1;
-        }
-
-        .mobile-menu-link:active {
-            background: #f8f9fa;
-            border-color: #7e74f1;
-            transform: scale(0.98);
-        }
-
-        .mobile-menu-link .mobile-badge {
-            position: relative;
-            right: auto;
-            top: auto;
-            transform: none;
-            margin-left: 10px;
-        }
-
-        .mobile-menu-link.logout-link {
-            margin-top: 20px;
-            border-color: #dc3545;
-            background: #fff5f5;
-        }
-
-        .mobile-menu-link.logout-link i {
-            color: #dc3545;
-        }
-
-        .mobile-menu-link.logout-link:active {
-            background: #ffe5e5;
-            border-color: #dc3545;
-        }
-
-        /* Menu Section Divider */
-        .mobile-menu-divider {
-            height: 1px;
-            background: #e9ecef;
-            margin: 20px 0;
-        }
-
-        .mobile-menu-section-title {
-            font-size: 12px;
-            font-weight: 600;
-            color: #6c757d;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin: 15px 0 10px 0;
-            padding: 0 5px;
-        }
-    }
-
-    /* ========================================
-   EXTRA SMALL DEVICES (MAX-WIDTH: 375px)
-======================================== */
-    @media screen and (max-width: 375px) {
-        .mobile-nav-item {
-            font-size: 10px;
-            padding: 3px;
-        }
-
-        .mobile-nav-item i {
-            font-size: 20px;
-        }
-
-        .mobile-nav-item span {
-            font-size: 9px;
-        }
-
-        .fab-button {
-            width: 50px;
-            height: 50px;
-        }
-
-        .fab-button i {
-            font-size: 22px;
-        }
-
-        .mobile-menu-link {
-            padding: 12px 15px;
-            font-size: 14px;
-        }
-
-        .mobile-menu-user-info {
-            padding: 15px;
-        }
-
-        .user-avatar {
-            width: 50px;
-            height: 50px;
-        }
-
-        .user-avatar i {
-            font-size: 24px;
-        }
-    }
-
-    /* ========================================
-   LANDSCAPE MODE (Mobile)
-======================================== */
-    @media screen and (max-width: 768px) and (orientation: landscape) {
-        .mobile-bottom-nav {
-            height: 55px;
-        }
-
-        .mobile-nav-item i {
-            font-size: 20px;
-        }
-
-        .mobile-nav-item span {
-            font-size: 9px;
-        }
-
-        .fab-button {
-            width: 48px;
-            height: 48px;
-        }
-
-        .mobile-nav-item.mobile-fab {
-            top: -15px;
-        }
-    }
-</style>
+<!-- sidebar.blade.php -->
+@include('layouts.partials.part.sidebar-style')
 
 <!--**********************************
-    Desktop Sidebar (Hidden on Mobile)
+    Desktop Sidebar
 ***********************************-->
 <div class="deznav desktop-sidebar">
     <div class="deznav-scroll">
-        <!-- Quick Create Ticket Button - User, Technician & Admin Eng ONLY -->
-        @if (in_array(auth()->user()->role, ['user', 'technician', 'admin_eng']))
+        <!-- Quick Create Ticket Button sesuai role -->
+        @if (in_array(auth()->user()->role, ['user', 'manager', 'admin_eng']))
             <a href="{{ route('tickets.create') }}" class="add-menu-sidebar">
-                <i class="flaticon-381-add"></i> New Ticket
+                <i class="fas fa-plus-circle"></i> New Ticket
             </a>
         @endif
 
@@ -421,28 +17,106 @@
             <!-- ========================= DASHBOARD (ALL ROLES) ========================= -->
             <li>
                 <a class="ai-icon" href="{{ route('dashboard') }}" aria-expanded="false">
-                    <i class="flaticon-381-networking"></i>
+                    <i class="fas fa-chart-pie"></i>
                     <span class="nav-text">Dashboard</span>
                 </a>
             </li>
 
+            <!-- ========================= APPROVAL CENTERS (OM & GM) ========================= -->
+            @if (auth()->user()->role === 'om')
+                <li>
+                    <a class="has-arrow ai-icon" href="javascript:void()" aria-expanded="false">
+                        <i class="fas fa-check-double"></i>
+                        <span class="nav-text">OM Approval</span>
+                        @php
+                            $omApprovalCount = App\Models\Ticket::where('status', 'pending_om')
+                                ->where('current_stage', 3)
+                                ->count();
+                            $omVRCount = App\Models\VoucherRequest::where('status', 'admin_approved')->count();
+                            $totalOmCount = $omApprovalCount + $omVRCount;
+                        @endphp
+                        @if ($totalOmCount > 0)
+                            <span class="badge badge-danger badge-sm">{{ $totalOmCount }}</span>
+                        @endif
+                    </a>
+                    <ul aria-expanded="false">
+                        <li>
+                            <a href="{{ route('tickets.index') }}?status=pending_om">
+                                <i class="fas fa-clipboard-list"></i> MR Approval
+                                @if ($omApprovalCount > 0)
+                                    <span class="badge badge-danger badge-sm">{{ $omApprovalCount }}</span>
+                                @endif
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{{ route('vouchers.index') }}?status=admin_approved">
+                                <i class="fas fa-ticket-alt"></i> VR Approval
+                                @if ($omVRCount > 0)
+                                    <span class="badge badge-danger badge-sm">{{ $omVRCount }}</span>
+                                @endif
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+            @endif
+
+            @if (auth()->user()->role === 'gm')
+                <li>
+                    <a class="has-arrow ai-icon" href="javascript:void()" aria-expanded="false">
+                        <i class="fas fa-check-circle"></i>
+                        <span class="nav-text">GM Approval</span>
+                        @php
+                            $gmApprovalCount = App\Models\Ticket::where('status', 'pending_gm')
+                                ->where('current_stage', 8)
+                                ->count();
+                            $gmVRCount = App\Models\VoucherRequest::where('status', 'om_approved')->count();
+                            $totalGmCount = $gmApprovalCount + $gmVRCount;
+                        @endphp
+                        @if ($totalGmCount > 0)
+                            <span class="badge badge-danger badge-sm">{{ $totalGmCount }}</span>
+                        @endif
+                    </a>
+                    <ul aria-expanded="false">
+                        <li>
+                            <a href="{{ route('tickets.index') }}?status=pending_gm">
+                                <i class="fas fa-clipboard-list"></i> MR Approval
+                                @if ($gmApprovalCount > 0)
+                                    <span class="badge badge-danger badge-sm">{{ $gmApprovalCount }}</span>
+                                @endif
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{{ route('vouchers.index') }}?status=om_approved">
+                                <i class="fas fa-ticket-alt"></i> VR Approval
+                                @if ($gmVRCount > 0)
+                                    <span class="badge badge-danger badge-sm">{{ $gmVRCount }}</span>
+                                @endif
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+            @endif
+
             <!-- ========================= TICKETS ========================= -->
-            <li>
+            <li class="{{ request()->routeIs('tickets.*') ? 'active' : '' }}">
                 <a class="has-arrow ai-icon" href="javascript:void()" aria-expanded="false">
-                    <i class="flaticon-381-notepad"></i>
+                    <i class="fas fa-ticket-alt"></i>
                     <span class="nav-text">Tickets</span>
                 </a>
-                <ul aria-expanded="false">
-                    <li>
+                <ul aria-expanded="false" class="{{ request()->routeIs('tickets.*') ? 'show' : '' }}">
+                    <!-- All Tickets - Tetap tanpa badge -->
+                    <li
+                        class="{{ request()->routeIs('tickets.index') && !request()->anyFilled(['my_tickets', 'assigned', 'department_filter', 'status', 'stage', 'unassigned']) ? 'active' : '' }}">
                         <a href="{{ route('tickets.index') }}">
-                            <i class="flaticon-381-list"></i> All Tickets
+                            <i class="fas fa-list"></i> All Tickets
                         </a>
                     </li>
 
-                    @if (auth()->user()->role === 'user')
-                        <li>
-                            <a href="{{ route('tickets.index', ['my_tickets' => '1']) }}">
-                                <i class="flaticon-381-file"></i> My Tickets
+                    <!-- My Tickets untuk User, Manager, Admin Eng -->
+                    @if (in_array(auth()->user()->role, ['user', 'manager', 'admin_eng']))
+                        <li class="{{ request()->get('my_tickets') == '1' ? 'active' : '' }}">
+                            <a href="{{ route('tickets.index') }}?my_tickets=1">
+                                <i class="fas fa-user"></i> My Tickets
                                 @php
                                     $myTicketsCount = App\Models\Ticket::where('user_id', auth()->id())->count();
                                 @endphp
@@ -453,29 +127,11 @@
                         </li>
                     @endif
 
-                    @if (auth()->user()->role === 'user' && auth()->user()->department_id)
-                        <li>
-                            <a href="#">
-                                <i class="flaticon-381-folder-11"></i> Department Tickets
-                                @php
-                                    $deptCount = App\Models\Ticket::where(
-                                        'department_id',
-                                        auth()->user()->department_id,
-                                    )
-                                        ->whereNotIn('status', ['closed', 'cancelled'])
-                                        ->count();
-                                @endphp
-                                @if ($deptCount > 0)
-                                    <span class="badge badge-primary badge-sm">{{ $deptCount }}</span>
-                                @endif
-                            </a>
-                        </li>
-                    @endif
-
+                    <!-- Assigned to Me untuk Technician -->
                     @if (auth()->user()->role === 'technician')
-                        <li>
-                            <a href="#">
-                                <i class="flaticon-381-user-7"></i> Assigned to Me
+                        <li class="{{ request()->get('assigned') == '1' ? 'active' : '' }}">
+                            <a href="{{ route('tickets.index') }}?assigned=1">
+                                <i class="fas fa-user-check"></i> Assigned to Me
                                 @php
                                     $assignedCount = App\Models\Ticket::where('assigned_to', auth()->id())
                                         ->whereIn('status', ['in_progress', 'pending_vr'])
@@ -488,10 +144,53 @@
                         </li>
                     @endif
 
+                    <!-- Department Tickets untuk User dengan department atau Manager -->
+                    @if ((auth()->user()->role === 'user' && auth()->user()->department_id) || auth()->user()->role === 'manager')
+                        <li class="{{ request()->get('department_filter') == '1' ? 'active' : '' }}">
+                            <a href="{{ route('tickets.index') }}?department_filter=1">
+                                <i class="fas fa-users"></i> Department Tickets
+                                @php
+                                    $deptCount = auth()->user()->department_id
+                                        ? App\Models\Ticket::where('department_id', auth()->user()->department_id)
+                                            ->whereNotIn('status', ['closed', 'cancelled'])
+                                            ->count()
+                                        : 0;
+                                @endphp
+                                @if ($deptCount > 0)
+                                    <span class="badge badge-primary badge-sm">{{ $deptCount }}</span>
+                                @endif
+                            </a>
+                        </li>
+                    @endif
+
+                    <!-- Pending Check untuk User -->
+                    @if (auth()->user()->role === 'user' && auth()->user()->department_id)
+                        <li
+                            class="{{ request()->get('status') == 'completed' && request()->get('stage') == '6' ? 'active' : '' }}">
+                            <a href="{{ route('tickets.index') }}?status=completed&stage=6">
+                                <i class="fas fa-check-square"></i> Pending Check
+                                @php
+                                    $pendingCheckCount = App\Models\Ticket::where(
+                                        'department_id',
+                                        auth()->user()->department_id,
+                                    )
+                                        ->where('status', 'completed')
+                                        ->where('current_stage', 6)
+                                        ->count();
+                                @endphp
+                                @if ($pendingCheckCount > 0)
+                                    <span class="badge badge-info badge-sm">{{ $pendingCheckCount }}</span>
+                                @endif
+                            </a>
+                        </li>
+                    @endif
+
+                    <!-- Menu khusus Admin Engineering -->
                     @if (auth()->user()->role === 'admin_eng')
-                        <li>
-                            <a href="#">
-                                <i class="flaticon-381-inbox"></i> Pending Receive
+                        <li
+                            class="{{ request()->get('status') == 'open' && !request()->has('unassigned') ? 'active' : '' }}">
+                            <a href="{{ route('tickets.index') }}?status=open">
+                                <i class="fas fa-inbox"></i> Pending Receive
                                 @php
                                     $pendingReceiveCount = App\Models\Ticket::where('status', 'open')
                                         ->where('current_stage', 1)
@@ -503,9 +202,10 @@
                             </a>
                         </li>
 
-                        <li>
-                            <a href="#">
-                                <i class="flaticon-381-folder-1"></i> Unassigned
+                        <li
+                            class="{{ request()->get('status') == 'pending_om' && request()->get('unassigned') == '1' ? 'active' : '' }}">
+                            <a href="{{ route('tickets.index') }}?status=pending_om&unassigned=1">
+                                <i class="fas fa-user-slash"></i> Unassigned
                                 @php
                                     $unassignedCount = App\Models\Ticket::where('status', 'pending_om')
                                         ->where('current_stage', 3)
@@ -518,9 +218,9 @@
                             </a>
                         </li>
 
-                        <li>
-                            <a href="#">
-                                <i class="flaticon-381-price-tag"></i> Pending VR
+                        <li class="{{ request()->get('status') == 'pending_vr' ? 'active' : '' }}">
+                            <a href="{{ route('tickets.index') }}?status=pending_vr">
+                                <i class="fas fa-tag"></i> Pending VR
                                 @php
                                     $pendingVRCount = App\Models\Ticket::where('status', 'pending_vr')
                                         ->where('current_stage', 5)
@@ -532,25 +232,11 @@
                             </a>
                         </li>
 
-                        <li>
-                            <a href="#">
-                                <i class="flaticon-381-stopwatch"></i> Waiting User Check
+                        <li class="{{ request()->get('status') == 'ready_for_closure' ? 'active' : '' }}">
+                            <a href="{{ route('tickets.index') }}?status=ready_for_closure">
+                                <i class="fas fa-check-circle"></i> Ready to Close
                                 @php
-                                    $waitingCheckCount = App\Models\Ticket::where('status', 'completed')
-                                        ->where('current_stage', 6)
-                                        ->count();
-                                @endphp
-                                @if ($waitingCheckCount > 0)
-                                    <span class="badge badge-info badge-sm">{{ $waitingCheckCount }}</span>
-                                @endif
-                            </a>
-                        </li>
-
-                        <li>
-                            <a href="#">
-                                <i class="flaticon-381-success"></i> Ready to Close
-                                @php
-                                    $readyCloseCount = App\Models\Ticket::where('status', 'pending_gm')
+                                    $readyCloseCount = App\Models\Ticket::where('status', 'ready_for_closure')
                                         ->where('current_stage', 8)
                                         ->count();
                                 @endphp
@@ -560,236 +246,260 @@
                             </a>
                         </li>
                     @endif
+
+                    <!-- Menu khusus OM (Operation Manager) -->
+                    @if (auth()->user()->role === 'om')
+                        <li class="{{ request()->get('status') == 'pending_om' ? 'active' : '' }}">
+                            <a href="{{ route('tickets.index') }}?status=pending_om">
+                                <i class="fas fa-hourglass-half"></i> Pending My Approval
+                                @php
+                                    $pendingOMCount = App\Models\Ticket::where('status', 'pending_om')
+                                        ->where('current_stage', 3)
+                                        ->count();
+                                @endphp
+                                @if ($pendingOMCount > 0)
+                                    <span class="badge badge-danger badge-sm">{{ $pendingOMCount }}</span>
+                                @endif
+                            </a>
+                        </li>
+                    @endif
+
+                    <!-- Menu khusus GM (General Manager) -->
+                    @if (auth()->user()->role === 'gm')
+                        <li class="{{ request()->get('status') == 'pending_gm' ? 'active' : '' }}">
+                            <a href="{{ route('tickets.index') }}?status=pending_gm">
+                                <i class="fas fa-hourglass-half"></i> Pending My Approval
+                                @php
+                                    $pendingGMCount = App\Models\Ticket::where('status', 'pending_gm')
+                                        ->where('current_stage', 8)
+                                        ->count();
+                                @endphp
+                                @if ($pendingGMCount > 0)
+                                    <span class="badge badge-danger badge-sm">{{ $pendingGMCount }}</span>
+                                @endif
+                            </a>
+                        </li>
+                    @endif
+
+                    <!-- Menu untuk Manager -->
+                    @if (auth()->user()->role === 'manager')
+                        <li
+                            class="{{ request()->get('status') == 'in_progress' && request()->get('department') == auth()->user()->department_id ? 'active' : '' }}">
+                            <a
+                                href="{{ route('tickets.index') }}?status=in_progress&department={{ auth()->user()->department_id }}">
+                                <i class="fas fa-spinner"></i> Dept In Progress
+                                @php
+                                    $deptInProgress = auth()->user()->department_id
+                                        ? App\Models\Ticket::where('department_id', auth()->user()->department_id)
+                                            ->where('status', 'in_progress')
+                                            ->count()
+                                        : 0;
+                                @endphp
+                                @if ($deptInProgress > 0)
+                                    <span class="badge badge-primary badge-sm">{{ $deptInProgress }}</span>
+                                @endif
+                            </a>
+                        </li>
+                    @endif
                 </ul>
             </li>
 
-            <!-- ========================= APPROVAL CENTERS ========================= -->
-            @if (auth()->user()->role === 'om')
-                <li>
-                    <a class="ai-icon" href="#" aria-expanded="false">
-                        <i class="flaticon-381-box"></i>
-                        <span class="nav-text">OM Approval</span>
-                        @php
-                            $pendingOMCount = App\Models\Ticket::where('status', 'received')
-                                ->where('current_stage', 2)
-                                ->count();
-                        @endphp
-                        @if ($pendingOMCount > 0)
-                            <span class="badge badge-danger badge-sm">{{ $pendingOMCount }}</span>
-                        @endif
-                    </a>
-                </li>
-            @endif
-
-            @if (auth()->user()->role === 'gm')
-                <li>
-                    <a class="ai-icon" href="#" aria-expanded="false">
-                        <i class="flaticon-381-box"></i>
-                        <span class="nav-text">GM Approval</span>
-                        @php
-                            $pendingGMCount = App\Models\Ticket::where('current_stage', 7)->count();
-                        @endphp
-                        @if ($pendingGMCount > 0)
-                            <span class="badge badge-danger badge-sm">{{ $pendingGMCount }}</span>
-                        @endif
-                    </a>
-                </li>
-            @endif
-
-            @if (auth()->user()->role === 'user')
-                <li>
-                    <a class="ai-icon" href="#" aria-expanded="false">
-                        <i class="flaticon-381-check"></i>
-                        <span class="nav-text">Pending Verification</span>
-                        @php
-                            $pendingVerificationCount = App\Models\Ticket::where(
-                                'department_id',
-                                auth()->user()->department_id,
-                            )
-                                ->where('status', 'completed')
-                                ->where('current_stage', 6)
-                                ->count();
-                        @endphp
-                        @if ($pendingVerificationCount > 0)
-                            <span class="badge badge-info badge-sm">{{ $pendingVerificationCount }}</span>
-                        @endif
-                    </a>
-                </li>
-            @endif
-
             <!-- ========================= VOUCHER REQUESTS (VR) ========================= -->
-            @if (in_array(auth()->user()->role, ['admin_eng', 'om', 'gm']))
-                <li>
+            @php
+                $user = auth()->user();
+                $role = $user->role;
+
+                // Hitung badge sekali aja
+                $badgeCount = 0;
+                if ($role === 'admin_eng') {
+                    $badgeCount = App\Models\VoucherRequest::where('status', 'pending')->count();
+                } elseif ($role === 'om') {
+                    $badgeCount = App\Models\VoucherRequest::where('status', 'admin_approved')->count();
+                } elseif ($role === 'gm') {
+                    $badgeCount = App\Models\VoucherRequest::where('status', 'om_approved')->count();
+                }
+            @endphp
+
+            @if (in_array($role, ['admin_eng', 'om', 'gm', 'superadmin']))
+                <li class="{{ request()->routeIs('vouchers.*') ? 'active' : '' }}">
                     <a class="has-arrow ai-icon" href="javascript:void()" aria-expanded="false">
-                        <i class="flaticon-381-price-tag"></i>
+                        <i class="fas fa-file-invoice-dollar"></i>
                         <span class="nav-text">Voucher Requests</span>
-                        @php
-                            $myVRCount = 0;
-                            if (auth()->user()->role === 'admin_eng') {
-                                $myVRCount = App\Models\VoucherRequest::where('status', 'pending')->count();
-                            } elseif (auth()->user()->role === 'om') {
-                                $myVRCount = App\Models\VoucherRequest::where('status', 'admin_approved')->count();
-                            } elseif (auth()->user()->role === 'gm') {
-                                $myVRCount = App\Models\VoucherRequest::where('status', 'om_approved')->count();
-                            }
-                        @endphp
-                        @if ($myVRCount > 0)
-                            <span class="badge badge-warning badge-sm">{{ $myVRCount }}</span>
+                        @if ($badgeCount > 0)
+                            <span class="badge badge-warning badge-sm">{{ $badgeCount }}</span>
                         @endif
                     </a>
                     <ul aria-expanded="false">
-                        <li>
+                        <li
+                            class="{{ request()->routeIs('vouchers.index') && !request()->get('status') ? 'active' : '' }}">
                             <a href="{{ route('vouchers.index') }}">
-                                <i class="flaticon-381-list"></i> All VR
+                                <i class="fas fa-list"></i> All VR
                             </a>
                         </li>
 
-                        @if (auth()->user()->role === 'admin_eng')
-                            <li>
-                                <a href="#" onclick="openCreateVRModal()">
-                                    <i class="flaticon-381-add"></i> Create New VR
+                        @if (in_array($role, ['admin_eng', 'om', 'gm']))
+                            @php
+                                $pendingStatus =
+                                    $role === 'admin_eng'
+                                        ? 'pending'
+                                        : ($role === 'om'
+                                            ? 'admin_approved'
+                                            : 'om_approved');
+                            @endphp
+                            <li
+                                class="{{ request()->routeIs('vouchers.index') && request()->get('status') === $pendingStatus ? 'active' : '' }}">
+                                <a href="{{ route('vouchers.index') }}?status={{ $pendingStatus }}">
+                                    <i class="fas fa-hourglass-half"></i> Pending My Approval
+                                    @if ($badgeCount > 0)
+                                        <span class="badge badge-warning badge-sm">{{ $badgeCount }}</span>
+                                    @endif
                                 </a>
                             </li>
                         @endif
 
-                        <li>
-                            <a href="{{ route('vouchers.index') }}?filter=pending_my_approval">
-                                <i class="flaticon-381-clock"></i> Pending My Approval
+                        <li
+                            class="{{ request()->routeIs('vouchers.index') && request()->get('status') === 'gm_approved' ? 'active' : '' }}">
+                            <a href="{{ route('vouchers.index') }}?status=gm_approved">
+                                <i class="fas fa-check-circle"></i> Approved
                             </a>
                         </li>
 
-                        <li>
-                            <a href="{{ route('vouchers.index') }}?filter=approved">
-                                <i class="flaticon-381-check"></i> Approved
+                        <li
+                            class="{{ request()->routeIs('vouchers.index') && request()->get('status') === 'paid' ? 'active' : '' }}">
+                            <a href="{{ route('vouchers.index') }}?status=paid">
+                                <i class="fas fa-money-bill-wave"></i> Paid
                             </a>
                         </li>
 
-                        <li>
-                            <a href="{{ route('vouchers.index') }}?filter=rejected">
-                                <i class="flaticon-381-close"></i> Rejected
-                            </a>
-                        </li>
-
-                        <li>
-                            <a href="{{ route('vouchers.index') }}?filter=paid">
-                                <i class="flaticon-381-check-double"></i> Paid
+                        <li
+                            class="{{ request()->routeIs('vouchers.index') && request()->get('status') === 'rejected' ? 'active' : '' }}">
+                            <a href="{{ route('vouchers.index') }}?status=rejected">
+                                <i class="fas fa-times-circle"></i> Rejected
                             </a>
                         </li>
                     </ul>
                 </li>
             @endif
-
             <!-- ========================= CALENDAR (ALL) ========================= -->
-            <li>
-                <a class="ai-icon" href="#" aria-expanded="false">
-                    <i class="flaticon-381-calendar-1"></i>
+            <li class="{{ request()->routeIs('calendar.*') ? 'active' : '' }}">
+                <a class="ai-icon" href="{{ route('calendar.index') }}">
+                    <i class="fas fa-calendar-alt"></i>
                     <span class="nav-text">Calendar</span>
                 </a>
             </li>
 
-            <!-- ========================= MASTER DATA (SuperAdmin ONLY!) ========================= -->
-            @if (auth()->user()->role === 'superadmin')
-                <li>
-                    <a class="has-arrow ai-icon" href="javascript:void()" aria-expanded="false">
-                        <i class="flaticon-381-database-2"></i>
-                        <span class="nav-text">Master Data</span>
-                    </a>
-                    <ul aria-expanded="false">
-                        <li><a href="{{ route('admin.departments.index') }}"><i class="flaticon-381-layer-1"></i>
-                                Departments</a></li>
-                        <li><a href="{{ route('admin.locations.index') }}"><i class="flaticon-381-location-1"></i>
-                                Locations</a></li>
-                        <li><a href="{{ route('admin.categories.index') }}"><i class="flaticon-381-folder"></i>
-                                Categories</a></li>
-                        <li><a href="{{ route('admin.priorities.index') }}"><i class="flaticon-381-flag"></i>
-                                Priorities</a></li>
-                    </ul>
-                </li>
-            @endif
-
-            <!-- ========================= USER MANAGEMENT ========================= -->
-            @if (auth()->user()->role === 'superadmin')
-                <li>
-                    <a class="has-arrow ai-icon" href="javascript:void()" aria-expanded="false">
-                        <i class="flaticon-381-user-9"></i>
-                        <span class="nav-text">User Management</span>
-                    </a>
-                    <ul aria-expanded="false">
-                        <li><a href="{{ route('admin.users.index') }}"><i class="flaticon-381-user"></i> All
-                                Users</a></li>
-                        <li><a href="#"><i class="flaticon-381-clock"></i> Pending Approval</a></li>
-                        <li><a href="#"><i class="flaticon-381-settings"></i> Role Management</a></li>
-                        <li><a href="#"><i class="flaticon-381-trash-1"></i> Inactive Users</a></li>
-                    </ul>
-                </li>
-            @endif
-
-            @if (auth()->user()->role === 'admin_eng')
-                <li>
-                    <a class="has-arrow ai-icon" href="javascript:void()" aria-expanded="false">
-                        <i class="flaticon-381-user-9"></i>
-                        <span class="nav-text">Users</span>
-                    </a>
-                    <ul aria-expanded="false">
-                        <li><a href="{{ route('admin.users.index') }}"><i class="flaticon-381-user"></i> All
-                                Users</a></li>
-                        <li><a href="#"><i class="flaticon-381-settings"></i> Technicians</a></li>
-                        <li><a href="#"><i class="flaticon-381-layer-1"></i> Department Users</a></li>
-                    </ul>
-                </li>
-            @endif
-
+            <!-- ========================= MY DEPARTMENT (Manager) ========================= -->
             @if (auth()->user()->role === 'manager')
-                <li>
-                    <a class="ai-icon" href="#" aria-expanded="false">
-                        <i class="flaticon-381-layer-1"></i>
+                <li class="{{ request()->routeIs('my-department.*') ? 'active' : '' }}">
+                    <a class="ai-icon" href="{{ route('my-department.index') }}">
+                        <i class="fas fa-building"></i>
                         <span class="nav-text">My Department</span>
                     </a>
                 </li>
             @endif
 
-            <!-- ========================= REPORTS ========================= -->
-            <li>
-                <a class="has-arrow ai-icon" href="javascript:void()" aria-expanded="false">
-                    <i class="flaticon-381-diploma"></i>
-                    <span class="nav-text">Reports</span>
-                </a>
-                <ul aria-expanded="false">
-                    @if (in_array(auth()->user()->role, ['superadmin', 'admin_eng']))
-                        <li><a href="#"><i class="flaticon-381-controls-3"></i> Ticket Reports</a></li>
-                        <li><a href="#"><i class="flaticon-381-television"></i> User Activity</a></li>
-                        <li><a href="#"><i class="flaticon-381-line-chart"></i> Performance Report</a></li>
-                        <li><a href="#"><i class="flaticon-381-controls-1"></i> Department Performance</a></li>
-                        <li><a href="#"><i class="flaticon-381-price-tag"></i> VR Summary</a></li>
-                    @endif
-
-                    @if (in_array(auth()->user()->role, ['gm', 'om']))
-                        <li><a href="#"><i class="flaticon-381-controls-1"></i> Department Report</a></li>
-                        <li><a href="#"><i class="flaticon-381-line-chart"></i> Approval Summary</a></li>
-                        <li><a href="#"><i class="flaticon-381-diploma"></i> Monthly Report</a></li>
-                    @endif
-
-                    @if (auth()->user()->role === 'manager')
-                        <li><a href="#"><i class="flaticon-381-controls-1"></i> Department Report</a></li>
-                        <li><a href="#"><i class="flaticon-381-layer-1"></i> Department Analytics</a></li>
-                    @endif
-
-                    @if (auth()->user()->role === 'technician')
-                        <li><a href="#"><i class="flaticon-381-controls"></i> My Performance</a></li>
-                        <li><a href="#"><i class="flaticon-381-file-1"></i> Completed Tickets</a></li>
-                    @endif
-
-                    @if (auth()->user()->role === 'user')
-                        <li><a href="#"><i class="flaticon-381-file-1"></i> My Ticket History</a></li>
-                        <li><a href="#"><i class="flaticon-381-diploma"></i> Department Summary</a></li>
-                    @endif
-                </ul>
-            </li>
+            <!-- ========================= MASTER DATA (SuperAdmin ONLY) ========================= -->
+            @if (auth()->user()->role === 'superadmin')
+                <li>
+                    <a class="has-arrow ai-icon" href="javascript:void()" aria-expanded="false">
+                        <i class="fas fa-database"></i>
+                        <span class="nav-text">Master Data</span>
+                    </a>
+                    <ul aria-expanded="false">
+                        <li><a href="{{ route('admin.departments.index') }}"><i class="fas fa-building"></i>
+                                Departments</a></li>
+                        <li><a href="{{ route('admin.locations.index') }}"><i class="fas fa-map-marker-alt"></i>
+                                Locations</a></li>
+                        <li><a href="{{ route('admin.categories.index') }}"><i class="fas fa-folder"></i>
+                                Categories</a></li>
+                        <li><a href="{{ route('admin.priorities.index') }}"><i class="fas fa-flag"></i>
+                                Priorities</a></li>
+                    </ul>
+                </li>
+            @endif
+            <!-- ========================= USER MANAGEMENT (SUPERADMIN ONLY) ========================= -->
+            @if (auth()->user()->role === 'superadmin')
+                <li
+                    class="{{ request()->routeIs('admin.users.*') ||
+                    request()->get('status') == 'pending' ||
+                    request()->get('status') == 'inactive' ||
+                    request()->get('verified') == 'unverified'
+                        ? 'mm-active'
+                        : '' }}">
+                    <a class="has-arrow ai-icon" href="javascript:void()"
+                        aria-expanded="{{ request()->routeIs('admin.users.*') ||
+                        request()->get('status') == 'pending' ||
+                        request()->get('status') == 'inactive' ||
+                        request()->get('verified') == 'unverified'
+                            ? 'true'
+                            : 'false' }}">
+                        <i class="fas fa-users-cog"></i>
+                        <span class="nav-text">User Management</span>
+                        @php
+                            $pendingCount = App\Models\User::where('status', 'pending')->count();
+                        @endphp
+                        @if ($pendingCount > 0)
+                            <span class="badge badge-danger badge-sm">{{ $pendingCount }}</span>
+                        @endif
+                    </a>
+                    <ul aria-expanded="{{ request()->routeIs('admin.users.*') ||
+                    request()->get('status') == 'pending' ||
+                    request()->get('status') == 'inactive' ||
+                    request()->get('verified') == 'unverified'
+                        ? 'true'
+                        : 'false' }}"
+                        class="mm-collapse">
+                        <!-- All Users -->
+                        <li
+                            class="{{ request()->routeIs('admin.users.index') && !request()->hasAny(['status', 'verified']) ? 'mm-active' : '' }}">
+                            <a href="{{ route('admin.users.index') }}">
+                                <i class="fas fa-user"></i> All Users
+                            </a>
+                        </li>
+                        <!-- Pending Approval -->
+                        <li class="{{ request()->get('status') == 'pending' ? 'mm-active' : '' }}">
+                            <a href="{{ route('admin.users.index', ['status' => 'pending']) }}">
+                                <i class="fas fa-hourglass-half"></i> Pending
+                                @php
+                                    $pendingCount = App\Models\User::where('status', 'pending')->count();
+                                @endphp
+                                @if ($pendingCount > 0)
+                                    <span class="badge badge-danger badge-sm ms-auto">{{ $pendingCount }}</span>
+                                @endif
+                            </a>
+                        </li>
+                        <!-- Inactive Users -->
+                        <li class="{{ request()->get('status') == 'inactive' ? 'mm-active' : '' }}">
+                            <a href="{{ route('admin.users.index', ['status' => 'inactive']) }}">
+                                <i class="fas fa-ban"></i> Inactive
+                                @php
+                                    $inactiveCount = App\Models\User::where('status', 'inactive')->count();
+                                @endphp
+                                @if ($inactiveCount > 0)
+                                    <span class="badge badge-danger badge-sm ms-auto">{{ $inactiveCount }}</span>
+                                @endif
+                            </a>
+                        </li>
+                        <!-- Unverified Email -->
+                        <li class="{{ request()->get('verified') == 'unverified' ? 'mm-active' : '' }}">
+                            <a href="{{ route('admin.users.index', ['verified' => 'unverified']) }}">
+                                <i class="fas fa-envelope"></i> Unverified
+                                @php
+                                    $unverifiedCount = App\Models\User::whereNull('email_verified_at')->count();
+                                @endphp
+                                @if ($unverifiedCount > 0)
+                                    <span class="badge badge-warning badge-sm ms-auto">{{ $unverifiedCount }}</span>
+                                @endif
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+            @endif
 
             <!-- ========================= NOTIFICATIONS (ALL) ========================= -->
             <li>
                 <a class="ai-icon" href="{{ route('notifications.index') }}">
-                    <i class="flaticon-381-ring"></i>
+                    <i class="fas fa-bell"></i>
                     <span class="nav-text">Notifications</span>
                     @php
                         $unreadCount = App\Models\Notification::where('user_id', auth()->id())
@@ -797,7 +507,7 @@
                             ->count();
                     @endphp
                     @if ($unreadCount > 0)
-                        <span class="badge badge-danger badge-sm" id="notificationBadge">{{ $unreadCount }}</span>
+                        <span class="badge badge-danger badge-sm">{{ $unreadCount }}</span>
                     @endif
                 </a>
             </li>
@@ -806,52 +516,52 @@
             @if (in_array(auth()->user()->role, ['superadmin', 'admin_eng']))
                 <li>
                     <a class="ai-icon" href="{{ route('activity-logs.index') }}">
-                        <i class="flaticon-381-notebook"></i>
+                        <i class="fas fa-history"></i>
                         <span class="nav-text">Activity Logs</span>
                     </a>
                 </li>
             @endif
 
-            <!-- ========================= SYSTEM SETTINGS (SuperAdmin ONLY!) ========================= -->
+            {{-- <!-- ========================= SYSTEM SETTINGS (SuperAdmin ONLY) ========================= -->
             @if (auth()->user()->role === 'superadmin')
                 <li>
                     <a class="has-arrow ai-icon" href="javascript:void()" aria-expanded="false">
-                        <i class="flaticon-381-settings-2"></i>
+                        <i class="fas fa-cog"></i>
                         <span class="nav-text">System Settings</span>
                     </a>
                     <ul aria-expanded="false">
-                        <li><a href="#"><i class="flaticon-381-settings-6"></i> General Settings</a></li>
-                        <li><a href="#"><i class="flaticon-381-network"></i> Email Configuration</a></li>
-                        <li><a href="#"><i class="flaticon-381-home"></i> Hotel Settings</a></li>
-                        <li><a href="#"><i class="flaticon-381-database"></i> Database Backup</a></li>
-                        <li><a href="#"><i class="flaticon-381-edit"></i> System Logs</a></li>
+                        <li><a href="#"><i class="fas fa-sliders-h"></i> General Settings</a></li>
+                        <li><a href="#"><i class="fas fa-envelope"></i> Email Configuration</a></li>
+                        <li><a href="#"><i class="fas fa-hotel"></i> Hotel Settings</a></li>
+                        <li><a href="#"><i class="fas fa-database"></i> Database Backup</a></li>
+                        <li><a href="#"><i class="fas fa-edit"></i> System Logs</a></li>
                     </ul>
                 </li>
-            @endif
-
+            @endif --}}
             <!-- ========================= ACCOUNT (ALL) ========================= -->
             <li>
                 <a class="has-arrow ai-icon" href="javascript:void()" aria-expanded="false">
-                    <i class="flaticon-381-user-7"></i>
+                    <i class="fas fa-user-circle"></i>
                     <span class="nav-text">Account</span>
                 </a>
                 <ul aria-expanded="false">
-                    <li><a href="{{ route('profile.index') }}"><i class="flaticon-381-user-3"></i> My Profile</a>
-                    </li>
-
-                    @if (in_array(auth()->user()->role, ['om', 'gm', 'admin_eng']))
-                        <li><a href="#"><i class="flaticon-381-edit"></i> Digital Signature</a></li>
-                    @endif
-
-                    @if (auth()->user()->role === 'manager')
-                        <li><a href="#"><i class="flaticon-381-layer-1"></i> Manage Department</a></li>
-                    @endif
-
-                    <li><a href="#"><i class="flaticon-381-settings-2"></i> Settings</a></li>
                     <li>
-                        <a href="{{ route('logout') }}"
-                            onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
-                            <i class="flaticon-381-exit"></i> Logout
+                        <a href="{{ route('profile.index') }}">
+                            <i class="fas fa-id-card"></i> My Profile
+                        </a>
+                    </li>
+                    {{--
+                    @if (auth()->user()->role === 'manager')
+                        <li>
+                            <a href="#">
+                                <i class="fas fa-building"></i> Manage Department
+                            </a>
+                        </li>
+                    @endif --}}
+
+                    <li>
+                        <a href="javascript:void(0)" onclick="confirmLogout()">
+                            <i class="fas fa-sign-out-alt"></i> Logout
                         </a>
                     </li>
                 </ul>
@@ -861,60 +571,69 @@
         <!-- Copyright -->
         <div class="copyright">
             <p><strong>Harris Hotel Ticketing</strong> © {{ date('Y') }} All Rights Reserved</p>
-            <p class="fs-12">Made with <span class="heart"></span> by VHP Team</p>
+            <p class="fs-12">Made with <span class="heart"></span> by IT Harris</p>
         </div>
     </div>
 </div>
 
 <!--**********************************
-    Mobile Bottom Navigation Bar (Shown on Mobile Only)
+    Mobile Bottom Navigation Bar
 ***********************************-->
 <nav class="mobile-bottom-nav">
     <div class="mobile-nav-container">
         <!-- Dashboard -->
         <a href="{{ route('dashboard') }}"
             class="mobile-nav-item {{ request()->routeIs('dashboard') ? 'active' : '' }}">
-            <i class="flaticon-381-networking"></i>
+            <i class="fas fa-chart-pie"></i>
             <span>Dashboard</span>
         </a>
 
         <!-- Tickets -->
         <a href="{{ route('tickets.index') }}"
             class="mobile-nav-item {{ request()->routeIs('tickets.*') && !request()->routeIs('tickets.create') ? 'active' : '' }}">
-            <i class="flaticon-381-notepad"></i>
+            <i class="fas fa-ticket-alt"></i>
             <span>Tickets</span>
             @php
-                $totalTicketsCount = 0;
+                $mobileTicketCount = 0;
                 if (auth()->user()->role === 'user') {
-                    $totalTicketsCount = App\Models\Ticket::where('user_id', auth()->id())->count();
+                    $mobileTicketCount = App\Models\Ticket::where('user_id', auth()->id())->count();
                 } elseif (auth()->user()->role === 'technician') {
-                    $totalTicketsCount = App\Models\Ticket::where('assigned_to', auth()->id())
+                    $mobileTicketCount = App\Models\Ticket::where('assigned_to', auth()->id())
                         ->whereIn('status', ['in_progress', 'pending_vr'])
                         ->count();
                 } elseif (auth()->user()->role === 'admin_eng') {
-                    $totalTicketsCount = App\Models\Ticket::whereIn('status', [
+                    $mobileTicketCount = App\Models\Ticket::whereIn('status', [
                         'open',
-                        'received',
                         'pending_vr',
-                    ])->count();
+                        'ready_for_closure',
+                    ])
+                        ->whereIn('current_stage', [1, 5, 8])
+                        ->count();
+                } elseif (auth()->user()->role === 'om') {
+                    $mobileTicketCount = App\Models\Ticket::where('status', 'pending_om')
+                        ->where('current_stage', 3)
+                        ->count();
+                } elseif (auth()->user()->role === 'gm') {
+                    $mobileTicketCount = App\Models\Ticket::where('status', 'pending_gm')
+                        ->where('current_stage', 8)
+                        ->count();
                 }
             @endphp
-            @if ($totalTicketsCount > 0)
-                <span class="mobile-badge">{{ $totalTicketsCount > 99 ? '99+' : $totalTicketsCount }}</span>
+            @if ($mobileTicketCount > 0)
+                <span class="mobile-badge">{{ $mobileTicketCount > 99 ? '99+' : $mobileTicketCount }}</span>
             @endif
         </a>
 
-        <!-- Create Ticket (Floating Action Button) -->
-        @if (in_array(auth()->user()->role, ['user', 'technician', 'admin_eng']))
+        <!-- Create Ticket FAB / Calendar -->
+        @if (in_array(auth()->user()->role, ['user', 'manager', 'admin_eng']))
             <a href="{{ route('tickets.create') }}" class="mobile-nav-item mobile-fab">
                 <div class="fab-button">
-                    <i class="flaticon-381-add"></i>
+                    <i class="fas fa-plus"></i>
                 </div>
             </a>
         @else
-            <!-- Calendar for other roles -->
-            <a href="#" class="mobile-nav-item {{ request()->is('calendar') ? 'active' : '' }}">
-                <i class="flaticon-381-calendar-1"></i>
+            <a href="{{ route('calendar.index') }}" class="mobile-nav-item">
+                <i class="fas fa-calendar-alt"></i>
                 <span>Calendar</span>
             </a>
         @endif
@@ -922,7 +641,7 @@
         <!-- Notifications -->
         <a href="{{ route('notifications.index') }}"
             class="mobile-nav-item {{ request()->routeIs('notifications.*') ? 'active' : '' }}">
-            <i class="flaticon-381-ring"></i>
+            <i class="fas fa-bell"></i>
             <span>Notifikasi</span>
             @php
                 $mobileUnreadCount = App\Models\Notification::where('user_id', auth()->id())
@@ -936,25 +655,25 @@
 
         <!-- Menu (More Options) -->
         <a href="#" class="mobile-nav-item" id="mobileMenuTrigger">
-            <i class="flaticon-381-menu-1"></i>
+            <i class="fas fa-bars"></i>
             <span>Menu</span>
         </a>
     </div>
 </nav>
 
-<!-- Mobile Menu Modal (Full Screen) -->
+<!-- Mobile Menu Modal dengan Accordion -->
 <div class="mobile-menu-modal" id="mobileMenuModal">
     <div class="mobile-menu-header">
         <h4>Menu</h4>
         <button class="close-mobile-menu" id="closeMobileMenu" type="button">
-            <i class="flaticon-381-close"></i>
+            <i class="fas fa-times"></i>
         </button>
     </div>
 
     <div class="mobile-menu-content">
         <div class="mobile-menu-user-info">
             <div class="user-avatar">
-                <i class="flaticon-381-user-7"></i>
+                <i class="fas fa-user-circle"></i>
             </div>
             <div class="user-details">
                 <h5>{{ auth()->user()->name }}</h5>
@@ -963,257 +682,521 @@
         </div>
 
         <div class="mobile-menu-list">
-            <!-- Approval Centers -->
-            @if (auth()->user()->role === 'om')
-                <div class="mobile-menu-section-title">Approval</div>
-                <a href="#" class="mobile-menu-link">
-                    <i class="flaticon-381-box"></i>
-                    <span>OM Approval</span>
-                    @php
-                        $mobilePendingOMCount = App\Models\Ticket::where('status', 'received')
-                            ->where('current_stage', 2)
-                            ->count();
-                    @endphp
-                    @if ($mobilePendingOMCount > 0)
-                        <span class="mobile-badge">{{ $mobilePendingOMCount }}</span>
-                    @endif
+            <!-- Dashboard -->
+            <a href="{{ route('dashboard') }}"
+                class="mobile-menu-link {{ request()->routeIs('dashboard') ? 'active' : '' }}">
+                <i class="fas fa-chart-pie"></i>
+                <span>Dashboard</span>
+            </a>
+
+            <!-- Quick Create Ticket (Mobile version) -->
+            @if (in_array(auth()->user()->role, ['user', 'manager', 'admin_eng']))
+                <a href="{{ route('tickets.create') }}" class="mobile-menu-link">
+                    <i class="fas fa-plus-circle"></i>
+                    <span>New Ticket</span>
                 </a>
+            @endif
+
+            <!-- ========== APPROVAL CENTERS (OM & GM) ========== -->
+            @if (auth()->user()->role === 'om')
+                <div class="mobile-menu-accordion">
+                    <a href="javascript:void(0)" class="mobile-menu-accordion-header">
+                        <i class="fas fa-check-double"></i>
+                        <span>OM Approval</span>
+                        <i class="fas fa-chevron-right accordion-icon"></i>
+                        @php
+                            $omApprovalCount = App\Models\Ticket::where('status', 'pending_om')
+                                ->where('current_stage', 3)
+                                ->count();
+                            $omVRCount = App\Models\VoucherRequest::where('status', 'admin_approved')->count();
+                            $totalOmCount = $omApprovalCount + $omVRCount;
+                        @endphp
+                        @if ($totalOmCount > 0)
+                            <span class="mobile-badge">{{ $totalOmCount }}</span>
+                        @endif
+                    </a>
+                    <div class="mobile-menu-accordion-content">
+                        <a href="{{ route('tickets.index') }}?status=pending_om"
+                            class="mobile-menu-sublink {{ request()->routeIs('tickets.index') && request()->get('status') == 'pending_om' ? 'active' : '' }}">
+                            <i class="fas fa-clipboard-list"></i>
+                            <span>MR Approval</span>
+                            @if ($omApprovalCount > 0)
+                                <span class="mobile-badge">{{ $omApprovalCount }}</span>
+                            @endif
+                        </a>
+                        <a href="{{ route('vouchers.index') }}?status=admin_approved"
+                            class="mobile-menu-sublink {{ request()->routeIs('vouchers.index') && request()->get('status') == 'admin_approved' ? 'active' : '' }}">
+                            <i class="fas fa-ticket-alt"></i>
+                            <span>VR Approval</span>
+                            @if ($omVRCount > 0)
+                                <span class="mobile-badge">{{ $omVRCount }}</span>
+                            @endif
+                        </a>
+                    </div>
+                </div>
             @endif
 
             @if (auth()->user()->role === 'gm')
-                <div class="mobile-menu-section-title">Approval</div>
-                <a href="#" class="mobile-menu-link">
-                    <i class="flaticon-381-box"></i>
-                    <span>GM Approval</span>
-                    @php
-                        $mobilePendingGMCount = App\Models\Ticket::where('current_stage', 7)->count();
-                    @endphp
-                    @if ($mobilePendingGMCount > 0)
-                        <span class="mobile-badge">{{ $mobilePendingGMCount }}</span>
-                    @endif
-                </a>
+                <div class="mobile-menu-accordion">
+                    <a href="javascript:void(0)" class="mobile-menu-accordion-header">
+                        <i class="fas fa-check-circle"></i>
+                        <span>GM Approval</span>
+                        <i class="fas fa-chevron-right accordion-icon"></i>
+                        @php
+                            $gmApprovalCount = App\Models\Ticket::where('status', 'pending_gm')
+                                ->where('current_stage', 8)
+                                ->count();
+                            $gmVRCount = App\Models\VoucherRequest::where('status', 'om_approved')->count();
+                            $totalGmCount = $gmApprovalCount + $gmVRCount;
+                        @endphp
+                        @if ($totalGmCount > 0)
+                            <span class="mobile-badge">{{ $totalGmCount }}</span>
+                        @endif
+                    </a>
+                    <div class="mobile-menu-accordion-content">
+                        <a href="{{ route('tickets.index') }}?status=pending_gm"
+                            class="mobile-menu-sublink {{ request()->routeIs('tickets.index') && request()->get('status') == 'pending_gm' ? 'active' : '' }}">
+                            <i class="fas fa-clipboard-list"></i>
+                            <span>MR Approval</span>
+                            @if ($gmApprovalCount > 0)
+                                <span class="mobile-badge">{{ $gmApprovalCount }}</span>
+                            @endif
+                        </a>
+                        <a href="{{ route('vouchers.index') }}?status=om_approved"
+                            class="mobile-menu-sublink {{ request()->routeIs('vouchers.index') && request()->get('status') == 'om_approved' ? 'active' : '' }}">
+                            <i class="fas fa-ticket-alt"></i>
+                            <span>VR Approval</span>
+                            @if ($gmVRCount > 0)
+                                <span class="mobile-badge">{{ $gmVRCount }}</span>
+                            @endif
+                        </a>
+                    </div>
+                </div>
             @endif
 
-            @if (auth()->user()->role === 'user')
-                <div class="mobile-menu-section-title">Verifikasi</div>
-                <a href="#" class="mobile-menu-link">
-                    <i class="flaticon-381-check"></i>
-                    <span>Pending Verification</span>
-                    @php
-                        $mobilePendingVerificationCount = App\Models\Ticket::where(
-                            'department_id',
-                            auth()->user()->department_id,
-                        )
-                            ->where('status', 'completed')
-                            ->where('current_stage', 6)
-                            ->count();
-                    @endphp
-                    @if ($mobilePendingVerificationCount > 0)
-                        <span class="mobile-badge">{{ $mobilePendingVerificationCount }}</span>
-                    @endif
+            <!-- ========== TICKETS ACCORDION ========== -->
+            <div class="mobile-menu-accordion">
+                <a href="javascript:void(0)" class="mobile-menu-accordion-header">
+                    <i class="fas fa-ticket-alt"></i>
+                    <span>Tickets</span>
+                    <i class="fas fa-chevron-right accordion-icon"></i>
                 </a>
-            @endif
+                <div class="mobile-menu-accordion-content">
+                    <!-- All Tickets -->
+                    <a href="{{ route('tickets.index') }}"
+                        class="mobile-menu-sublink {{ request()->routeIs('tickets.index') && !request()->anyFilled(['my_tickets', 'assigned', 'department_filter', 'status', 'stage', 'unassigned']) ? 'active' : '' }}">
+                        <i class="fas fa-list"></i>
+                        <span>All Tickets</span>
+                    </a>
 
-            <!-- Voucher Requests -->
-            @if (in_array(auth()->user()->role, ['admin_eng', 'om', 'gm']))
-                <div class="mobile-menu-section-title">Voucher</div>
-                <a href="{{ route('vouchers.index') }}" class="mobile-menu-link">
-                    <i class="flaticon-381-price-tag"></i>
-                    <span>Voucher Requests</span>
-                    @php
-                        $mobileMyVRCount = 0;
-                        if (auth()->user()->role === 'admin_eng') {
-                            $mobileMyVRCount = App\Models\VoucherRequest::where('status', 'pending')->count();
-                        } elseif (auth()->user()->role === 'om') {
-                            $mobileMyVRCount = App\Models\VoucherRequest::where('status', 'admin_approved')->count();
-                        } elseif (auth()->user()->role === 'gm') {
-                            $mobileMyVRCount = App\Models\VoucherRequest::where('status', 'om_approved')->count();
-                        }
-                    @endphp
-                    @if ($mobileMyVRCount > 0)
-                        <span class="mobile-badge">{{ $mobileMyVRCount }}</span>
+                    <!-- My Tickets -->
+                    @if (in_array(auth()->user()->role, ['user', 'manager', 'admin_eng']))
+                        @php
+                            $myTicketsCount = App\Models\Ticket::where('user_id', auth()->id())->count();
+                        @endphp
+                        <a href="{{ route('tickets.index') }}?my_tickets=1"
+                            class="mobile-menu-sublink {{ request()->routeIs('tickets.index') && request()->get('my_tickets') == '1' ? 'active' : '' }}">
+                            <i class="fas fa-user"></i>
+                            <span>My Tickets</span>
+                            @if ($myTicketsCount > 0)
+                                <span class="mobile-badge">{{ $myTicketsCount }}</span>
+                            @endif
+                        </a>
                     @endif
-                </a>
-            @endif
 
-            <!-- Main Menu -->
-            <div class="mobile-menu-section-title">Main Menu</div>
+                    <!-- Assigned to Me -->
+                    @if (auth()->user()->role === 'technician')
+                        @php
+                            $assignedCount = App\Models\Ticket::where('assigned_to', auth()->id())
+                                ->whereIn('status', ['in_progress', 'pending_vr'])
+                                ->count();
+                        @endphp
+                        <a href="{{ route('tickets.index') }}?assigned=1"
+                            class="mobile-menu-sublink {{ request()->routeIs('tickets.index') && request()->get('assigned') == '1' ? 'active' : '' }}">
+                            <i class="fas fa-user-check"></i>
+                            <span>Assigned to Me</span>
+                            @if ($assignedCount > 0)
+                                <span class="mobile-badge">{{ $assignedCount }}</span>
+                            @endif
+                        </a>
+                    @endif
+
+                    <!-- Department Tickets -->
+                    @if ((auth()->user()->role === 'user' && auth()->user()->department_id) || auth()->user()->role === 'manager')
+                        @php
+                            $deptCount = auth()->user()->department_id
+                                ? App\Models\Ticket::where('department_id', auth()->user()->department_id)
+                                    ->whereNotIn('status', ['closed', 'cancelled'])
+                                    ->count()
+                                : 0;
+                        @endphp
+                        <a href="{{ route('tickets.index') }}?department_filter=1"
+                            class="mobile-menu-sublink {{ request()->routeIs('tickets.index') && request()->get('department_filter') == '1' ? 'active' : '' }}">
+                            <i class="fas fa-users"></i>
+                            <span>Department Tickets</span>
+                            @if ($deptCount > 0)
+                                <span class="mobile-badge">{{ $deptCount }}</span>
+                            @endif
+                        </a>
+                    @endif
+
+                    <!-- Pending Check untuk User -->
+                    @if (auth()->user()->role === 'user' && auth()->user()->department_id)
+                        @php
+                            $pendingCheckCount = App\Models\Ticket::where(
+                                'department_id',
+                                auth()->user()->department_id,
+                            )
+                                ->where('status', 'completed')
+                                ->where('current_stage', 6)
+                                ->count();
+                        @endphp
+                        <a href="{{ route('tickets.index') }}?status=completed&stage=6"
+                            class="mobile-menu-sublink {{ request()->routeIs('tickets.index') && request()->get('status') == 'completed' && request()->get('stage') == '6' ? 'active' : '' }}">
+                            <i class="fas fa-check-square"></i>
+                            <span>Pending Check</span>
+                            @if ($pendingCheckCount > 0)
+                                <span class="mobile-badge">{{ $pendingCheckCount }}</span>
+                            @endif
+                        </a>
+                    @endif
+
+                    <!-- Menu Admin Engineering -->
+                    @if (auth()->user()->role === 'admin_eng')
+                        @php
+                            $pendingReceiveCount = App\Models\Ticket::where('status', 'open')
+                                ->where('current_stage', 1)
+                                ->count();
+                            $unassignedCount = App\Models\Ticket::where('status', 'pending_om')
+                                ->where('current_stage', 3)
+                                ->whereNull('assigned_to')
+                                ->count();
+                            $pendingVRCount = App\Models\Ticket::where('status', 'pending_vr')
+                                ->where('current_stage', 5)
+                                ->count();
+                            $readyCloseCount = App\Models\Ticket::where('status', 'ready_for_closure')
+                                ->where('current_stage', 8)
+                                ->count();
+                        @endphp
+                        <a href="{{ route('tickets.index') }}?status=open"
+                            class="mobile-menu-sublink {{ request()->routeIs('tickets.index') && request()->get('status') == 'open' && !request()->has('unassigned') ? 'active' : '' }}">
+                            <i class="fas fa-inbox"></i>
+                            <span>Pending Receive</span>
+                            @if ($pendingReceiveCount > 0)
+                                <span class="mobile-badge">{{ $pendingReceiveCount }}</span>
+                            @endif
+                        </a>
+                        <a href="{{ route('tickets.index') }}?status=pending_om&unassigned=1"
+                            class="mobile-menu-sublink {{ request()->routeIs('tickets.index') && request()->get('status') == 'pending_om' && request()->get('unassigned') == '1' ? 'active' : '' }}">
+                            <i class="fas fa-user-slash"></i>
+                            <span>Unassigned</span>
+                            @if ($unassignedCount > 0)
+                                <span class="mobile-badge">{{ $unassignedCount }}</span>
+                            @endif
+                        </a>
+                        <a href="{{ route('tickets.index') }}?status=pending_vr"
+                            class="mobile-menu-sublink {{ request()->routeIs('tickets.index') && request()->get('status') == 'pending_vr' ? 'active' : '' }}">
+                            <i class="fas fa-tag"></i>
+                            <span>Pending VR</span>
+                            @if ($pendingVRCount > 0)
+                                <span class="mobile-badge">{{ $pendingVRCount }}</span>
+                            @endif
+                        </a>
+                        <a href="{{ route('tickets.index') }}?status=ready_for_closure"
+                            class="mobile-menu-sublink {{ request()->routeIs('tickets.index') && request()->get('status') == 'ready_for_closure' ? 'active' : '' }}">
+                            <i class="fas fa-check-circle"></i>
+                            <span>Ready to Close</span>
+                            @if ($readyCloseCount > 0)
+                                <span class="mobile-badge">{{ $readyCloseCount }}</span>
+                            @endif
+                        </a>
+                    @endif
+
+                    <!-- Pending My Approval OM -->
+                    @if (auth()->user()->role === 'om')
+                        @php
+                            $pendingOMCount = App\Models\Ticket::where('status', 'pending_om')
+                                ->where('current_stage', 3)
+                                ->count();
+                        @endphp
+                        <a href="{{ route('tickets.index') }}?status=pending_om"
+                            class="mobile-menu-sublink {{ request()->routeIs('tickets.index') && request()->get('status') == 'pending_om' ? 'active' : '' }}">
+                            <i class="fas fa-hourglass-half"></i>
+                            <span>Pending My Approval</span>
+                            @if ($pendingOMCount > 0)
+                                <span class="mobile-badge">{{ $pendingOMCount }}</span>
+                            @endif
+                        </a>
+                    @endif
+
+                    <!-- Pending My Approval GM -->
+                    @if (auth()->user()->role === 'gm')
+                        @php
+                            $pendingGMCount = App\Models\Ticket::where('status', 'pending_gm')
+                                ->where('current_stage', 8)
+                                ->count();
+                        @endphp
+                        <a href="{{ route('tickets.index') }}?status=pending_gm"
+                            class="mobile-menu-sublink {{ request()->routeIs('tickets.index') && request()->get('status') == 'pending_gm' ? 'active' : '' }}">
+                            <i class="fas fa-hourglass-half"></i>
+                            <span>Pending My Approval</span>
+                            @if ($pendingGMCount > 0)
+                                <span class="mobile-badge">{{ $pendingGMCount }}</span>
+                            @endif
+                        </a>
+                    @endif
+
+                    <!-- Dept In Progress untuk Manager -->
+                    @if (auth()->user()->role === 'manager')
+                        @php
+                            $deptInProgress = auth()->user()->department_id
+                                ? App\Models\Ticket::where('department_id', auth()->user()->department_id)
+                                    ->where('status', 'in_progress')
+                                    ->count()
+                                : 0;
+                        @endphp
+                        <a href="{{ route('tickets.index') }}?status=in_progress&department={{ auth()->user()->department_id }}"
+                            class="mobile-menu-sublink {{ request()->routeIs('tickets.index') && request()->get('status') == 'in_progress' && request()->get('department') == auth()->user()->department_id ? 'active' : '' }}">
+                            <i class="fas fa-spinner"></i>
+                            <span>Dept In Progress</span>
+                            @if ($deptInProgress > 0)
+                                <span class="mobile-badge">{{ $deptInProgress }}</span>
+                            @endif
+                        </a>
+                    @endif
+                </div>
+            </div>
+
+            <!-- ========== VOUCHER REQUESTS ========== -->
+            @php
+                $user = auth()->user();
+                $role = $user->role;
+                $badgeCount = 0;
+                if ($role === 'admin_eng') {
+                    $badgeCount = App\Models\VoucherRequest::where('status', 'pending')->count();
+                } elseif ($role === 'om') {
+                    $badgeCount = App\Models\VoucherRequest::where('status', 'admin_approved')->count();
+                } elseif ($role === 'gm') {
+                    $badgeCount = App\Models\VoucherRequest::where('status', 'om_approved')->count();
+                }
+            @endphp
+
+            @if (in_array($role, ['admin_eng', 'om', 'gm', 'superadmin']))
+                <div class="mobile-menu-accordion">
+                    <a href="javascript:void(0)" class="mobile-menu-accordion-header">
+                        <i class="fas fa-file-invoice-dollar"></i>
+                        <span>Voucher Requests</span>
+                        <i class="fas fa-chevron-right accordion-icon"></i>
+                        @if ($badgeCount > 0)
+                            <span class="mobile-badge">{{ $badgeCount }}</span>
+                        @endif
+                    </a>
+                    <div class="mobile-menu-accordion-content">
+                        <a href="{{ route('vouchers.index') }}"
+                            class="mobile-menu-sublink {{ request()->routeIs('vouchers.index') && !request()->get('status') ? 'active' : '' }}">
+                            <i class="fas fa-list"></i>
+                            <span>All VR</span>
+                        </a>
+
+                        @if (in_array($role, ['admin_eng', 'om', 'gm']))
+                            @php
+                                $pendingStatus =
+                                    $role === 'admin_eng'
+                                        ? 'pending'
+                                        : ($role === 'om'
+                                            ? 'admin_approved'
+                                            : 'om_approved');
+                            @endphp
+                            <a href="{{ route('vouchers.index') }}?status={{ $pendingStatus }}"
+                                class="mobile-menu-sublink {{ request()->routeIs('vouchers.index') && request()->get('status') === $pendingStatus ? 'active' : '' }}">
+                                <i class="fas fa-hourglass-half"></i>
+                                <span>Pending My Approval</span>
+                                @if ($badgeCount > 0)
+                                    <span class="mobile-badge">{{ $badgeCount }}</span>
+                                @endif
+                            </a>
+                        @endif
+
+                        <a href="{{ route('vouchers.index') }}?status=gm_approved"
+                            class="mobile-menu-sublink {{ request()->routeIs('vouchers.index') && request()->get('status') === 'gm_approved' ? 'active' : '' }}">
+                            <i class="fas fa-check-circle"></i>
+                            <span>Approved</span>
+                        </a>
+
+                        <a href="{{ route('vouchers.index') }}?status=paid"
+                            class="mobile-menu-sublink {{ request()->routeIs('vouchers.index') && request()->get('status') === 'paid' ? 'active' : '' }}">
+                            <i class="fas fa-money-bill-wave"></i>
+                            <span>Paid</span>
+                        </a>
+
+                        <a href="{{ route('vouchers.index') }}?status=rejected"
+                            class="mobile-menu-sublink {{ request()->routeIs('vouchers.index') && request()->get('status') === 'rejected' ? 'active' : '' }}">
+                            <i class="fas fa-times-circle"></i>
+                            <span>Rejected</span>
+                        </a>
+                    </div>
+                </div>
+            @endif
 
             <!-- Calendar -->
-            <a href="#" class="mobile-menu-link">
-                <i class="flaticon-381-calendar-1"></i>
+            <a href="{{ route('calendar.index') }}"
+                class="mobile-menu-link {{ request()->routeIs('calendar.*') ? 'active' : '' }}">
+                <i class="fas fa-calendar-alt"></i>
                 <span>Calendar</span>
             </a>
 
-            <!-- Reports -->
-            <a href="#" class="mobile-menu-link">
-                <i class="flaticon-381-diploma"></i>
-                <span>Reports</span>
-            </a>
+            <!-- My Department untuk Manager -->
+            @if (auth()->user()->role === 'manager')
+                <a href="{{ route('my-department.index') }}"
+                    class="mobile-menu-link {{ request()->routeIs('my-department.*') ? 'active' : '' }}">
+                    <i class="fas fa-building"></i>
+                    <span>My Department</span>
+                </a>
+            @endif
 
-            <!-- Master Data (SuperAdmin) -->
+            <!-- Master Data untuk SuperAdmin -->
             @if (auth()->user()->role === 'superadmin')
-                <div class="mobile-menu-divider"></div>
-                <div class="mobile-menu-section-title">Administration</div>
-                <a href="#" class="mobile-menu-link">
-                    <i class="flaticon-381-database-2"></i>
-                    <span>Master Data</span>
-                </a>
+                <div class="mobile-menu-accordion">
+                    <a href="javascript:void(0)" class="mobile-menu-accordion-header">
+                        <i class="fas fa-database"></i>
+                        <span>Master Data</span>
+                        <i class="fas fa-chevron-right accordion-icon"></i>
+                    </a>
+                    <div class="mobile-menu-accordion-content">
+                        <a href="{{ route('admin.departments.index') }}"
+                            class="mobile-menu-sublink {{ request()->routeIs('admin.departments.*') ? 'active' : '' }}">
+                            <i class="fas fa-building"></i>
+                            <span>Departments</span>
+                        </a>
+                        <a href="{{ route('admin.locations.index') }}"
+                            class="mobile-menu-sublink {{ request()->routeIs('admin.locations.*') ? 'active' : '' }}">
+                            <i class="fas fa-map-marker-alt"></i>
+                            <span>Locations</span>
+                        </a>
+                        <a href="{{ route('admin.categories.index') }}"
+                            class="mobile-menu-sublink {{ request()->routeIs('admin.categories.*') ? 'active' : '' }}">
+                            <i class="fas fa-folder"></i>
+                            <span>Categories</span>
+                        </a>
+                        <a href="{{ route('admin.priorities.index') }}"
+                            class="mobile-menu-sublink {{ request()->routeIs('admin.priorities.*') ? 'active' : '' }}">
+                            <i class="fas fa-flag"></i>
+                            <span>Priorities</span>
+                        </a>
+                    </div>
+                </div>
             @endif
 
-            <!-- User Management -->
-            @if (in_array(auth()->user()->role, ['superadmin', 'admin_eng']))
-                <a href="{{ route('admin.users.index') }}" class="mobile-menu-link">
-                    <i class="flaticon-381-user-9"></i>
-                    <span>User Management</span>
-                </a>
+            <!-- User Management untuk SuperAdmin -->
+            @if (auth()->user()->role === 'superadmin')
+                <div class="mobile-menu-accordion">
+                    <a href="javascript:void(0)" class="mobile-menu-accordion-header">
+                        <i class="fas fa-users-cog"></i>
+                        <span>User Management</span>
+                        <i class="fas fa-chevron-right accordion-icon"></i>
+                        @php
+                            $pendingCount = App\Models\User::where('status', 'pending')->count();
+                        @endphp
+                        @if ($pendingCount > 0)
+                            <span class="mobile-badge">{{ $pendingCount }}</span>
+                        @endif
+                    </a>
+                    <div class="mobile-menu-accordion-content">
+                        <a href="{{ route('admin.users.index') }}"
+                            class="mobile-menu-sublink {{ request()->routeIs('admin.users.index') && !request()->hasAny(['status', 'verified']) ? 'active' : '' }}">
+                            <i class="fas fa-user"></i>
+                            <span>All Users</span>
+                        </a>
+                        <a href="{{ route('admin.users.index', ['status' => 'pending']) }}"
+                            class="mobile-menu-sublink {{ request()->get('status') == 'pending' ? 'active' : '' }}">
+                            <i class="fas fa-hourglass-half"></i>
+                            <span>Pending</span>
+                            @php
+                                $pendingCount = App\Models\User::where('status', 'pending')->count();
+                            @endphp
+                            @if ($pendingCount > 0)
+                                <span class="mobile-badge">{{ $pendingCount }}</span>
+                            @endif
+                        </a>
+                        <a href="{{ route('admin.users.index', ['status' => 'inactive']) }}"
+                            class="mobile-menu-sublink {{ request()->get('status') == 'inactive' ? 'active' : '' }}">
+                            <i class="fas fa-ban"></i>
+                            <span>Inactive</span>
+                            @php
+                                $inactiveCount = App\Models\User::where('status', 'inactive')->count();
+                            @endphp
+                            @if ($inactiveCount > 0)
+                                <span class="mobile-badge">{{ $inactiveCount }}</span>
+                            @endif
+                        </a>
+                        <a href="{{ route('admin.users.index', ['verified' => 'unverified']) }}"
+                            class="mobile-menu-sublink {{ request()->get('verified') == 'unverified' ? 'active' : '' }}">
+                            <i class="fas fa-envelope"></i>
+                            <span>Unverified</span>
+                            @php
+                                $unverifiedCount = App\Models\User::whereNull('email_verified_at')->count();
+                            @endphp
+                            @if ($unverifiedCount > 0)
+                                <span class="mobile-badge">{{ $unverifiedCount }}</span>
+                            @endif
+                        </a>
+                    </div>
+                </div>
             @endif
+
+            <!-- Notifications -->
+            <a href="{{ route('notifications.index') }}"
+                class="mobile-menu-link {{ request()->routeIs('notifications.*') ? 'active' : '' }}">
+                <i class="fas fa-bell"></i>
+                <span>Notifications</span>
+                @php
+                    $unreadCount = App\Models\Notification::where('user_id', auth()->id())
+                        ->where('is_read', false)
+                        ->count();
+                @endphp
+                @if ($unreadCount > 0)
+                    <span class="mobile-badge">{{ $unreadCount }}</span>
+                @endif
+            </a>
 
             <!-- Activity Logs -->
             @if (in_array(auth()->user()->role, ['superadmin', 'admin_eng']))
-                <a href="{{ route('activity-logs.index') }}" class="mobile-menu-link">
-                    <i class="flaticon-381-notebook"></i>
+                <a href="{{ route('activity-logs.index') }}"
+                    class="mobile-menu-link {{ request()->routeIs('activity-logs.*') ? 'active' : '' }}">
+                    <i class="fas fa-history"></i>
                     <span>Activity Logs</span>
                 </a>
             @endif
 
-            <!-- System Settings (SuperAdmin) -->
-            @if (auth()->user()->role === 'superadmin')
-                <a href="#" class="mobile-menu-link">
-                    <i class="flaticon-381-settings-2"></i>
-                    <span>System Settings</span>
+            <!-- ========== ACCOUNT ========== -->
+            <div class="mobile-menu-accordion">
+                <a href="javascript:void(0)" class="mobile-menu-accordion-header">
+                    <i class="fas fa-user-circle"></i>
+                    <span>Account</span>
+                    <i class="fas fa-chevron-right accordion-icon"></i>
                 </a>
-            @endif
+                <div class="mobile-menu-accordion-content">
+                    <a href="{{ route('profile.index') }}"
+                        class="mobile-menu-sublink {{ request()->routeIs('profile.*') ? 'active' : '' }}">
+                        <i class="fas fa-id-card"></i>
+                        <span>My Profile</span>
+                    </a>
 
-            <!-- Account Section -->
-            <div class="mobile-menu-divider"></div>
-            <div class="mobile-menu-section-title">Account</div>
 
-            <!-- Profile -->
-            <a href="{{ route('profile.index') }}" class="mobile-menu-link">
-                <i class="flaticon-381-user-3"></i>
-                <span>My Profile</span>
-            </a>
 
-            <!-- Digital Signature -->
-            @if (in_array(auth()->user()->role, ['om', 'gm', 'admin_eng']))
-                <a href="#" class="mobile-menu-link">
-                    <i class="flaticon-381-edit"></i>
-                    <span>Digital Signature</span>
-                </a>
-            @endif
+                    <a href="javascript:void(0)" onclick="confirmLogout()" class="mobile-menu-sublink">
+                        <i class="fas fa-sign-out-alt"></i>
+                        <span>Logout</span>
+                    </a>
+                </div>
+            </div>
 
-            <!-- Settings -->
-            <a href="#" class="mobile-menu-link">
-                <i class="flaticon-381-settings-2"></i>
-                <span>Settings</span>
-            </a>
-
-            <!-- Logout -->
-            <a href="{{ route('logout') }}"
-                onclick="event.preventDefault(); document.getElementById('logout-form-mobile').submit();"
-                class="mobile-menu-link logout-link">
-                <i class="flaticon-381-exit"></i>
-                <span>Logout</span>
-            </a>
+            <!-- Copyright (simplified for mobile) -->
+            <div class="mobile-menu-copyright">
+                <p>Harris Hotel Ticketing © {{ date('Y') }}</p>
+            </div>
         </div>
     </div>
 </div>
 
-<!-- Logout Forms -->
-<form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">
-    @csrf
-</form>
-
-<form id="logout-form-mobile" action="{{ route('logout') }}" method="POST" class="d-none">
-    @csrf
-</form>
-
-<!-- JavaScript -->
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Mobile Menu Elements
-        const mobileMenuTrigger = document.getElementById('mobileMenuTrigger');
-        const mobileMenuModal = document.getElementById('mobileMenuModal');
-        const closeMobileMenu = document.getElementById('closeMobileMenu');
-
-        // Open mobile menu
-        if (mobileMenuTrigger) {
-            mobileMenuTrigger.addEventListener('click', function(e) {
-                e.preventDefault();
-                mobileMenuModal.classList.add('active');
-                document.body.style.overflow = 'hidden';
-            });
-        }
-
-        // Close mobile menu via close button
-        if (closeMobileMenu) {
-            closeMobileMenu.addEventListener('click', function() {
-                mobileMenuModal.classList.remove('active');
-                document.body.style.overflow = '';
-            });
-        }
-
-        // Close on outside click (background)
-        if (mobileMenuModal) {
-            mobileMenuModal.addEventListener('click', function(e) {
-                if (e.target === mobileMenuModal) {
-                    mobileMenuModal.classList.remove('active');
-                    document.body.style.overflow = '';
-                }
-            });
-        }
-
-        // Prevent scroll on body when modal is open
-        const observer = new MutationObserver(function(mutations) {
-            mutations.forEach(function(mutation) {
-                if (mutation.target.classList.contains('active')) {
-                    document.body.style.overflow = 'hidden';
-                } else {
-                    document.body.style.overflow = '';
-                }
-            });
-        });
-
-        if (mobileMenuModal) {
-            observer.observe(mobileMenuModal, {
-                attributes: true,
-                attributeFilter: ['class']
-            });
-        }
-
-        // Add ripple effect on mobile nav items (optional)
-        const mobileNavItems = document.querySelectorAll('.mobile-nav-item, .mobile-menu-link');
-
-        mobileNavItems.forEach(item => {
-            item.addEventListener('touchstart', function(e) {
-                this.style.transform = 'scale(0.95)';
-            });
-
-            item.addEventListener('touchend', function(e) {
-                this.style.transform = '';
-            });
-        });
-
-        // Handle back button on Android
-        window.addEventListener('popstate', function(e) {
-            if (mobileMenuModal && mobileMenuModal.classList.contains('active')) {
-                e.preventDefault();
-                mobileMenuModal.classList.remove('active');
-                document.body.style.overflow = '';
-            }
-        });
-
-        // Add haptic feedback for FAB button (if supported)
-        const fabButton = document.querySelector('.fab-button');
-        if (fabButton && 'vibrate' in navigator) {
-            fabButton.addEventListener('click', function() {
-                navigator.vibrate(10); // 10ms vibration
-            });
-        }
-    });
-</script>
-
-<!--**********************************
-    Sidebar end
-***********************************-->
+@include('layouts.partials.part.sidebar-script')

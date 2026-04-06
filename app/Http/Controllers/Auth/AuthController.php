@@ -43,13 +43,12 @@ class AuthController extends Controller
                 ->withInput($request->except('password'));
         }
 
-        // ==== CHECK IF USER SOFT DELETED ====
+        // Check soft deleted
         $softDeletedUser = User::onlyTrashed()
             ->where('email', $request->email)
             ->first();
 
         if ($softDeletedUser) {
-            // Log attempt to login with deactivated account
             ActivityLog::create([
                 'user_id' => null,
                 'ticket_id' => null,
@@ -57,6 +56,7 @@ class AuthController extends Controller
                 'description' => 'Login attempt with deactivated account: ' . $request->email,
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->userAgent(),
+                'created_at' => now(),
             ]);
 
             return back()->withErrors([
@@ -64,7 +64,6 @@ class AuthController extends Controller
             ])->onlyInput('email');
         }
 
-        // ==== NORMAL LOGIN ATTEMPT ====
         $credentials = $request->only('email', 'password');
         $remember = $request->has('remember');
 
@@ -73,7 +72,6 @@ class AuthController extends Controller
 
             $request->session()->regenerate();
 
-            // Log successful login
             ActivityLog::create([
                 'user_id' => $user->id,
                 'ticket_id' => null,
@@ -81,19 +79,19 @@ class AuthController extends Controller
                 'description' => $user->name . ' (' . $user->role . ') logged in successfully',
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->userAgent(),
+                'created_at' => now(),
             ]);
 
-            // Check email verification
+            // Email verification check
             if (is_null($user->email_verified_at)) {
                 return redirect()->route('verification.notice')
                     ->with('warning', 'Please verify your email address before continuing. Check your inbox or click resend.');
             }
 
-            // Check user status - SEMUA USER (kecuali superadmin) HARUS DITUNGGU APPROVAL ADMIN
-            if (!$user->isActive()) {
+            // Check user status based on database
+            if ($user->status === 'pending') {
                 Auth::logout();
 
-                // Log failed login attempt due to inactive status
                 ActivityLog::create([
                     'user_id' => $user->id,
                     'ticket_id' => null,
@@ -101,17 +99,34 @@ class AuthController extends Controller
                     'description' => $user->name . ' (' . $user->role . ') login failed - Account pending admin approval',
                     'ip_address' => $request->ip(),
                     'user_agent' => $request->userAgent(),
+                    'created_at' => now(),
                 ]);
 
                 return redirect()->route('login')
                     ->with('error', 'Your account is pending approval from admin. Please wait for approval email.');
             }
 
+            if ($user->status === 'inactive') {
+                Auth::logout();
+
+                ActivityLog::create([
+                    'user_id' => $user->id,
+                    'ticket_id' => null,
+                    'action' => 'login_failed',
+                    'description' => $user->name . ' (' . $user->role . ') login failed - Account inactive',
+                    'ip_address' => $request->ip(),
+                    'user_agent' => $request->userAgent(),
+                    'created_at' => now(),
+                ]);
+
+                return redirect()->route('login')
+                    ->with('error', 'Your account has been deactivated. Please contact administrator.');
+            }
+
             // Login success
             return redirect()->intended('dashboard');
         }
 
-        // Log failed login attempt
         ActivityLog::create([
             'user_id' => null,
             'ticket_id' => null,
@@ -119,6 +134,7 @@ class AuthController extends Controller
             'description' => 'Failed login attempt for email: ' . $request->email,
             'ip_address' => $request->ip(),
             'user_agent' => $request->userAgent(),
+            'created_at' => now(),
         ]);
 
         return back()->withErrors([
@@ -140,48 +156,25 @@ class AuthController extends Controller
      */
     public function register(Request $request)
     {
-        // ==== CHECK EXISTING USER (TERMASUK SOFT DELETED) ====
-        $existingUser = User::withTrashed() // ← Include soft deleted users
+        // CHECK EXISTING USER (including soft deleted)
+        $existingUser = User::withTrashed()
             ->where('email', $request->email)
             ->first();
 
-        // Jika ada user dengan email yang sama
         if ($existingUser) {
-            // Case 1: Soft deleted user → Force delete (permanent) untuk free up email
-            if ($existingUser->trashed()) {
-                \Log::info("Force deleting soft-deleted account: " . $existingUser->email);
-
-                // Log activity
+            // Force delete soft deleted or unverified users
+            if ($existingUser->trashed() || is_null($existingUser->email_verified_at)) {
                 ActivityLog::create([
                     'user_id' => null,
                     'ticket_id' => null,
                     'action' => 'user_deleted',
-                    'description' => 'Force deleted soft-deleted account during registration: ' . $existingUser->email,
+                    'description' => 'Deleted account during registration: ' . $existingUser->email,
                     'ip_address' => $request->ip(),
                     'user_agent' => $request->userAgent(),
                 ]);
 
-                $existingUser->forceDelete(); // Permanent delete
-            }
-            // Case 2: Unverified active user → Delete untuk free up email
-            elseif (is_null($existingUser->email_verified_at)) {
-                \Log::info("Deleting unverified account: " . $existingUser->email);
-
-                // Log activity
-                ActivityLog::create([
-                    'user_id' => null,
-                    'ticket_id' => null,
-                    'action' => 'user_deleted',
-                    'description' => 'Deleted unverified account during registration: ' . $existingUser->email,
-                    'ip_address' => $request->ip(),
-                    'user_agent' => $request->userAgent(),
-                ]);
-
-                $existingUser->forceDelete(); // Permanent delete
-            }
-            // Case 3: Verified active user → Email conflict, return error
-            else {
-                // Log registration attempt with existing email
+                $existingUser->forceDelete();
+            } else {
                 ActivityLog::create([
                     'user_id' => null,
                     'ticket_id' => null,
@@ -197,7 +190,7 @@ class AuthController extends Controller
             }
         }
 
-        // ==== VALIDATION ====
+        // VALIDATION
         $rules = [
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users,email',
@@ -219,19 +212,18 @@ class AuthController extends Controller
                 ->withInput($request->except('password', 'password_confirmation'));
         }
 
-        // ==== CREATE NEW USER ====
+        // CREATE NEW USER - Default role 'user', status 'pending'
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
             'phone' => $request->phone,
             'password' => Hash::make($request->password),
             'role' => 'user', // SEMUA YANG REGISTER DEFAULT ROLE 'user'
-            'department_id' => null, // Tidak ada department untuk registrasi
-            'status' => 'pending', // SEMUA USER BARU STATUS 'pending' MENUNGGU APPROVAL ADMIN
+            'department_id' => null,
+            'status' => 'pending', // SEMUA USER BARU STATUS 'pending' (menunggu approval admin)
             'email_verified_at' => null,
         ]);
 
-        // Log successful registration
         ActivityLog::create([
             'user_id' => $user->id,
             'ticket_id' => null,
@@ -246,11 +238,10 @@ class AuthController extends Controller
 
         \Log::info('New user registered: ' . $user->email . ' (Role: ' . $user->role . ', Status: ' . $user->status . ')');
 
-        // Success message - SEMUA USER MENUNGGU APPROVAL ADMIN
+        // Success message - semua user menunggu approval admin
         return redirect()->route('login')
             ->with('success', 'Registration successful! Please check your email and click the verification link. After verification, wait for admin approval to activate your account.');
     }
-
     /**
      * Logout
      */
@@ -266,6 +257,7 @@ class AuthController extends Controller
             'description' => $user->name . ' (' . $user->role . ') logged out',
             'ip_address' => $request->ip(),
             'user_agent' => $request->userAgent(),
+            'created_at' => now(),
         ]);
 
         Auth::logout();
@@ -306,6 +298,7 @@ class AuthController extends Controller
             'description' => 'Manual reset unverified account: ' . $user->email,
             'ip_address' => $request->ip(),
             'user_agent' => $request->userAgent(),
+            'created_at' => now(),
         ]);
 
         // Force delete unverified account
