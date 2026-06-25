@@ -6,13 +6,12 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use App\Models\ActivityLog;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Password;
-use Illuminate\Validation\ValidationException;
-use Carbon\Carbon;
-use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
 class ForgotPasswordController extends Controller
 {
@@ -48,6 +47,26 @@ class ForgotPasswordController extends Controller
 
             throw ValidationException::withMessages([
                 'email' => ['Password reset is only available for regular users.'],
+            ]);
+        }
+
+        // ✅ TAMBAHKAN: Cek apakah sudah ada request dalam 10 menit terakhir
+        $lastRequest = DB::table('password_resets')
+            ->where('email', $request->email)
+            ->where('created_at', '>=', Carbon::now()->subMinutes(10))
+            ->first();
+
+        if ($lastRequest) {
+            ActivityLog::create([
+                'user_id' => null,
+                'action' => 'password_reset_rate_limited',
+                'description' => 'Rate limit exceeded for email: ' . $request->email,
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->userAgent(),
+            ]);
+
+            throw ValidationException::withMessages([
+                'email' => ['Please wait 10 minutes before requesting another reset link.'],
             ]);
         }
 

@@ -673,79 +673,18 @@ class ProfileController extends Controller
         ]);
     }
 
-    // ==================== PASSWORD RESET VIA EMAIL ====================
 
-    /**
-     * Send password reset link via email (AJAX from profile page)
-     */
-    public function sendResetLink(Request $request)
+    public function getSignatureInfoForPR()
     {
-        $validator = Validator::make($request->all(), [
-            'email' => 'required|email|exists:users,email',
-            'captcha' => 'required|captcha',
+        $user = Auth::user();
+
+        $hasSignature = !empty($user->signature_path) && Storage::disk('public')->exists($user->signature_path);
+
+        return response()->json([
+            'has_signature' => $hasSignature,
+            'signature_date' => $user->signature_updated_at ? $user->signature_updated_at->format('d M Y H:i') : null,
+            'signature_path' => $hasSignature ? Storage::url($user->signature_path) : null,
         ]);
-
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Validation error',
-                'errors' => $validator->errors()
-            ], 422);
-        }
-
-        $user = User::where('email', $request->email)->first();
-
-        // Only specific roles can reset via email
-        $allowedRoles = ['user', 'technician', 'manager'];
-
-        if (!in_array($user->role, $allowedRoles)) {
-            ActivityLog::create([
-                'user_id' => auth()->id() ?: null,
-                'ticket_id' => null,
-                'action' => 'password_reset_failed',
-                'description' => 'High-privilege role attempted reset: ' . $request->email . ' (Role: ' . $user->role . ')',
-                'old_values' => null,
-                'new_values' => null,
-                'ip_address' => $request->ip(),
-                'user_agent' => $request->userAgent(),
-            ]);
-
-            return response()->json([
-                'success' => false,
-                'message' => 'Password reset is not available for accounts with this role. Please contact administrator.'
-            ], 403);
-        }
-
-        try {
-            // Create token manually - THIS AVOIDS THE REDIRECT ISSUE
-            $broker = app(\Illuminate\Auth\Passwords\PasswordBroker::class);
-            $token = $broker->createToken($user);
-
-            // Send the reset notification with custom route
-            $user->sendPasswordResetNotification($token);
-
-            ActivityLog::create([
-                'user_id' => auth()->id() ?: null,
-                'ticket_id' => null,
-                'action' => 'password_reset_requested',
-                'description' => 'Password reset link sent from profile to: ' . $request->email,
-                'old_values' => null,
-                'new_values' => null,
-                'ip_address' => $request->ip(),
-                'user_agent' => $request->userAgent(),
-            ]);
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Password reset link has been sent to your email!'
-            ]);
-
-        } catch (\Exception $e) {
-            \Log::error('Password reset error: ' . $e->getMessage());
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to send reset link: ' . $e->getMessage()
-            ], 500);
-        }
     }
+
 }

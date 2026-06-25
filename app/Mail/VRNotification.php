@@ -35,7 +35,7 @@ class VRNotification extends Mailable
      */
     public function build()
     {
-        $subject = "[VR Notification] " . $this->title;
+        $subject = "[PR Notification] " . $this->title;  // Ganti VR → PR
 
         return $this->subject($subject)
             ->view('emails.vr-notification')

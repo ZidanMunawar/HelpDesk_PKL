@@ -957,7 +957,7 @@
                 // Update button states
                 function updateButtons() {
                     $('#modalUndoBtn').prop('disabled', undoStack.length <=
-                    1); // Minimal 1 state untuk undo
+                        1); // Minimal 1 state untuk undo
                     $('#modalRedoBtn').prop('disabled', redoStack.length === 0);
                 }
 

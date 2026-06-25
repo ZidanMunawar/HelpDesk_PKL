@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="en">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ATTACHMENTS - {{ $ticket->ticket_number }}</title>
+    <title>Attachments - {{ $ticket->ticket_number }}</title>
     <style>
         * {
             margin: 0;
@@ -14,262 +14,287 @@
 
         body {
             font-family: Arial, sans-serif;
-            background: #ffffff;
-            padding: 0;
+            font-size: 12px;
+            line-height: 1.4;
+            background: white;
+            padding: 20px;
+        }
+
+        @media print {
+
+            html,
+            body {
+                margin: 0 !important;
+                padding: 0 !important;
+                height: auto !important;
+            }
+
+            body {
+                padding: 0;
+                margin: 0;
+            }
+
+            .photo-item {
+                page-break-inside: avoid;
+                break-inside: avoid;
+            }
+
+            *:last-child {
+                margin-bottom: 0 !important;
+                padding-bottom: 0 !important;
+            }
+
+            body {
+                overflow: hidden !important;
+            }
+        }
+
+        .report-header {
+            text-align: center;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 3px solid #FF6B35;
+        }
+
+        .report-header h1 {
+            color: #FF6B35;
+            font-size: 22px;
             margin: 0;
         }
 
-        .attachment-page {
-            page-break-after: always;
-            width: 210mm;
-            height: 297mm;
-            display: flex;
-            flex-direction: column;
-            padding: 5mm;
-            position: relative;
-            overflow: hidden;
-        }
-
-        /* Hapus page-break-after untuk halaman terakhir */
-        .attachment-page:last-child {
-            page-break-after: auto;
-        }
-
-        .attachment-header {
-            width: 100%;
-            text-align: center;
-            margin-bottom: 5px;
-            padding-bottom: 3px;
-            border-bottom: 2px solid #FF6B35;
-            flex-shrink: 0;
-        }
-
-        .attachment-title {
-            font-size: 14pt;
-            font-weight: bold;
-            color: #FF6B35;
-        }
-
-        .attachment-subtitle {
-            font-size: 9pt;
+        .report-header p {
+            font-size: 12px;
             color: #666;
-            margin-top: 2px;
-            word-break: break-all;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            padding: 0 10px;
+            margin-top: 5px;
         }
 
-        /* MAIN CONTAINER FOTO - INI YANG BIKIN FOTO GEDE BANGET */
-        .attachment-image-container {
-            flex: 1;
+        .photo-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
             width: 100%;
-            min-height: 0;
-            /* PENTING! */
+            justify-content: center;
+        }
+
+        .photo-grid.single-photo {
+            grid-template-columns: 1fr;
+            max-width: 100%;
+        }
+
+        .photo-item {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            overflow: hidden;
             display: flex;
             flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            padding: 2px 0;
+            text-align: center;
         }
 
-        /* WRAPPER FOTO - BUAT NGONTROL UKURAN */
-        .photo-wrapper {
+        .photo-item img {
             width: 100%;
-            height: 100%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            background: #f8f8f8;
-            border: 1px solid #eee;
-        }
-
-        /* FOTO PORTRAIT - FULL SETINGGI MUNGKIN */
-        .attachment-full-image {
-            max-width: 100%;
-            max-height: 100%;
-            width: auto;
             height: auto;
+            max-height: 70vh;
             object-fit: contain;
             display: block;
-            margin: 0 auto;
         }
 
-        /* UNTUK FILE BUKAN FOTO (PDF, ZIP, DLL) */
-        .file-info-box {
+        .photo-caption {
+            padding: 10px;
+            background: #f9f9f9;
+            font-size: 11px;
+            color: #666;
+            text-align: center;
+            margin-top: auto;
+        }
+
+        @media print {
+            .photo-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 15px;
+            }
+
+            .photo-grid.single-photo {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .photo-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* TAMBAHKAN INI */
+        .print-modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
             width: 100%;
             height: 100%;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
+            background: rgba(0, 0, 0, 0.85);
+            z-index: 9999;
             align-items: center;
-            background: #f0f0f0;
-            border: 2px dashed #FF6B35;
+            justify-content: center;
             padding: 20px;
         }
 
-        .file-icon {
-            font-size: 80px;
-            margin-bottom: 20px;
-            opacity: 0.7;
-        }
-
-        .file-name {
-            font-size: 14pt;
-            font-weight: bold;
-            margin-bottom: 10px;
-            word-break: break-word;
+        .print-modal {
+            background: white;
+            border-radius: 16px;
+            padding: 40px 30px;
             text-align: center;
-        }
-
-        .file-size {
-            font-size: 11pt;
-            color: #666;
-        }
-
-        /* FOOTER INFO - DIGABUNG DENGAN UPLOAD INFO */
-        .attachment-footer {
+            max-width: 420px;
             width: 100%;
-            text-align: center;
-            margin-top: 5px;
-            padding-top: 3px;
-            border-top: 1px solid #ddd;
-            font-size: 9pt;
-            color: #666;
-            flex-shrink: 0;
-            display: flex;
-            justify-content: center;
-            gap: 15px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
         }
 
-        .footer-item {
+        .print-modal .modal-icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+            display: block;
+        }
+
+        .print-modal h2 {
+            color: #FF6B35;
+            margin-bottom: 10px;
+            font-size: 22px;
+            font-weight: bold;
+        }
+
+        .print-modal .ticket-number {
+            color: #666;
+            margin-bottom: 10px;
+            font-size: 13px;
+            background: #f5f5f5;
+            padding: 8px 16px;
+            border-radius: 20px;
             display: inline-block;
         }
 
-        .separator {
-            color: #FF6B35;
-            font-weight: bold;
-        }
-
-        .empty-data {
+        .print-modal .info-text {
             color: #888;
-            font-style: italic;
-            text-align: center;
-            padding: 20px;
+            margin-bottom: 30px;
+            font-size: 14px;
+            line-height: 1.5;
         }
 
-        /* Pastikan tidak ada extra page */
-        .no-extra-page {
-            page-break-after: avoid;
+        .print-modal .print-btn {
+            background: #FF6B35;
+            color: white;
+            border: none;
+            padding: 16px 40px;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            width: 100%;
+            justify-content: center;
+        }
+
+        .print-modal .close-link {
+            display: block;
+            margin-top: 20px;
+            color: #999;
+            text-decoration: none;
+            font-size: 14px;
+            padding: 10px;
+            cursor: pointer;
+        }
+
+        @media screen and (max-width: 768px) {
+            .print-modal-overlay {
+                display: flex;
+            }
+
+            .print-content {
+                display: none;
+            }
+        }
+
+        @media screen and (min-width: 769px) {
+            .print-modal-overlay {
+                display: none !important;
+            }
+
+            .print-content {
+                display: block;
+            }
+        }
+
+        @media print {
+            .print-modal-overlay {
+                display: none !important;
+            }
+
+            .print-content {
+                display: block !important;
+            }
         }
     </style>
 </head>
 
 <body>
-    @if (isset($imageAttachments) && count($imageAttachments) > 0)
-        @foreach ($imageAttachments as $index => $attachment)
-            <div class="attachment-page {{ $loop->last ? 'last-page' : '' }}">
-                <!-- HEADER - HANYA JUDUL -->
-                <div class="attachment-header">
-                    <div class="attachment-title">
-                        ATTACHMENT {{ $index + 1 }} of {{ count($imageAttachments) }}
-                    </div>
-                </div>
+    <!-- MODAL PRINT -->
+    <div class="print-modal-overlay" id="printModalOverlay">
+        <div class="print-modal">
+            <span class="modal-icon">🖨️</span>
+            <h2>Print Report</h2>
+            <div class="ticket-number">#{{ $ticket->ticket_number }}</div>
+            <p class="info-text">Tap button below to print</p>
+            <button class="print-btn" onclick="triggerPrint()">
+                <span class="btn-icon">📄</span> Print Now
+            </button>
+            <div class="close-link" onclick="window.close()">← Cancel</div>
+        </div>
+    </div>
+    <div class="report-header">
+        <h1>TICKET ATTACHMENTS</h1>
+        <p>Ticket: {{ $ticket->ticket_number }} | Generated: {{ now()->format('d F Y, H:i') }}</p>
+    </div>
 
-                <!-- MAIN CONTENT - FOTO GEDE BANGET -->
-                <div class="attachment-image-container">
-                    @php
-                        $filePath = storage_path('app/public/' . $attachment->file_path);
-                        $fileExists = file_exists($filePath);
-                        $fileExtension = strtolower(pathinfo($attachment->file_name, PATHINFO_EXTENSION));
-                        $isImage = in_array($fileExtension, ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'svg']);
-
-                        if ($fileExists && $isImage) {
-                            $imageInfo = @getimagesize($filePath);
-                            if ($imageInfo) {
-                                $width = $imageInfo[0];
-                                $height = $imageInfo[1];
-                                $isLandscape = $width > $height;
-                                $ratio = $width / $height;
-                            }
-                        }
-                    @endphp
-
-                    @if ($fileExists && $isImage && isset($imageInfo))
-                        <!-- FOTO - TANPA INFO DIMENSI DI SINI, INFO DI FOOTER -->
-                        <div class="photo-wrapper">
-                            <img src="{{ $filePath }}" class="attachment-full-image"
-                                alt="{{ $attachment->file_name }}">
-                        </div>
-                    @elseif($fileExists && !$isImage)
-                        <!-- FILE BUKAN FOTO (PDF, ZIP, DLL) - TAMPILIN INFO GEDE -->
-                        <div class="file-info-box">
-                            <div class="file-icon">
-                                @php
-                                    $icon = match ($fileExtension) {
-                                        'pdf' => '📄',
-                                        'doc', 'docx' => '📝',
-                                        'xls', 'xlsx' => '📊',
-                                        'zip', 'rar', '7z' => '🗜️',
-                                        'txt' => '📃',
-                                        default => '📎',
-                                    };
-                                @endphp
-                                {{ $icon }}
-                            </div>
-                            <div class="file-name">{{ $attachment->file_name }}</div>
-                            <div class="file-size">
-                                @php
-                                    $size = $attachment->file_size ?? 0;
-                                    if ($size > 1048576) {
-                                        echo round($size / 1048576, 2) . ' MB';
-                                    } elseif ($size > 1024) {
-                                        echo round($size / 1024, 2) . ' KB';
-                                    } else {
-                                        echo $size . ' bytes';
-                                    }
-                                @endphp
-                            </div>
-                        </div>
-                    @else
-                        <!-- FILE TIDAK DITEMUKAN -->
-                        <div class="file-info-box" style="background: #fee;">
-                            <div class="file-icon">❌</div>
-                            <div class="file-name">{{ $attachment->file_name }}</div>
-                            <div class="file-size">File not found</div>
-                        </div>
-                    @endif
-                </div>
-
-                <!-- FOOTER - INFO DIGABUNG (UPLOAD + DIMENSI) -->
-                <div class="attachment-footer">
-                    <span class="footer-item">📅
-                        {{ $attachment->created_at ? date('d F Y, H:i', strtotime($attachment->created_at)) : '-' }}</span>
-                    <span class="separator">|</span>
-                    @if (isset($imageInfo))
-                        <span class="footer-item">📷 {{ $width }} x {{ $height }}
-                            ({{ $isLandscape ? 'Landscape' : 'Portrait' }})</span>
-                    @else
-                        <span class="footer-item">📁 {{ strtoupper($fileExtension) }} file</span>
-                    @endif
+    <div class="photo-grid {{ count($imageAttachments) == 1 ? 'single-photo' : '' }}">
+        @foreach ($imageAttachments as $attachment)
+            <div class="photo-item">
+                <img src="{{ $attachment->url }}" alt="{{ $attachment->file_name }}" loading="lazy">
+                <div class="photo-caption">
+                    <strong>{{ $attachment->file_name }}</strong><br>
+                    {{ $helper->formatDate($attachment->created_at, 'd/m/Y H:i') }}
+                    ({{ number_format($attachment->file_size / 1024, 2) }} KB)
                 </div>
             </div>
         @endforeach
-    @else
-        <div class="attachment-page">
-            <div class="attachment-header">
-                <div class="attachment-title">ATTACHMENTS</div>
-            </div>
-            <div class="attachment-image-container">
-                <div class="file-info-box">
-                    <div class="file-icon">📭</div>
-                    <div class="file-name">No Attachments</div>
-                    <div class="file-size">This ticket has no attachments</div>
-                </div>
-            </div>
+    </div>
+
+    @if (count($imageAttachments) == 0)
+        <div style="text-align: center; padding: 50px; color: #999;">
+            <p>No image attachments found</p>
         </div>
     @endif
+
+    <script>
+        function triggerPrint() {
+            document.getElementById('printModalOverlay').style.display = 'none';
+            document.querySelector('.print-content').style.display = 'block';
+            setTimeout(function() {
+                window.print();
+            }, 500);
+        }
+
+        @if (request()->has('print'))
+            if (window.innerWidth > 768) {
+                window.onload = function() {
+                    setTimeout(function() {
+                        window.print();
+                    }, 800);
+                };
+            }
+        @endif
+    </script>
 </body>
 
 </html>

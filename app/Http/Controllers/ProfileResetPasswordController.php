@@ -10,6 +10,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -23,11 +24,33 @@ class ProfileResetPasswordController extends Controller
     {
         $request->validate([
             'email' => 'required|email|exists:users,email',
+            'captcha' => 'required|captcha',
         ], [
             'email.exists' => 'Email address not found in our records.'
         ]);
 
         $user = User::where('email', $request->email)->first();
+
+        // ✅ TAMBAHKAN: Cek apakah sudah ada request dalam 10 menit terakhir
+        $lastRequest = DB::table('password_resets')
+            ->where('email', $request->email)
+            ->where('created_at', '>=', Carbon::now()->subMinutes(10))
+            ->first();
+
+        if ($lastRequest) {
+            ActivityLog::create([
+                'user_id' => auth()->id() ?: null,
+                'action' => 'password_reset_failed',
+                'description' => 'Rate limit exceeded for email: ' . $request->email,
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->userAgent(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Please wait 10 minutes before requesting another reset link.'
+            ], 429); // 429 = Too Many Requests
+        }
 
         // Generate token
         $token = Str::random(64);
@@ -49,7 +72,7 @@ class ProfileResetPasswordController extends Controller
             // Log activity
             ActivityLog::create([
                 'user_id' => $user->id,
-                'action' => 'profile_password_reset_requested',
+                'action' => 'password_reset_requested',
                 'description' => 'Password reset link sent from profile to: ' . $request->email,
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->userAgent(),
@@ -61,6 +84,7 @@ class ProfileResetPasswordController extends Controller
             ]);
 
         } catch (\Exception $e) {
+            Log::error('Profile password reset error: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to send reset link. Please try again later.'
@@ -75,11 +99,11 @@ class ProfileResetPasswordController extends Controller
     {
         $resetLink = route('profile.password.reset', ['token' => $token, 'email' => $user->email]);
 
-        Mail::send('emails.password-reset', [ // Gunakan template yang sama
+        Mail::send('emails.password-reset', [
             'user' => $user,
             'resetLink' => $resetLink,
             'expiry' => Carbon::now()->addHours(1),
-            'source' => $source // Tandai source
+            'source' => $source
         ], function ($message) use ($user) {
             $message->to($user->email, $user->name)
                 ->subject('Reset Your Password - ' . config('app.name'));
@@ -185,7 +209,7 @@ class ProfileResetPasswordController extends Controller
         // Log activity
         ActivityLog::create([
             'user_id' => $user->id,
-            'action' => 'profile_password_reset_completed',
+            'action' => 'password_reset',
             'description' => 'Password reset completed via profile for: ' . $request->email,
             'ip_address' => $request->ip(),
             'user_agent' => $request->userAgent(),

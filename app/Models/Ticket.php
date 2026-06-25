@@ -31,14 +31,21 @@ class Ticket extends Model
         'closed_at'
     ];
 
-    protected $casts = [
-        'due_date' => 'datetime',
-        'resolved_at' => 'datetime',
-        'closed_at' => 'datetime',
-        'created_at' => 'datetime',
-        'updated_at' => 'datetime',
-
-    ];
+   protected $casts = [
+    'due_date' => 'datetime',
+    'resolved_at' => 'datetime',
+    'closed_at' => 'datetime',
+    'created_at' => 'datetime',
+    'updated_at' => 'datetime',
+    
+    // Casting ID ke integer (fix perbandingan di hosting)
+    'assigned_to' => 'integer',
+    'user_id' => 'integer',
+    'department_id' => 'integer',
+    'category_id' => 'integer',
+    'priority_id' => 'integer',
+    'location_id' => 'integer',
+];
 
     // Di dalam class Ticket (app/Models/Ticket.php)
 // Tambahkan relationship ini:

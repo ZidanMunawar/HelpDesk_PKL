@@ -30,6 +30,20 @@
             font-size: 14px;
         }
 
+        .form-control,
+        .form-select,
+        textarea.form-control {
+            color: #1e1e1e;
+            font-weight: 400;
+        }
+
+        /* Saat typing/input juga tetep hitam */
+        .form-control:focus,
+        .form-select:focus,
+        textarea.form-control:focus {
+            color: #000000 !important;
+        }
+
         /* Length Menu Styling */
         #locationsTable_wrapper .dataTables_length select {
             padding: 8px 35px 8px 15px;

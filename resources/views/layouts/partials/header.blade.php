@@ -11,33 +11,10 @@
                     </div>
                 </div>
                 <ul class="navbar-nav header-right">
-                    <!-- Search Area -->
-                    <li class="nav-item">
-                        <div class="input-group search-area d-xl-inline-flex d-none">
-                            <input type="text" class="form-control" placeholder="Search tickets..." id="global-search"
-                                aria-label="Search">
-                            <span class="input-group-text" id="header-search">
-                                <a href="javascript:void(0);">
-                                    <i class="flaticon-381-search-2"></i>
-                                </a>
-                            </span>
-                        </div>
-                    </li>
-
                     <!-- Quick Actions (New Ticket) -->
                     <li class="nav-item">
-                        @if (in_array(auth()->user()->role, ['user', 'technician', 'admin_eng']))
+                        @if (in_array(auth()->user()->role, ['user', 'manager', 'admin_eng']))
                             <a class="nav-link ai-icon" href="{{ route('tickets.create') }}" title="New Ticket">
-                                <svg width="28" height="28" viewBox="0 0 28 28" fill="none"
-                                    xmlns="http://www.w3.org/2000/svg">
-                                    <path
-                                        d="M14 2.33331C7.55667 2.33331 2.33334 7.55665 2.33334 14C2.33334 20.4433 7.55667 25.6666 14 25.6666C20.4433 25.6666 25.6667 20.4433 25.6667 14C25.6667 7.55665 20.4433 2.33331 14 2.33331ZM19.8333 15.1666H15.1667V19.8333H12.8333V15.1666H8.16667V12.8333H12.8333V8.16665H15.1667V12.8333H19.8333V15.1666Z"
-                                        fill="#FF7B00" />
-                                </svg>
-                            </a>
-                        @else
-                            <a class="nav-link ai-icon" href="#" title="Quick Action" data-bs-toggle="modal"
-                                data-bs-target="#quickActionModal">
                                 <svg width="28" height="28" viewBox="0 0 28 28" fill="none"
                                     xmlns="http://www.w3.org/2000/svg">
                                     <path
@@ -50,8 +27,7 @@
 
                     <!-- Notifications Dropdown -->
                     <li class="nav-item dropdown notification_dropdown">
-                        <a class="nav-link ai-icon" href="{{ route('notifications.index') }}" role="button"
-                            data-bs-toggle="dropdown">
+                        <a class="nav-link ai-icon" href="javascript:void(0)" role="button" data-bs-toggle="dropdown">
                             <svg width="28" height="28" viewBox="0 0 28 28" fill="none"
                                 xmlns="http://www.w3.org/2000/svg">
                                 <path fill-rule="evenodd" clip-rule="evenodd"
@@ -62,57 +38,140 @@
                                 $unreadCount = auth()->user()->unreadNotifications()->count();
                             @endphp
                             @if ($unreadCount > 0)
-                                <span class="badge light text-white bg-danger rounded-circle">{{ $unreadCount }}</span>
+                                <span class="badge light text-white bg-danger rounded-circle"
+                                    id="headerNotificationBadge">{{ $unreadCount }}</span>
                             @endif
                         </a>
-                        <div class="dropdown-menu rounded dropdown-menu-end">
-                            <div id="DZ_W_Notification1" class="widget-media dz-scroll p-3" style="height:380px;">
-                                <ul class="timeline">
+                        <div class="dropdown-menu rounded dropdown-menu-end" style="min-width: 380px;">
+                            <!-- Dropdown Header dengan All Read Button -->
+                            <div class="d-flex justify-content-between align-items-center px-3 pt-3 pb-2 border-bottom">
+                                <h6 class="mb-0 fw-bold" style="color: var(--primary-navy);">
+                                    <i class="fas fa-bell me-2" style="color: #FF7B00;"></i>Notifications
+                                </h6>
+                                @if ($unreadCount > 0)
+                                    <button class="btn btn-sm btn-link text-decoration-none"
+                                        onclick="markAllNotificationsRead(event)"
+                                        style="color: #FF7B00; font-size: 12px;">
+                                        <i class="fas fa-check-double me-1"></i>Mark All Read
+                                    </button>
+                                @endif
+                            </div>
+
+                            <!-- Notification List -->
+                            <div id="DZ_W_Notification1" class="widget-media dz-scroll p-3" style="height:350px;">
+                                <ul class="timeline" id="headerNotificationList">
                                     @forelse(auth()->user()->notifications()->latest()->take(5)->get() as $notification)
-                                        <li>
-                                            <div class="timeline-panel">
-                                                <div class="media me-2">
-                                                    @if ($notification->ticket && $notification->ticket->user)
-                                                        <div class="profile-image-container"
-                                                            style="width: 50px; height: 50px; border-radius: 50%; overflow: hidden; background-color: #f0f0f0;">
-                                                            <img alt="{{ $notification->ticket->user->name }}"
-                                                                src="{{ $notification->ticket->user->profile_picture_url }}"
-                                                                style="width: 100%; height: 100%; object-fit: cover; object-position: center;">
-                                                        </div>
-                                                    @else
-                                                        <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center"
-                                                            style="width: 50px; height: 50px;">
-                                                            <i class="fa fa-bell"></i>
-                                                        </div>
-                                                    @endif
+                                        <li class="notification-item {{ !$notification->is_read ? 'unread' : '' }}"
+                                            data-id="{{ $notification->id }}"
+                                            style="{{ !$notification->is_read ? 'background: #fff9f5; border-left: 3px solid #FF7B00;' : '' }} padding: 10px; border-radius: 8px; margin-bottom: 8px;">
+                                            <div class="timeline-panel d-flex">
+                                                <div class="me-3">
+                                                    @php
+                                                        $iconMap = [
+                                                            'info' => ['icon' => 'info-circle', 'color' => '#3498db'],
+                                                            'success' => [
+                                                                'icon' => 'check-circle',
+                                                                'color' => '#2ecc71',
+                                                            ],
+                                                            'warning' => [
+                                                                'icon' => 'exclamation-triangle',
+                                                                'color' => '#f39c12',
+                                                            ],
+                                                            'danger' => [
+                                                                'icon' => 'times-circle',
+                                                                'color' => '#e74c3c',
+                                                            ],
+                                                            'error' => ['icon' => 'times-circle', 'color' => '#e74c3c'],
+                                                            'approval' => [
+                                                                'icon' => 'clipboard-check',
+                                                                'color' => '#1a2b4c',
+                                                            ],
+                                                            'assignment' => [
+                                                                'icon' => 'user-plus',
+                                                                'color' => '#27ae60',
+                                                            ],
+                                                            'vr_request' => [
+                                                                'icon' => 'file-invoice-dollar',
+                                                                'color' => '#e67e22',
+                                                            ],
+                                                            'closure' => [
+                                                                'icon' => 'check-circle',
+                                                                'color' => '#27ae60',
+                                                            ],
+                                                            'comment' => ['icon' => 'comment', 'color' => '#3498db'],
+                                                            'broadcast' => ['icon' => 'bullhorn', 'color' => '#FF7B00'],
+                                                        ];
+                                                        $iconData = $iconMap[$notification->type] ?? [
+                                                            'icon' => 'bell',
+                                                            'color' => '#95a5a6',
+                                                        ];
+                                                    @endphp
+                                                    <div class="rounded-circle d-flex align-items-center justify-content-center"
+                                                        style="width: 40px; height: 40px; background: {{ $iconData['color'] }}15;">
+                                                        <i class="fas fa-{{ $iconData['icon'] }}"
+                                                            style="color: {{ $iconData['color'] }}; font-size: 18px;"></i>
+                                                    </div>
                                                 </div>
-                                                <div class="media-body">
-                                                    <h6 class="mb-1">{{ $notification->title }}</h6>
-                                                    <small
-                                                        class="d-block">{{ $notification->created_at->diffForHumans() }}</small>
-                                                    @if ($notification->ticket)
-                                                        <a href="{{ route('tickets.show', $notification->ticket->id) }}"
-                                                            class="badge badge-sm badge-primary mt-1">
-                                                            {{ $notification->ticket->ticket_number }}
-                                                        </a>
-                                                    @endif
+                                                <div class="flex-grow-1">
+                                                    <div class="d-flex justify-content-between align-items-start">
+                                                        <h6 class="mb-1 fw-semibold"
+                                                            style="font-size: 13px; color: #333;">
+                                                            {{ $notification->title }}</h6>
+                                                        @if (!$notification->is_read)
+                                                            <span class="badge badge-xs"
+                                                                style="background: #FF7B00; color: white; font-size: 9px;">NEW</span>
+                                                        @endif
+                                                    </div>
+                                                    <p class="mb-1 text-muted"
+                                                        style="font-size: 11px; line-height: 1.4;">
+                                                        {{ \Illuminate\Support\Str::limit($notification->message, 60) }}
+                                                    </p>
+                                                    <div class="d-flex justify-content-between align-items-center mt-2">
+                                                        <small class="text-muted" style="font-size: 10px;">
+                                                            <i
+                                                                class="far fa-clock me-1"></i>{{ $notification->created_at->diffForHumans() }}
+                                                        </small>
+                                                        <div>
+                                                            @if ($notification->ticket_id)
+                                                                <a href="{{ route('tickets.show', $notification->ticket_id) }}"
+                                                                    class="badge badge-sm text-decoration-none"
+                                                                    style="background: #1a2b4c; color: white; font-size: 10px; padding: 4px 8px;">
+                                                                    <i class="fas fa-ticket-alt me-1"></i>View Ticket
+                                                                </a>
+                                                            @endif
+                                                            @if (!$notification->is_read)
+                                                                <button
+                                                                    class="badge badge-sm border-0 ms-1 mark-single-read"
+                                                                    onclick="markSingleNotificationRead(event, {{ $notification->id }})"
+                                                                    style="background: #2ecc71; color: white; font-size: 10px; padding: 4px 8px; cursor: pointer;">
+                                                                    <i class="fas fa-check me-1"></i>Read
+                                                                </button>
+                                                            @endif
+                                                        </div>
+                                                    </div>
                                                 </div>
-                                                @if (!$notification->is_read)
-                                                    <span class="badge badge-xs badge-danger">New</span>
-                                                @endif
                                             </div>
                                         </li>
                                     @empty
-                                        <li class="text-center py-3">
-                                            <i class="fa fa-bell-slash fa-2x text-muted mb-2"></i>
-                                            <p class="text-muted">No notifications</p>
+                                        <li class="text-center py-4">
+                                            <div class="mb-3">
+                                                <i class="fas fa-bell-slash fa-3x" style="color: #ddd;"></i>
+                                            </div>
+                                            <p class="text-muted mb-0" style="font-size: 13px;">No notifications yet</p>
+                                            <small class="text-muted">We'll notify you when something arrives</small>
                                         </li>
                                     @endforelse
                                 </ul>
                             </div>
-                            <a class="all-notification" href="{{ route('notifications.index') }}">
-                                See all notifications <i class="ti-arrow-right"></i>
-                            </a>
+
+                            <!-- Dropdown Footer -->
+                            <div class="border-top p-2">
+                                <a class="all-notification d-block text-center py-2 text-decoration-none"
+                                    href="{{ route('notifications.index') }}"
+                                    style="color: #FF7B00; font-size: 13px; font-weight: 500;">
+                                    <i class="fas fa-arrow-right me-2"></i>See All Notifications
+                                </a>
+                            </div>
                         </div>
                     </li>
 
@@ -130,56 +189,25 @@
                             </div>
                         </a>
                         <div class="dropdown-menu dropdown-menu-end">
+                            <!-- Profile -->
                             <a href="{{ route('profile.index') }}" class="dropdown-item ai-icon">
-                                <svg id="icon-user1" xmlns="http://www.w3.org/2000/svg" class="text-primary"
-                                    width="18" height="18" viewBox="0 0 24 24" fill="none"
-                                    stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                    stroke-linejoin="round">
-                                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                                    <circle cx="12" cy="7" r="4"></circle>
-                                </svg>
-                                <span class="ms-2">Profile</span>
+                                <i class="fas fa-user-circle text-primary me-2"></i>
+                                <span>Profile</span>
                             </a>
-                            <a href="#" class="dropdown-item ai-icon">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="text-info" width="18"
-                                    height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <path
-                                        d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z">
-                                    </path>
-                                    <circle cx="12" cy="12" r="3"></circle>
-                                </svg>
-                                <span class="ms-2">Settings</span>
+
+                            <!-- Settings - TAMBAHKAN INI! -->
+                            <a href="{{ route('settings.index') }}" class="dropdown-item ai-icon">
+                                <i class="fas fa-cog text-warning me-2"></i>
+                                <span>Settings</span>
                             </a>
-                            <a href="#" class="dropdown-item ai-icon">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="text-success" width="18"
-                                    height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <path
-                                        d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z">
-                                    </path>
-                                    <polyline points="22,6 12,13 2,6"></polyline>
-                                </svg>
-                                <span class="ms-2">Inbox
-                                    <span class="badge badge-xs badge-danger ms-1">3</span>
-                                </span>
+
+                            <div class="dropdown-divider"></div>
+
+                            <!-- Logout -->
+                            <a href="javascript:void(0)" onclick="confirmLogout()" class="dropdown-item ai-icon">
+                                <i class="fas fa-sign-out-alt text-danger me-2"></i>
+                                <span>Logout</span>
                             </a>
-                            <a href="javascript:void(0)" onclick="confirmHeaderLogout()"
-                                class="dropdown-item ai-icon">
-                                <svg id="icon-logout" xmlns="http://www.w3.org/2000/svg" class="text-danger"
-                                    width="18" height="18" viewBox="0 0 24 24" fill="none"
-                                    stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                    stroke-linejoin="round">
-                                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-                                    <polyline points="16 17 21 12 16 7"></polyline>
-                                    <line x1="21" y1="12" x2="9" y2="12"></line>
-                                </svg>
-                                <span class="ms-2">Logout</span>
-                            </a>
-                            <form id="logout-form" action="{{ route('logout') }}" method="POST"
-                                style="display: none;">
-                                @csrf
-                            </form>
                         </div>
                     </li>
                 </ul>
@@ -192,6 +220,9 @@
 ***********************************-->
 
 <script>
+    // =============================================
+    // FUNGSI HEADER - LOGOUT
+    // =============================================
     function confirmHeaderLogout() {
         Swal.fire({
             title: 'Logout?',
@@ -209,4 +240,346 @@
             }
         });
     }
+
+    // =============================================
+    // FUNGSI GLOBAL UNTUK SINKRONISASI
+    // =============================================
+
+    // Update badge di header
+    function updateHeaderBadge() {
+        $.ajax({
+            url: "{{ route('notifications.unread-count') }}",
+            method: 'GET',
+            success: function(response) {
+                const $badge = $('#headerNotificationBadge');
+
+                if (response.count > 0) {
+                    if ($badge.length) {
+                        $badge.text(response.count);
+                    } else {
+                        $('.notification_dropdown .nav-link').append(
+                            '<span class="badge light text-white bg-danger rounded-circle" id="headerNotificationBadge">' +
+                            response.count + '</span>'
+                        );
+                    }
+                } else {
+                    $badge.remove();
+                    $('button[onclick="markAllNotificationsRead(event)"]').remove();
+                }
+            }
+        });
+    }
+
+    // Refresh daftar notifikasi di header
+    function refreshHeaderNotificationList() {
+        $.ajax({
+            url: "{{ route('notifications.latest') }}",
+            method: 'GET',
+            success: function(notifications) {
+                const $list = $('#headerNotificationList');
+
+                if (!notifications || notifications.length === 0) {
+                    $list.html(`
+                        <li class="text-center py-4">
+                            <div class="mb-3">
+                                <i class="fas fa-bell-slash fa-3x" style="color: #ddd;"></i>
+                            </div>
+                            <p class="text-muted mb-0" style="font-size: 13px;">No notifications yet</p>
+                            <small class="text-muted">We'll notify you when something arrives</small>
+                        </li>
+                    `);
+                    return;
+                }
+
+                let html = '';
+                notifications.forEach(notif => {
+                    const isUnread = !notif.is_read;
+                    const iconMap = {
+                        info: {
+                            icon: 'info-circle',
+                            color: '#3498db'
+                        },
+                        success: {
+                            icon: 'check-circle',
+                            color: '#2ecc71'
+                        },
+                        warning: {
+                            icon: 'exclamation-triangle',
+                            color: '#f39c12'
+                        },
+                        danger: {
+                            icon: 'times-circle',
+                            color: '#e74c3c'
+                        },
+                        approval: {
+                            icon: 'clipboard-check',
+                            color: '#1a2b4c'
+                        },
+                        assignment: {
+                            icon: 'user-plus',
+                            color: '#27ae60'
+                        },
+                        vr_request: {
+                            icon: 'file-invoice-dollar',
+                            color: '#e67e22'
+                        },
+                        closure: {
+                            icon: 'check-circle',
+                            color: '#27ae60'
+                        },
+                        comment: {
+                            icon: 'comment',
+                            color: '#3498db'
+                        },
+                        broadcast: {
+                            icon: 'bullhorn',
+                            color: '#FF7B00'
+                        }
+                    };
+                    const iconData = iconMap[notif.type] || {
+                        icon: 'bell',
+                        color: '#95a5a6'
+                    };
+
+                    html += `
+                        <li class="notification-item ${isUnread ? 'unread' : ''}"
+                            data-id="${notif.id}"
+                            style="${isUnread ? 'background: #fff9f5; border-left: 3px solid #FF7B00;' : ''} padding: 10px; border-radius: 8px; margin-bottom: 8px; cursor: pointer;">
+                            <div class="timeline-panel d-flex">
+                                <div class="me-3">
+                                    <div class="rounded-circle d-flex align-items-center justify-content-center"
+                                        style="width: 40px; height: 40px; background: ${iconData.color}15;">
+                                        <i class="fas fa-${iconData.icon}"
+                                            style="color: ${iconData.color}; font-size: 18px;"></i>
+                                    </div>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <h6 class="mb-1 fw-semibold" style="font-size: 13px; color: #333;">
+                                            ${escapeHtml(notif.title)}</h6>
+                                        ${isUnread ? '<span class="badge badge-xs" style="background: #FF7B00; color: white; font-size: 9px;">NEW</span>' : ''}
+                                    </div>
+                                    <p class="mb-1 text-muted" style="font-size: 11px; line-height: 1.4;">
+                                        ${escapeHtml(notif.message.substring(0, 60))}${notif.message.length > 60 ? '...' : ''}
+                                    </p>
+                                    <div class="d-flex justify-content-between align-items-center mt-2">
+                                        <small class="text-muted" style="font-size: 10px;">
+                                            <i class="far fa-clock me-1"></i>${notif.time}
+                                        </small>
+                                        <div>
+                                            ${notif.ticket_id ? `<a href="{{ url('tickets') }}/${notif.ticket_id}" class="badge badge-sm text-decoration-none" style="background: #1a2b4c; color: white; font-size: 10px; padding: 4px 8px;" onclick="event.stopPropagation();">
+                                                <i class="fas fa-ticket-alt me-1"></i>View Ticket
+                                            </a>` : ''}
+                                            ${isUnread ? `<button class="badge badge-sm border-0 ms-1 mark-single-read" onclick="markSingleNotificationRead(event, ${notif.id})" style="background: #2ecc71; color: white; font-size: 10px; padding: 4px 8px; cursor: pointer;">
+                                                <i class="fas fa-check me-1"></i>Read
+                                            </button>` : ''}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </li>
+                    `;
+                });
+
+                $list.html(html);
+
+                // Tambahin event click ke seluruh notification item
+                $('.notification-item').off('click').on('click', function(e) {
+                    if ($(e.target).closest('a, button').length) return;
+                    const id = $(this).data('id');
+                    if (id) {
+                        window.location.href = "{{ route('notifications.index') }}";
+                    }
+                });
+            }
+        });
+    }
+
+    // Escape HTML helper
+    function escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    // =============================================
+    // MARK ALL NOTIFICATIONS READ (GLOBAL)
+    // =============================================
+    window.markAllNotificationsRead = function(event) {
+        if (event) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
+
+        $.ajax({
+            url: "{{ route('notifications.mark-all-read') }}",
+            method: 'POST',
+            data: {
+                _token: "{{ csrf_token() }}"
+            },
+            success: function(response) {
+                if (response.success) {
+                    // Update header
+                    $('#headerNotificationList .notification-item').css({
+                        'background': 'transparent',
+                        'border-left': 'none'
+                    });
+                    $('#headerNotificationList .notification-item .badge-danger, #headerNotificationList .notification-item span[style*="background: #FF7B00"]')
+                        .remove();
+                    $('#headerNotificationList .mark-single-read').remove();
+                    $('#headerNotificationBadge').remove();
+                    $('button[onclick="markAllNotificationsRead(event)"]').remove();
+
+                    // Refresh header list
+                    refreshHeaderNotificationList();
+
+                    // Jika halaman notifikasi sedang terbuka, refresh juga
+                    if (typeof loadNotifications === 'function') {
+                        let url = "{{ route('notifications.index') }}?";
+                        const type = $('#filterType').val();
+                        const startDate = $('#startDateFilter').val();
+                        const endDate = $('#endDateFilter').val();
+
+                        if (type && type !== 'all') url += "type=" + type + "&";
+                        if (startDate) url += "start_date=" + startDate + "&";
+                        if (endDate) url += "end_date=" + endDate + "&";
+
+                        loadNotifications(url);
+                    }
+
+                    toastr.success('All notifications marked as read');
+                }
+            },
+            error: function() {
+                toastr.error('Failed to mark all as read');
+            }
+        });
+    };
+
+    // =============================================
+    // MARK SINGLE NOTIFICATION READ (GLOBAL)
+    // =============================================
+    window.markSingleNotificationRead = function(event, id) {
+        if (event) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
+
+        const $item = $(event.target).closest('.notification-item');
+
+        $.ajax({
+            url: "{{ url('notifications') }}/mark-read/" + id,
+            method: 'POST',
+            data: {
+                _token: "{{ csrf_token() }}"
+            },
+            success: function(response) {
+                if (response.success) {
+                    // Update header
+                    $item.css({
+                        'background': 'transparent',
+                        'border-left': 'none'
+                    });
+                    $item.find('.badge-danger, span[style*="background: #FF7B00"]').remove();
+                    $item.find('.mark-single-read').remove();
+
+                    // Update badge count
+                    const $badge = $('#headerNotificationBadge');
+                    if ($badge.length) {
+                        const count = parseInt($badge.text()) - 1;
+                        if (count > 0) {
+                            $badge.text(count);
+                        } else {
+                            $badge.remove();
+                            $('button[onclick="markAllNotificationsRead(event)"]').remove();
+                        }
+                    }
+
+                    // Refresh header list
+                    refreshHeaderNotificationList();
+
+                    // Jika halaman notifikasi sedang terbuka, refresh juga
+                    if (typeof loadNotifications === 'function') {
+                        let url = "{{ route('notifications.index') }}?";
+                        const type = $('#filterType').val();
+                        const startDate = $('#startDateFilter').val();
+                        const endDate = $('#endDateFilter').val();
+                        const currentPage = $('.pagination .active .ajax-page').data('page') || 1;
+
+                        if (type && type !== 'all') url += "type=" + type + "&";
+                        if (startDate) url += "start_date=" + startDate + "&";
+                        if (endDate) url += "end_date=" + endDate + "&";
+                        url += "page=" + currentPage;
+
+                        loadNotifications(url);
+                    }
+
+                    toastr.success('Marked as read');
+                }
+            },
+            error: function() {
+                toastr.error('Failed to mark as read');
+            }
+        });
+    };
+
+    // =============================================
+    // POLLING UPDATE HEADER (SETIAP 30 DETIK)
+    // =============================================
+    setInterval(function() {
+        updateHeaderBadge();
+        refreshHeaderNotificationList();
+    }, 30000);
+
+    // =============================================
+    // INITIAL LOAD
+    // =============================================
+    $(document).ready(function() {
+        updateHeaderBadge();
+    });
 </script>
+
+<style>
+    /* Additional styles for header notifications */
+    .notification_dropdown .dropdown-menu {
+        border: none;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        border-radius: 12px;
+    }
+
+    .notification-item {
+        transition: all 0.2s ease;
+        cursor: pointer;
+    }
+
+    .notification-item:hover {
+        background: #f8f9fa !important;
+    }
+
+    .notification-item.unread {
+        position: relative;
+    }
+
+    .widget-media.dz-scroll {
+        overflow-y: auto;
+    }
+
+    .widget-media.dz-scroll::-webkit-scrollbar {
+        width: 4px;
+    }
+
+    .widget-media.dz-scroll::-webkit-scrollbar-thumb {
+        background: #ddd;
+        border-radius: 4px;
+    }
+
+    .all-notification:hover {
+        background: #fff5eb;
+        border-radius: 8px;
+    }
+
+    .mark-single-read:hover {
+        opacity: 0.8 !important;
+    }
+</style>

@@ -1,14 +1,14 @@
 @extends('layouts.main')
 
-@section('title', 'Create New Ticket | ' . config('app.name'))
+@section('title', 'Create New MR | ' . config('app.name'))
 
-@section('page-title', 'Create New Ticket')
+@section('page-title', 'Create New Maintenance Request')
 
 @section('breadcrumb')
     @php
         $breadcrumb = [
-            ['title' => 'Tickets', 'url' => route('tickets.index')],
-            ['title' => 'Create New Ticket', 'url' => 'javascript:void(0)'],
+            ['title' => 'Maintenance Requests', 'url' => route('tickets.index')],
+            ['title' => 'Create New MR', 'url' => 'javascript:void(0)'],
         ];
     @endphp
     @include('layouts.partials.breadcrumb')
@@ -21,8 +21,8 @@
 
     <style>
         /* ============================================
-                                                                                                            RESET & BASE STYLES
-                                                                                                        ============================================ */
+                                                                   RESET & BASE STYLES
+                                                                ============================================ */
         * {
             margin: 0;
             padding: 0;
@@ -35,8 +35,8 @@
         }
 
         /* ============================================
-                                                                                                            MAIN CARD STYLING
-                                                                                                        ============================================ */
+                                                                   MAIN CARD STYLING
+                                                                ============================================ */
         .form-card {
             background: white;
             border-radius: 10px;
@@ -45,7 +45,6 @@
             overflow: hidden;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
             max-width: 250mm;
-            /* Lebar A4 */
             margin-left: auto;
             margin-right: auto;
         }
@@ -55,8 +54,8 @@
         }
 
         /* ============================================
-                                                                                                            FORM ELEMENTS - WARNA TEKS HITAM!
-                                                                                                        ============================================ */
+                                                                   FORM ELEMENTS
+                                                                ============================================ */
         .form-label {
             font-weight: 600;
             color: #333;
@@ -65,7 +64,6 @@
             display: block;
         }
 
-        /* Semua input, select, textarea wajib hitam */
         .form-control,
         .form-select,
         textarea.form-control,
@@ -82,7 +80,6 @@
             color: #000000 !important;
         }
 
-        /* Saat focus tetap hitam */
         .form-control:focus,
         .form-select:focus,
         textarea.form-control:focus,
@@ -94,7 +91,6 @@
             color: #000000 !important;
         }
 
-        /* Placeholder tetap abu-abu */
         .form-control::placeholder,
         .form-select::placeholder,
         textarea.form-control::placeholder,
@@ -104,43 +100,38 @@
         }
 
         /* ============================================
-                                                                                                            DESCRIPTION BOX - FIX UKURAN SEPERTI REPORT!
-                                                                                                            MONOSPACE FONT - 200px HEIGHT - FIX WIDTH
-                                                                                                        ============================================ */
+                                                                   DESCRIPTION BOX - SCROLL HORIZONTAL MOBILE ONLY
+                                                                ============================================ */
         .description-wrapper {
             position: relative;
             width: 100%;
             max-width: 793px;
             height: 200px;
-            /* FIX: Lebar box di PDF A4 (210mm = 793px - padding) */
             border: 1px solid #ff6a2a;
             border-radius: 6px;
             background: white;
-            overflow: hidden;
             margin: 0 auto;
-            /* Center jika lebih kecil dari container */
+            overflow: hidden;
         }
 
         .description-wrapper textarea {
             width: 793px !important;
-            /* FIX: Lebar persis seperti di report */
             min-width: 793px !important;
             max-width: 793px !important;
             min-height: 200px !important;
             height: 200px !important;
             max-height: 200px !important;
             padding: 8px 10px;
-            /* Padding persis seperti di report */
             font-family: 'Lucida Console', Monaco, monospace !important;
             font-size: 10pt !important;
             line-height: 1.2 !important;
             resize: none !important;
-            overflow: hidden !important;
             border: none;
             background: transparent;
             color: #000000 !important;
             display: block;
             margin: 0 auto;
+            overflow: hidden;
         }
 
         .description-wrapper textarea:focus {
@@ -148,82 +139,52 @@
             box-shadow: inset 0 0 0 2px rgba(255, 98, 0, 0.1);
         }
 
-        /* Character counter styling */
-        .char-counter {
-            font-size: 11px;
-            color: #999;
-            margin-top: 4px;
-            text-align: right;
-            transition: all 0.3s ease;
-            font-weight: 500;
-        }
-
-        .char-counter.warning {
-            color: #ff6200;
-            font-weight: 600;
-        }
-
-        .char-counter.danger {
-            color: #dc3545;
-            font-weight: bold;
-        }
-
-        /* Live preview box (untuk visualisasi batas) */
-        .preview-box {
-            background: #f8f9fa;
-            border: 1px dashed #ff6200;
+        .description-wrapper::-webkit-scrollbar {
+            height: 8px;
+            background-color: #f1f1f1;
             border-radius: 4px;
-            padding: 8px 12px;
-            margin-top: 10px;
-            font-size: 11px;
-            max-width: 773px;
-            margin-left: auto;
-            margin-right: auto;
         }
 
-        .preview-box .label {
-            font-weight: 600;
-            color: #ff6200;
-            display: block;
-            margin-bottom: 5px;
-        }
-
-        .preview-box .stats {
-            display: flex;
-            gap: 15px;
-            flex-wrap: wrap;
-        }
-
-        .preview-box .stat-item {
-            flex: 1;
-            min-width: 120px;
-        }
-
-        .preview-box .stat-value {
-            font-size: 14px;
-            font-weight: 600;
-            color: #333;
-        }
-
-        .preview-box .stat-label {
-            font-size: 10px;
-            color: #666;
-        }
-
-        .overflow-indicator {
-            background: #dc3545;
-            color: white;
-            padding: 4px 8px;
+        .description-wrapper::-webkit-scrollbar-thumb {
+            background: #ff6a2a;
             border-radius: 4px;
-            font-size: 11px;
-            font-weight: 600;
-            display: inline-block;
-            margin-top: 5px;
+        }
+
+        .description-wrapper::-webkit-scrollbar-thumb:hover {
+            background: #ff6200;
+        }
+
+        .description-wrapper::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+
+        .description-wrapper {
+            scrollbar-width: thin;
+            scrollbar-color: #ff6a2a #f1f1f1;
+        }
+
+        @media (max-width: 820px) {
+            .description-wrapper {
+                overflow-x: auto !important;
+                overflow-y: hidden !important;
+            }
+
+            .description-wrapper textarea {
+                width: 793px !important;
+                min-width: 793px !important;
+            }
+        }
+
+        @media (min-width: 821px) {
+            .description-wrapper {
+                overflow: hidden !important;
+            }
         }
 
         /* ============================================
-                                                                                                            SELECT2 CUSTOMIZATION
-                                                                                                        ============================================ */
+                                                                   SELECT2 CUSTOMIZATION
+                                                                ============================================ */
         .select2-container {
             width: 100% !important;
         }
@@ -288,13 +249,12 @@
         }
 
         /* ============================================
-                                                                                                            SECTION HEADERS
-                                                                                                        ============================================ */
+                                                                   SECTION HEADERS
+                                                                ============================================ */
         .section-header {
             padding: 12px 15px;
             background: #f8f9fa;
             border-bottom: 1px solid #eaeaea;
-            font-weight: 600;
             margin: 20px -20px 15px -20px;
             font-size: 14px;
             color: #333;
@@ -309,8 +269,8 @@
         }
 
         /* ============================================
-                                                                                                            LOCATION SELECTION
-                                                                                                        ============================================ */
+                                                                   LOCATION SELECTION
+                                                                ============================================ */
         .location-type-group {
             display: flex;
             gap: 10px;
@@ -393,8 +353,8 @@
         }
 
         /* ============================================
-                                                                                                            SIGNATURE SECTION
-                                                                                                        ============================================ */
+                                                                   SIGNATURE SECTION
+                                                                ============================================ */
         .signature-section {
             background: #f9f9f9;
             border: 1px solid #eaeaea;
@@ -454,7 +414,6 @@
             animation: fadeIn 0.3s ease;
         }
 
-        /* Signature Canvas - 300x200 */
         .signature-canvas-container {
             width: 100%;
             max-width: 320px;
@@ -491,7 +450,6 @@
             margin-top: 8px;
         }
 
-        /* Signature instructions */
         .signature-instructions {
             background: #f8f9fa;
             border-left: 4px solid #ff6200;
@@ -500,71 +458,35 @@
             font-size: 13px;
         }
 
-        /* Manager Signature Card */
-        .manager-signature-card {
-            background: white;
-            border: 2px solid #e0e0e0;
+        /* Saved Signature Card */
+        .saved-signature-card {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
             border-radius: 8px;
             padding: 15px;
-            margin-top: 15px;
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            flex-wrap: wrap;
+            margin-bottom: 15px;
         }
 
-        .manager-signature-card.has-signature {
-            border-color: #28a745;
-            background: #f0fff0;
+        .saved-signature-img {
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 5px;
+            background: white;
         }
 
-        .manager-signature-preview {
-            max-width: 200px;
-            max-height: 60px;
-            object-fit: contain;
-            background: transparent;
-        }
-
-        .manager-signature-info {
-            flex: 1;
-        }
-
-        .manager-signature-name {
+        .signature-role-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 10px;
             font-weight: 600;
-            color: #333;
-            margin-bottom: 4px;
-        }
-
-        .manager-signature-date {
-            font-size: 11px;
-            color: #666;
-        }
-
-        .manager-signature-badge {
-            background: #28a745;
-            color: white;
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 500;
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-        }
-
-        .manager-signature-note {
-            background: #fff3cd;
-            border: 1px solid #ffeeba;
-            border-radius: 6px;
-            padding: 10px 15px;
-            margin-top: 10px;
-            font-size: 13px;
-            color: #856404;
+            background: #e9ecef;
+            color: #495057;
         }
 
         /* ============================================
-                                                                                                            BUTTONS
-                                                                                                        ============================================ */
+                                                                   BUTTONS
+                                                                ============================================ */
         .btn-submit-ticket {
             background: linear-gradient(135deg, #ff7b00, #ff6200);
             border: none;
@@ -614,8 +536,8 @@
         }
 
         /* ============================================
-                                                                                                            FILE UPLOAD
-                                                                                                        ============================================ */
+                                                                   FILE UPLOAD
+                                                                ============================================ */
         .file-upload-area {
             border: 2px dashed #ddd;
             border-radius: 6px;
@@ -740,8 +662,8 @@
         }
 
         /* ============================================
-                                                                                                            REQUIRED FIELD
-                                                                                                        ============================================ */
+                                                                   REQUIRED FIELD
+                                                                ============================================ */
         .required-mark {
             color: #dc3545;
             margin-left: 2px;
@@ -755,8 +677,8 @@
         }
 
         /* ============================================
-                                                                                                            VALIDATION
-                                                                                                        ============================================ */
+                                                                   VALIDATION
+                                                                ============================================ */
         .is-invalid {
             border-color: #dc3545 !important;
         }
@@ -773,8 +695,8 @@
         }
 
         /* ============================================
-                                                                                                            LOADING STATE
-                                                                                                        ============================================ */
+                                                                   LOADING STATE
+                                                                ============================================ */
         .btn-loading {
             position: relative;
             color: transparent !important;
@@ -792,6 +714,25 @@
             border-top: 2px solid white;
             border-radius: 50%;
             animation: spin 0.8s linear infinite;
+        }
+
+        .char-counter {
+            font-size: 11px;
+            color: #999;
+            margin-top: 4px;
+            text-align: right;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .char-counter.warning {
+            color: #ff6200;
+            font-weight: 600;
+        }
+
+        .char-counter.danger {
+            color: #dc3545;
+            font-weight: bold;
         }
 
         @keyframes spin {
@@ -815,26 +756,6 @@
                 transform: translateY(0);
             }
         }
-
-        /* ============================================
-                                                                                                            MOBILE RESPONSIVE (HANYA UNTUK LAYAR KECIL)
-                                                                                                        ============================================ */
-        @media (max-width: 820px) {
-            .form-card {
-                max-width: 100%;
-                margin: 0 10px;
-            }
-
-            .description-wrapper {
-                overflow-x: auto;
-                /* Scroll horizontal jika layar terlalu kecil */
-            }
-
-            .description-wrapper textarea {
-                width: 773px !important;
-                min-width: 773px !important;
-            }
-        }
     </style>
 @endpush
 
@@ -846,17 +767,17 @@
                     <form id="createTicketForm" enctype="multipart/form-data">
                         @csrf
 
-                        <!-- Ticket Information -->
+                        <!-- MR Information -->
                         <div class="section-header">
                             <i class="fas fa-clipboard-list"></i>
-                            Ticket Information
+                            Maintenance Request Information
                         </div>
 
                         <div class="row">
                             <!-- Title -->
                             <div class="col-md-12 mb-3">
                                 <label class="form-label">
-                                    Ticket Title / Subject <span class="required-mark">*</span>
+                                    MR Title / Subject <span class="required-mark">*</span>
                                 </label>
                                 <input type="text" class="form-control" name="title" id="title"
                                     placeholder="e.g., AC Room 502 tidak dingin" required maxlength="100">
@@ -943,20 +864,36 @@
                                     </div>
                                 </div>
 
-                                <!-- Predefined Location Select -->
+                                <!-- Predefined Location Select dengan Optgroup Hotel POP & HARRIS -->
                                 <div class="location-selection-area active" id="predefinedLocationSection">
                                     <select class="form-control select2" id="location_id" name="location_id">
                                         <option value="">Select Location</option>
-                                        @foreach ($locations->sortBy('name') as $location)
-                                            <option value="{{ $location->id }}">
-                                                {{ $location->name }}
-                                                @if ($location->floor_number)
-                                                    (Floor {{ $location->floor_number }})
-                                                @endif
-                                                - {{ ucfirst($location->hotel) }}
-                                                ({{ ucfirst($location->location_type) }})
-                                            </option>
-                                        @endforeach
+
+                                        <!-- Hotel POP -->
+                                        <optgroup label="🏨 POP HOTEL">
+                                            @foreach ($locations->where('hotel', 'pop')->sortBy('name') as $location)
+                                                <option value="{{ $location->id }}">
+                                                    {{ $location->name }}
+                                                    @if ($location->floor_number)
+                                                        (Floor {{ $location->floor_number }})
+                                                    @endif
+                                                    - {{ ucfirst($location->location_type) }}
+                                                </option>
+                                            @endforeach
+                                        </optgroup>
+
+                                        <!-- Hotel HARRIS -->
+                                        <optgroup label="🏨 HARRIS HOTEL">
+                                            @foreach ($locations->where('hotel', 'harris')->sortBy('name') as $location)
+                                                <option value="{{ $location->id }}">
+                                                    {{ $location->name }}
+                                                    @if ($location->floor_number)
+                                                        (Floor {{ $location->floor_number }})
+                                                    @endif
+                                                    - {{ ucfirst($location->location_type) }}
+                                                </option>
+                                            @endforeach
+                                        </optgroup>
                                     </select>
                                     <div class="invalid-feedback"></div>
                                     @if ($locations->isEmpty())
@@ -964,14 +901,27 @@
                                     @endif
                                 </div>
 
-                                <!-- Manual Location Input -->
+                                <!-- Manual Location Input dengan Pilihan Hotel -->
                                 <div class="location-selection-area" id="manualLocationSection">
-                                    <input type="text" class="form-control manual-location-input"
-                                        id="location_manual_input" name="location_manual"
-                                        placeholder="Enter location manually (e.g., Room 305, Lobby Area, etc.)"
-                                        maxlength="255">
+                                    <div class="row g-2">
+                                        <div class="col-8">
+                                            <input type="text" class="form-control manual-location-input"
+                                                id="location_manual_input" name="location_manual"
+                                                placeholder="Enter location manually (e.g., Room 305, Lobby Area, Back Office, etc.)"
+                                                maxlength="255">
+                                        </div>
+                                        <div class="col-4">
+                                            <select class="form-control" id="manual_location_hotel"
+                                                name="manual_location_hotel"
+                                                style="height: 42px; font-size: 14px; padding: 10px 12px;">
+                                                <option value="harris">Harris</option>
+                                                <option value="pop">Pop</option>
+                                            </select>
+                                        </div>
+                                    </div>
                                     <div class="char-counter" id="locationCounter">0/255</div>
                                     <div class="invalid-feedback"></div>
+                                    <small class="form-text">Enter location name manually and select which hotel</small>
                                 </div>
                             </div>
 
@@ -986,7 +936,7 @@
                             </div>
                         </div>
 
-                        <!-- Description dengan TEXTAREA - FIX 773px WIDTH, 200px HEIGHT, MONOSPACE FONT -->
+                        <!-- Description -->
                         <div class="section-header">
                             <i class="fas fa-align-left"></i>
                             Detailed Description
@@ -1000,45 +950,13 @@
 
                                 <div class="description-wrapper">
                                     <textarea class="form-control" name="description" id="description" rows="8"
-                                        placeholder="Describe the issue in detail... (Monospace font - exactly like PDF report - 773px width × 200px height)"
-                                        required></textarea>
-                                </div>
-
-                                <!-- Live Preview Box - Menampilkan statistik realtime -->
-                                <div class="preview-box" id="previewBox">
-                                    <span class="label"><i class="fas fa-ruler"></i> LIVE PREVIEW (EXACT PDF
-                                        DIMENSIONS)</span>
-                                    <div class="stats">
-                                        <div class="stat-item">
-                                            <span class="stat-value" id="charCount">0</span>
-                                            <span class="stat-label">Characters</span>
-                                        </div>
-                                        <div class="stat-item">
-                                            <span class="stat-value" id="lineCount">0</span>
-                                            <span class="stat-label">Lines</span>
-                                        </div>
-                                        <div class="stat-item">
-                                            <span class="stat-value">200px</span>
-                                            <span class="stat-label">Box Height</span>
-                                        </div>
-                                        <div class="stat-item">
-                                            <span class="stat-value">773px</span>
-                                            <span class="stat-label">Box Width</span>
-                                        </div>
-                                    </div>
-                                    <div id="overflowWarning" style="display: none;" class="overflow-indicator">
-                                        <i class="fas fa-exclamation-triangle"></i> TEXT OVERFLOW! Melebihi tinggi box
-                                        200px
-                                    </div>
+                                        placeholder="Describe the issue in detail..." required></textarea>
                                 </div>
 
                                 <div class="invalid-feedback"></div>
                                 <small class="form-text">
                                     <i class="fas fa-info-circle"></i>
-                                    <strong>Dimensions: 773px width × 200px height | Font: Courier New 10pt (monospace) |
-                                        Line-height: 1.2</strong> - EXACTLY like PDF report.
-                                    All characters have same width for accurate calculation. Text auto-truncated if exceeds
-                                    200px.
+                                    <strong>Max 12 lines visible, text will auto-truncate if exceeded.</strong>
                                 </small>
                             </div>
                         </div>
@@ -1066,8 +984,7 @@
                         <div class="signature-section">
                             <div class="signature-info">
                                 <i class="fas fa-info-circle"></i>
-                                <strong>Signature Required:</strong> Your signature is required as the reporter of this
-                                ticket. Canvas size: 300 x 200 pixels.
+                                <strong>Signature Required:</strong> Your signature is required as the reporter of this MR.
                             </div>
 
                             <div class="row">
@@ -1076,12 +993,50 @@
                                         Your Signature (As Reporter) <span class="required-mark">*</span>
                                     </label>
 
-                                    <button type="button" class="signature-btn" id="openSignatureModal">
-                                        <i class="fas fa-signature"></i>
-                                        Click to Sign (300x200)
-                                    </button>
+                                    <!-- Saved Signature Option (hanya untuk manager dan admin_eng) -->
+                                    @if ($canUseSavedSignature && $hasSavedSignature)
+                                        <div class="saved-signature-card">
+                                            <div class="form-check mb-3">
+                                                <input class="form-check-input" type="checkbox" id="useSavedSignature">
+                                                <label class="form-check-label" for="useSavedSignature">
+                                                    <i class="fas fa-save text-primary"></i>
+                                                    Use my saved signature as
+                                                    <span class="signature-role-badge">
+                                                        {{ auth()->user()->role === 'manager' ? 'Manager' : 'Admin Engineering' }}
+                                                    </span>
+                                                </label>
+                                            </div>
+
+                                            <div id="savedSignaturePreview" style="display: none;">
+                                                <div class="alert alert-info">
+                                                    <div class="d-flex align-items-center gap-3">
+                                                        <img src="{{ $signatureUrl }}" class="saved-signature-img"
+                                                            style="max-height: 60px; max-width: 200px; background: transparent;">
+                                                        <div>
+                                                            <strong>{{ auth()->user()->name }}</strong><br>
+                                                            <small>{{ auth()->user()->role === 'manager' ? 'Manager' : 'Admin Engineering' }}</small>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div id="newSignatureSection">
+                                            <button type="button" class="signature-btn" id="openSignatureModal">
+                                                <i class="fas fa-signature"></i>
+                                                Click to Sign (New Signature)
+                                            </button>
+                                        </div>
+                                    @else
+                                        <button type="button" class="signature-btn" id="openSignatureModal">
+                                            <i class="fas fa-signature"></i>
+                                            Click to Sign
+                                        </button>
+                                    @endif
 
                                     <input type="hidden" name="signature_data" id="signatureData">
+                                    <input type="hidden" name="use_saved_signature" id="useSavedSignatureValue"
+                                        value="0">
 
                                     <div class="mt-3">
                                         <img id="signaturePreview" class="signature-preview"
@@ -1092,22 +1047,6 @@
                                     </div>
                                 </div>
                             </div>
-
-                            <!-- Manager Signature Section -->
-                            @if (auth()->user()->role === 'manager')
-                                <div class="manager-signature-section mt-4">
-                                    <div class="signature-info" style="background: #fff3e0; border-color: #ffb366;">
-                                        <i class="fas fa-shield-alt"></i>
-                                        <strong>Manager Signature:</strong> You can use your saved signature.
-                                    </div>
-
-                                    <div id="managerSignatureContainer">
-                                        <div class="text-center p-3">
-                                            <i class="fas fa-spinner fa-spin"></i> Loading signature data...
-                                        </div>
-                                    </div>
-                                </div>
-                            @endif
                         </div>
 
                         <!-- Submit Buttons -->
@@ -1115,7 +1054,7 @@
                             <div class="col-md-12">
                                 <div class="d-flex flex-wrap gap-3">
                                     <button type="submit" class="btn-submit-ticket" id="submitBtn">
-                                        <i class="fas fa-paper-plane me-2"></i> Submit Ticket
+                                        <i class="fas fa-paper-plane me-2"></i> Submit MR
                                     </button>
                                     <a href="{{ route('tickets.index') }}" class="btn-cancel">
                                         <i class="fas fa-times me-2"></i> Cancel
@@ -1136,7 +1075,7 @@
                 <div class="modal-header">
                     <h5 class="modal-title">
                         <i class="fas fa-signature text-primary"></i>
-                        Your Signature (Reporter) - 300 x 200
+                        Your Signature (Reporter)
                     </h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
@@ -1144,7 +1083,7 @@
                     <div class="signature-instructions mb-3">
                         <p class="mb-0">
                             <i class="fas fa-info-circle text-primary me-2"></i>
-                            Sign in the box below. Canvas size: 300 x 200 pixels. Background will be transparent.
+                            Sign in the box below.
                         </p>
                     </div>
 
@@ -1199,9 +1138,8 @@
                 "positionClass": "toast-top-right",
                 "timeOut": "4000",
                 "extendedTimeOut": "1000",
-                "preventDuplicates": true, // Mencegah toastr duplikat
+                "preventDuplicates": true,
                 "newestOnTop": true,
-                "progressBar": true,
                 "showDuration": "300",
                 "hideDuration": "1000"
             };
@@ -1210,7 +1148,6 @@
             const MAX_TITLE = 100;
             const MAX_LOCATION = 255;
 
-            // Title counter
             $('#title').on('input', function() {
                 const len = $(this).val().length;
                 $('#titleCounter').text(len + '/' + MAX_TITLE);
@@ -1224,7 +1161,6 @@
                 }
             });
 
-            // Location manual counter
             $('#location_manual_input').on('input', function() {
                 const len = $(this).val().length;
                 $('#locationCounter').text(len + '/' + MAX_LOCATION);
@@ -1238,175 +1174,132 @@
                 }
             });
 
-            // ==================== DESCRIPTION - FIX 200px HEIGHT, FIX 773px WIDTH (MONOSPACE) ====================
+            // ==================== DESCRIPTION - AUTO TRUNCATE ====================
             const description = document.getElementById('description');
-            const charCountEl = document.getElementById('charCount');
-            const lineCountEl = document.getElementById('lineCount');
-            const overflowWarning = document.getElementById('overflowWarning');
 
-            // Constants untuk pengukuran - MONOSPACE - FIX
-            const BOX_HEIGHT = 200; // px
-            const BOX_WIDTH = 773; // px - FIX! Lebar box di PDF
-            const LINE_HEIGHT_PX = 16; // 13.33px * 1.2 ≈ 16px
-            const MAX_LINES = Math.floor(BOX_HEIGHT / LINE_HEIGHT_PX); // 12 baris (200/16 = 12.5, floor = 12)
+            const BOX_HEIGHT = 200;
+            const BOX_WIDTH = 773;
+            const LINE_HEIGHT_PX = 16;
+            const MAX_LINES = Math.floor(BOX_HEIGHT / LINE_HEIGHT_PX);
+            const CHAR_WIDTH_MONOSPACE = 8;
+            const CHARS_PER_LINE = Math.floor(BOX_WIDTH / CHAR_WIDTH_MONOSPACE);
 
-            // Dengan monospace, semua karakter lebarnya SAMA PERSIS
-            const CHAR_WIDTH_MONOSPACE = 8; // pixels per character di font monospace 10pt
-
-            // Hitung karakter per baris dengan lebar FIX
-            const CHARS_PER_LINE = Math.floor(BOX_WIDTH / CHAR_WIDTH_MONOSPACE); // 773 / 8 = 96 karakter per baris
-
-            // Variable untuk debounce
-            let previewTimeout;
+            let rafId = null;
             let lastTruncateToastTime = 0;
-            const TOAST_THROTTLE_TIME = 3000; // 3 detik jeda antar toast truncate
+            const TOAST_THROTTLE_TIME = 3000;
+            let isProcessing = false;
+            let pendingValue = null;
 
-            // Function untuk menghitung jumlah baris dengan AKURAT (monospace)
             function countLines(text) {
                 if (!text) return 0;
-
-                // Split berdasarkan newline
                 const lines = text.split('\n');
                 let totalLines = 0;
-
                 for (let i = 0; i < lines.length; i++) {
                     const line = lines[i];
-
-                    // Hitung berapa baris yang diperlukan untuk line ini (wrap)
                     if (line.length > 0) {
-                        // Math.ceil untuk pembulatan ke atas karena jika sisa karakter < CHARS_PER_LINE, tetap butuh 1 baris
-                        const linesNeeded = Math.ceil(line.length / CHARS_PER_LINE);
-                        totalLines += linesNeeded;
+                        totalLines += Math.ceil(line.length / CHARS_PER_LINE);
                     } else {
-                        // Baris kosong (hasil dari enter) tetap dihitung 1 baris
                         totalLines += 1;
                     }
                 }
-
                 return totalLines;
             }
 
-            // Function untuk memotong teks agar muat (monospace)
             function enforceHeightLimit(text) {
                 if (!text) return '';
-
-                // Split lines
                 const lines = text.split('\n');
-                let resultLines = [];
+                const resultLines = [];
                 let totalLinesUsed = 0;
-
                 for (let i = 0; i < lines.length; i++) {
                     const line = lines[i];
-
-                    // Hitung baris yang diperlukan untuk line ini
-                    let linesNeeded = 0;
+                    let linesNeeded;
                     if (line.length > 0) {
                         linesNeeded = Math.ceil(line.length / CHARS_PER_LINE);
                     } else {
-                        // Baris kosong tetap dihitung 1 baris
                         linesNeeded = 1;
                     }
-
-                    // Cek apakah masih muat
                     if (totalLinesUsed + linesNeeded <= MAX_LINES) {
-                        // Masih muat, ambil semua
                         resultLines.push(line);
                         totalLinesUsed += linesNeeded;
                     } else {
-                        // Tidak muat, potong
                         const remainingLines = MAX_LINES - totalLinesUsed;
                         if (remainingLines > 0) {
-                            // Untuk baris terakhir yang dipotong
                             const maxChars = remainingLines * CHARS_PER_LINE;
                             resultLines.push(line.substring(0, maxChars));
                         }
                         break;
                     }
                 }
-
                 return resultLines.join('\n');
             }
 
-            // Update preview dengan debounce
-            function updatePreview() {
-                // Clear timeout sebelumnya
-                if (previewTimeout) {
-                    clearTimeout(previewTimeout);
+            function updateDescriptionPreview() {
+                if (rafId) {
+                    cancelAnimationFrame(rafId);
+                    rafId = null;
                 }
-
-                // Set timeout baru untuk debounce
-                previewTimeout = setTimeout(function() {
-                    const text = description.value;
-                    const lines = countLines(text);
-                    const chars = text.length;
-
-                    // Update display
-                    charCountEl.textContent = chars;
-                    lineCountEl.textContent = lines;
-
-                    // Cek overflow
-                    if (lines > MAX_LINES) {
-                        overflowWarning.style.display = 'block';
-
-                        // Potong teks otomatis
-                        const limitedText = enforceHeightLimit(text);
-                        if (limitedText !== text) {
-                            description.value = limitedText;
-
-                            // Update setelah dipotong
-                            const newLines = countLines(limitedText);
-                            const newChars = limitedText.length;
-                            charCountEl.textContent = newChars;
-                            lineCountEl.textContent = newLines;
-
-                            // Tampilkan warning dengan throttle (jeda)
-                            const now = Date.now();
-                            if (now - lastTruncateToastTime > TOAST_THROTTLE_TIME) {
-                                toastr.warning(
-                                    `Text truncated to fit 200px height (max ${MAX_LINES} lines, ${CHARS_PER_LINE} chars per line)`
-                                );
-                                lastTruncateToastTime = now;
-                            }
-
-                            // Sembunyikan warning karena sudah dipotong
-                            overflowWarning.style.display = 'none';
-                        }
-                    } else {
-                        overflowWarning.style.display = 'none';
+                rafId = requestAnimationFrame(() => {
+                    if (isProcessing) {
+                        pendingValue = description.value;
+                        return;
                     }
-                }, 300); // Debounce 300ms
+                    isProcessing = true;
+                    try {
+                        const text = description.value;
+                        const lines = countLines(text);
+                        if (lines > MAX_LINES) {
+                            const limitedText = enforceHeightLimit(text);
+                            if (limitedText !== text) {
+                                description.value = limitedText;
+                                const now = Date.now();
+                                if (now - lastTruncateToastTime > TOAST_THROTTLE_TIME) {
+                                    toastr.warning(
+                                        `Text truncated to fit 200px height (max ${MAX_LINES} lines, ${CHARS_PER_LINE} chars per line)`
+                                    );
+                                    lastTruncateToastTime = now;
+                                }
+                            }
+                        }
+                    } finally {
+                        isProcessing = false;
+                        if (pendingValue !== null) {
+                            const pending = pendingValue;
+                            pendingValue = null;
+                            description.value = pending;
+                            updateDescriptionPreview();
+                        }
+                    }
+                    rafId = null;
+                });
             }
 
-            // Event listeners dengan passive flag untuk performance
-            description.addEventListener('input', updatePreview, {
+            description.addEventListener('input', updateDescriptionPreview, {
                 passive: true
             });
-            description.addEventListener('paste', function(e) {
-                // Biarkan paste dulu, lalu proses dengan debounce
-                setTimeout(updatePreview, 50);
-            }, {
+            description.addEventListener('keydown', updateDescriptionPreview, {
                 passive: true
             });
-            description.addEventListener('cut', function() {
-                setTimeout(updatePreview, 50);
-            }, {
+            description.addEventListener('keyup', updateDescriptionPreview, {
+                passive: true
+            });
+            description.addEventListener('paste', () => setTimeout(updateDescriptionPreview, 0), {
+                passive: true
+            });
+            description.addEventListener('cut', () => setTimeout(updateDescriptionPreview, 0), {
                 passive: true
             });
 
-            // Initial update
-            updatePreview();
+            updateDescriptionPreview();
 
             // ==================== DUE DATE ====================
             const now = new Date();
             now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
-            document.getElementById(
-                'due_date').min = now.toISOString().slice(0, 16);
+            document.getElementById('due_date').min = now.toISOString().slice(0, 16);
 
             // ==================== LOCATION TYPE TOGGLE ====================
             $('.location-type-label').on('click', function() {
                 const radioId = $(this).attr('for');
                 $('#' + radioId).prop('checked', true);
-
                 $('.location-type-label').removeClass('active');
                 $(this).addClass('active');
 
@@ -1414,15 +1307,77 @@
                     $('#predefinedLocationSection').addClass('active');
                     $('#manualLocationSection').removeClass('active');
                     $('#location_id').prop('required', true);
-                    $('#location_manual_input').prop('required', false).val('');
+                    $('#location_manual_input').prop('required', false);
+                    $('#manual_location_hotel').prop('required', false);
+                    $('#location_manual_input').val('');
                     $('#locationCounter').text('0/255');
                 } else {
                     $('#predefinedLocationSection').removeClass('active');
                     $('#manualLocationSection').addClass('active');
                     $('#location_manual_input').prop('required', true);
+                    $('#manual_location_hotel').prop('required', true);
                     $('#location_id').prop('required', false).val(null).trigger('change');
                 }
             });
+            // ==================== SAVED SIGNATURE (MANAGER & ADMIN_ENG) ====================
+            @if ($canUseSavedSignature && $hasSavedSignature)
+                // Initialize saved signature checkbox
+                const $useSavedSignatureCheckbox = $('#useSavedSignature');
+                const $useSavedSignatureValue = $('#useSavedSignatureValue');
+                const $newSignatureSection = $('#newSignatureSection');
+                const $savedSignaturePreview = $('#savedSignaturePreview');
+                const $signatureData = $('#signatureData');
+                const $signaturePreview = $('#signaturePreview');
+                const $signatureStatus = $('#signatureStatus');
+
+                $useSavedSignatureCheckbox.on('change', function() {
+                    const useSaved = $(this).is(':checked');
+
+                    // Set hidden input value
+                    $useSavedSignatureValue.val(useSaved ? '1' : '0');
+
+                    if (useSaved) {
+                        // Hide new signature section, show saved signature preview
+                        $newSignatureSection.hide();
+                        $savedSignaturePreview.show();
+
+                        // Clear any existing signature data from new signature
+                        $signatureData.val('');
+
+                        // Update status
+                        $signaturePreview.removeClass('show').attr('src', '');
+                        $signatureStatus.html(
+                            '<i class="fas fa-check-circle text-success"></i> Using saved signature as {{ auth()->user()->role === 'manager' ? 'Manager' : 'Admin Engineering' }}'
+                        );
+                    } else {
+                        // Show new signature section, hide saved signature preview
+                        $newSignatureSection.show();
+                        $savedSignaturePreview.hide();
+
+                        // Reset signature status
+                        $signatureStatus.html(
+                            '<i class="fas fa-times-circle text-danger"></i> No signature provided yet'
+                        );
+
+                        // If signature was already signed before, keep it
+                        if ($signatureData.val()) {
+                            const existingSig = $signatureData.val();
+                            $signaturePreview.attr('src', existingSig).addClass('show');
+                            $signatureStatus.html(
+                                '<i class="fas fa-check-circle text-success"></i> Signature saved'
+                            );
+                        }
+                    }
+                });
+
+                // Trigger initial state (pastikan checkbox dalam keadaan tidak centang)
+                // Ini penting untuk memastikan hidden input value = '0' saat pertama kali load
+                if (!$useSavedSignatureCheckbox.is(':checked')) {
+                    $useSavedSignatureValue.val('0');
+                    $newSignatureSection.show();
+                    $savedSignaturePreview.hide();
+                }
+            @endif
 
             // ==================== SIGNATURE PAD ====================
             let signaturePad = null;
@@ -1439,15 +1394,11 @@
 
                 const ctx = canvas.getContext('2d');
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-                // Draw border
                 ctx.strokeStyle = '#ccc';
                 ctx.lineWidth = 1;
                 ctx.setLineDash([5, 5]);
                 ctx.strokeRect(2, 2, canvas.width - 4, canvas.height - 4);
                 ctx.setLineDash([]);
-
-                // Add signature line
                 ctx.beginPath();
                 ctx.strokeStyle = '#999';
                 ctx.lineWidth = 1;
@@ -1464,7 +1415,6 @@
             $('#signatureModal').on('shown.bs.modal', function() {
                 if (!signaturePad) {
                     initSignaturePad();
-
                     signaturePad = new SignaturePad(canvas, {
                         backgroundColor: 'transparent',
                         penColor: '#000000',
@@ -1472,7 +1422,6 @@
                         maxWidth: 2.5,
                         throttle: 16
                     });
-
                     signaturePad.addEventListener('beginStroke', () => {
                         undoStack.push(signaturePad.toData());
                     });
@@ -1490,14 +1439,12 @@
                 if (signaturePad) {
                     signaturePad.clear();
                     undoStack = [];
-
                     const ctx = canvas.getContext('2d');
                     ctx.strokeStyle = '#ccc';
                     ctx.lineWidth = 1;
                     ctx.setLineDash([5, 5]);
                     ctx.strokeRect(2, 2, canvas.width - 4, canvas.height - 4);
                     ctx.setLineDash([]);
-
                     ctx.beginPath();
                     ctx.strokeStyle = '#999';
                     ctx.lineWidth = 1;
@@ -1519,7 +1466,6 @@
                     ctx.setLineDash([5, 5]);
                     ctx.strokeRect(2, 2, canvas.width - 4, canvas.height - 4);
                     ctx.setLineDash([]);
-
                     ctx.beginPath();
                     ctx.strokeStyle = '#999';
                     ctx.lineWidth = 1;
@@ -1537,74 +1483,21 @@
 
                 const signatureData = signaturePad.toDataURL('image/png');
                 $('#signatureData').val(signatureData);
-
                 $('#signaturePreview').attr('src', signatureData).addClass('show');
+
+                // Jika menggunakan saved signature checkbox di-uncheck
+                @if ($canUseSavedSignature && $hasSavedSignature)
+                    if ($('#useSavedSignature').is(':checked')) {
+                        $('#useSavedSignature').prop('checked', false).trigger('change');
+                    }
+                @endif
+
                 $('#signatureStatus').html(
                     '<i class="fas fa-check-circle text-success"></i> Signature saved (300x200)'
                 );
-
                 $('#signatureModal').modal('hide');
                 toastr.success('Signature saved successfully');
             });
-
-            // ==================== MANAGER SIGNATURE ====================
-            @if (auth()->user()->role === 'manager')
-                $.ajax({
-                    url: "{{ route('tickets.manager-signature') }}",
-                    type: 'GET',
-                    success: function(response) {
-                        if (response.success && response.has_signature) {
-                            const html = `
-                            <div class="manager-signature-card has-signature">
-                                <img src="${response.signature_url}" class="manager-signature-preview" style="background: transparent;">
-                                <div class="manager-signature-info">
-                                    <div class="manager-signature-name">${response.signature_name}</div>
-                                    <div class="manager-signature-date">Updated: ${response.signature_date || 'N/A'}</div>
-                                    <span class="manager-signature-badge mt-2">
-                                        <i class="fas fa-check-circle"></i> Available
-                                    </span>
-                                </div>
-                            </div>
-                            <div class="form-check mt-2">
-                                <input class="form-check-input" type="checkbox" id="useManagerSignature">
-                                <label class="form-check-label" for="useManagerSignature">
-                                    Use my saved signature for this ticket
-                                </label>
-                            </div>
-                            <input type="hidden" name="manager_signature_used" id="managerSignatureUsed" value="0">
-                        `;
-                            $('#managerSignatureContainer').html(html);
-
-                            $('#useManagerSignature').on('change', function() {
-                                $('#managerSignatureUsed').val($(this).is(':checked') ? '1' :
-                                    '0');
-                                if ($(this).is(':checked')) {
-                                    if (signaturePad) signaturePad.clear();
-                                    $('#signatureData').val('');
-                                    $('#signaturePreview').removeClass('show');
-                                    $('#signatureStatus').html(
-                                        '<i class="fas fa-info-circle text-info"></i> Using manager signature'
-                                    );
-                                } else {
-                                    $('#signatureStatus').html(
-                                        '<i class="fas fa-times-circle text-danger"></i> No signature provided yet'
-                                    );
-                                }
-                            });
-                        } else {
-                            $('#managerSignatureContainer').html(`
-                            <div class="manager-signature-note">
-                                <i class="fas fa-exclamation-triangle"></i>
-                                No signature uploaded.
-                                <a href="{{ route('profile.index') }}" class="btn btn-sm btn-warning ms-2">
-                                    <i class="fas fa-upload"></i> Upload
-                                </a>
-                            </div>
-                        `);
-                        }
-                    }
-                });
-            @endif
 
             // ==================== FILE UPLOAD ====================
             let selectedFiles = [];
@@ -1667,16 +1560,12 @@
             }
 
             // ==================== FORM SUBMIT ====================
-            // Variable untuk mencegah double submit
             let isSubmitting = false;
 
             $('#createTicketForm').on('submit', function(e) {
                 e.preventDefault();
 
-                // Cegah double submit
-                if (isSubmitting) {
-                    return;
-                }
+                if (isSubmitting) return;
 
                 let isValid = true;
                 $('.is-invalid').removeClass('is-invalid');
@@ -1702,21 +1591,30 @@
                 }
 
                 // Location validation
+                // Location validation
                 const locType = $('input[name="location_type"]:checked').val();
                 if (locType === 'predefined' && !$('#location_id').val()) {
                     $('#location_id').addClass('is-invalid').next('.invalid-feedback').text(
                         'Please select a location');
                     isValid = false;
-                } else if (locType === 'manual' && !$('#location_manual_input').val().trim()) {
-                    $('#location_manual_input').addClass('is-invalid').next('.invalid-feedback').text(
-                        'Please enter a location');
-                    isValid = false;
-                }
+                } else if (locType === 'manual') {
+                    const manualLocation = $('#location_manual_input').val().trim();
+                    const manualHotel = $('#manual_location_hotel').val();
 
+                    if (!manualLocation) {
+                        $('#location_manual_input').addClass('is-invalid');
+                        $('#location_manual_input').next('.invalid-feedback').text(
+                            'Please enter a location');
+                        isValid = false;
+                    } else if (!manualHotel) {
+                        $('#manual_location_hotel').addClass('is-invalid');
+                        $('#manual_location_hotel').after(
+                            '<div class="invalid-feedback">Please select hotel</div>');
+                        isValid = false;
+                    }
+                }
                 // Description validation
                 const descText = $('#description').val();
-
-                // Cek apakah description kosong atau hanya whitespace
                 if (!descText || descText.trim() === '') {
                     toastr.error('Description is required');
                     $('#description').addClass('is-invalid');
@@ -1730,15 +1628,15 @@
                 }
 
                 // Signature validation
-                const useManager = $('#managerSignatureUsed')?.val() === '1';
-                if (!useManager && !$('#signatureData').val()) {
-                    toastr.error('Please provide your signature');
+                const useSavedSig = $('#useSavedSignatureValue').val() === '1';
+                const hasSigData = $('#signatureData').val();
+
+                if (!useSavedSig && !hasSigData) {
+                    toastr.error('Please provide your signature or use saved signature');
                     isValid = false;
                 }
 
-                // Minimum length check (10 karakter) - hanya sekali, pakai toast yang sama
                 if (descText && descText.trim().length < 10) {
-                    // Gunakan toastr dengan ID unik untuk mencegah duplikasi
                     toastr.options = {
                         ...toastr.options,
                         "preventDuplicates": true
@@ -1748,21 +1646,12 @@
 
                 if (!isValid) return;
 
-                // Set flag submitting
                 isSubmitting = true;
 
                 const formData = new FormData(this);
-
-                // Add attachments
                 selectedFiles.forEach((f, i) => {
                     formData.append(`attachments[${i}]`, f);
                 });
-
-                // Handle manager signature
-                if (useManager) {
-                    formData.set('signature_data', '');
-                    formData.set('use_manager_signature', '1');
-                }
 
                 const $btn = $('#submitBtn');
                 $btn.prop('disabled', true).addClass('btn-loading').html('');
@@ -1778,8 +1667,8 @@
                             Swal.fire({
                                 icon: 'success',
                                 title: 'Success!',
-                                html: `Ticket <strong>#${res.ticket_number}</strong> created successfully`,
-                                confirmButtonText: 'View Ticket'
+                                html: `Maintenance Request <strong>#${res.ticket_number}</strong> created successfully`,
+                                confirmButtonText: 'View MR'
                             }).then(() => {
                                 window.location.href =
                                     "{{ route('tickets.index') }}?my_tickets=1";
@@ -1787,11 +1676,9 @@
                         }
                     },
                     error: function(xhr) {
-                        // Reset flag submitting
                         isSubmitting = false;
-
                         $btn.prop('disabled', false).removeClass('btn-loading').html(
-                            '<i class="fas fa-paper-plane me-2"></i> Submit Ticket');
+                            '<i class="fas fa-paper-plane me-2"></i> Submit MR');
 
                         if (xhr.status === 422) {
                             const errors = xhr.responseJSON.errors;
@@ -1826,13 +1713,10 @@
 
             $('#createTicketForm input, #createTicketForm select, #createTicketForm textarea')
                 .on('change input', function() {
-                    // Debounce untuk mencegah terlalu sering update
-                    if (changeTimeout) {
-                        clearTimeout(changeTimeout);
-                    }
+                    if (changeTimeout) clearTimeout(changeTimeout);
                     changeTimeout = setTimeout(function() {
                         formChanged = true;
-                    }, 1000); // Setelah 1 detik tidak ada perubahan baru dianggap form berubah
+                    }, 1000);
                 });
 
             $(window).on('beforeunload', function() {

@@ -1,14 +1,14 @@
 @extends('layouts.main')
 
-@section('title', 'Tickets | ' . config('app.name'))
+@section('title', 'Maintenance Requests | ' . config('app.name'))
 
-@section('page-title', 'Tickets')
+@section('page-title', 'Maintenance Requests')
 
 @section('breadcrumb')
     @php
         $breadcrumb = [
-            ['title' => 'Tickets', 'url' => 'javascript:void(0)'],
-            ['title' => 'All Tickets', 'url' => 'javascript:void(0)'],
+            ['title' => 'Maintenance Requests', 'url' => 'javascript:void(0)'],
+            ['title' => 'All Requests', 'url' => 'javascript:void(0)'],
         ];
     @endphp
     @include('layouts.partials.breadcrumb')
@@ -90,90 +90,6 @@
             transform: scale(0.95);
         }
 
-        /* Export Button Group */
-        .btn-export-group {
-            position: relative;
-            display: inline-block;
-        }
-
-        .btn-export {
-            background: linear-gradient(135deg, #1e3c2c, #2ecc71);
-            color: white;
-            box-shadow: 0 4px 15px rgba(46, 204, 113, 0.3);
-        }
-
-        .btn-export:hover {
-            background: linear-gradient(135deg, #2ecc71, #1e3c2c);
-            box-shadow: 0 6px 20px rgba(46, 204, 113, 0.4);
-            transform: translateY(-2px);
-        }
-
-        .btn-export i {
-            font-size: 14px;
-        }
-
-        .export-dropdown {
-            position: absolute;
-            right: 0;
-            top: 120%;
-            min-width: 200px;
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
-            z-index: 1000;
-            opacity: 0;
-            visibility: hidden;
-            transform: translateY(-10px);
-            transition: all 0.3s ease;
-            border: 1px solid rgba(0, 0, 0, 0.05);
-            overflow: hidden;
-        }
-
-        .btn-export-group:hover .export-dropdown {
-            opacity: 1;
-            visibility: visible;
-            transform: translateY(0);
-        }
-
-        .export-dropdown a {
-            color: #333;
-            padding: 12px 20px;
-            text-decoration: none;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            font-size: 14px;
-            transition: all 0.2s ease;
-            border-bottom: 1px solid #f0f0f0;
-        }
-
-        .export-dropdown a:last-child {
-            border-bottom: none;
-        }
-
-        .export-dropdown a:hover {
-            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
-            padding-left: 25px;
-        }
-
-        .export-dropdown a i {
-            width: 20px;
-            text-align: center;
-            font-size: 16px;
-        }
-
-        .export-dropdown a:nth-child(1) i {
-            color: #27ae60;
-        }
-
-        .export-dropdown a:nth-child(2) i {
-            color: #217346;
-        }
-
-        .export-dropdown a:nth-child(3) i {
-            color: #e74c3c;
-        }
-
         /* Create Button */
         .btn-create {
             background: linear-gradient(135deg, #ff7b00, #ff6200);
@@ -189,44 +105,143 @@
             color: white;
         }
 
-        .btn-create i {
+        /* ========== FLOATING ACTION BUTTON (FAB) ========== */
+        .fab-export {
+            position: fixed;
+            bottom: 80px;
+            right: 30px;
+            z-index: 1000;
+        }
+
+        .fab-button {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #ff7b00, #ff6200);
+            color: white;
+            border: none;
+            box-shadow: 0 4px 15px rgba(255, 98, 0, 0.4);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .fab-button:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 20px rgba(255, 98, 0, 0.5);
+        }
+
+        .fab-button i {
+            font-size: 24px;
+        }
+
+        .fab-menu {
+            position: absolute;
+            bottom: 70px;
+            right: 0;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+            min-width: 180px;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(10px);
+            transition: all 0.3s ease;
+            overflow: hidden;
+            z-index: 1001;
+        }
+
+        .fab-export:hover .fab-menu {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        .fab-menu a {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 20px;
+            text-decoration: none;
+            color: #333;
             font-size: 14px;
+            transition: all 0.2s ease;
+            border-bottom: 1px solid #f0f0f0;
+            cursor: pointer;
         }
 
-        /* Disabled Button State */
-        .btn-modern:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-            transform: none !important;
-            box-shadow: none !important;
+        .fab-menu a:last-child {
+            border-bottom: none;
         }
 
-        /* ========== SEARCH BAR ========== */
-        .search-section {
-            margin-bottom: 15px;
+        .fab-menu a:hover {
+            background: #fff3e0;
+            padding-left: 25px;
         }
 
-        .search-wrapper {
+        .fab-menu a i {
+            width: 20px;
+            font-size: 16px;
+        }
+
+        .fab-menu a:first-child i {
+            color: #27ae60;
+        }
+
+        .fab-menu a:last-child i {
+            color: #e74c3c;
+        }
+
+        /* ========== SEARCH & FILTER SECTION ========== */
+        .search-filter-wrapper {
+            background: white;
+            border-radius: 12px;
+            border: 1px solid #eaeaea;
+            margin-bottom: 20px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+
+        /* Search Bar */
+        .search-bar {
+            padding: 12px 16px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .search-form {
             display: flex;
             gap: 10px;
             align-items: center;
-            background: white;
-            border: 1px solid #eaeaea;
+        }
+
+        .search-input-wrapper {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
             border-radius: 10px;
-            padding: 2px 2px 2px 15px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            padding: 0 15px;
             transition: all 0.3s ease;
         }
 
-        .search-wrapper:focus-within {
+        .search-input-wrapper:focus-within {
             border-color: #ff6200;
             box-shadow: 0 0 0 3px rgba(255, 98, 0, 0.1);
+        }
+
+        .search-input-wrapper i {
+            color: #999;
+            font-size: 14px;
         }
 
         .search-input {
             flex: 1;
             border: none;
-            padding: 12px 0;
+            padding: 12px 10px;
             font-size: 14px;
             background: transparent;
         }
@@ -239,46 +254,32 @@
             background: #ff6200;
             color: white;
             border: none;
-            padding: 12px 24px;
-            border-radius: 8px;
+            padding: 10px 24px;
+            border-radius: 10px;
             font-size: 14px;
             font-weight: 500;
             cursor: pointer;
             transition: all 0.2s ease;
-            display: inline-flex;
+            white-space: nowrap;
+            display: flex;
             align-items: center;
             gap: 8px;
-            white-space: nowrap;
         }
 
         .search-btn:hover {
             background: #ff7b00;
             transform: translateY(-1px);
-            box-shadow: 0 4px 10px rgba(255, 98, 0, 0.3);
         }
 
-        /* ========== FILTER SECTION ========== */
-        .filter-section {
-            background: white;
-            border-radius: 10px;
-            border: 1px solid #eaeaea;
-            margin-bottom: 20px;
-            overflow: hidden;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-        }
-
+        /* Filter Header */
         .filter-header {
-            padding: 14px 18px;
+            padding: 12px 16px;
             background: #f8f9fa;
-            border-bottom: 1px solid #eaeaea;
-            font-weight: 600;
             cursor: pointer;
             display: flex;
             justify-content: space-between;
             align-items: center;
             transition: background 0.2s ease;
-            font-size: 14px;
-            color: #333;
         }
 
         .filter-header:hover {
@@ -289,15 +290,18 @@
             display: flex;
             align-items: center;
             gap: 8px;
+            font-size: 13px;
+            font-weight: 500;
+            color: #555;
         }
 
         .filter-header-left i {
             color: #ff6200;
-            font-size: 14px;
         }
 
         .filter-header-arrow {
             transition: transform 0.3s ease;
+            color: #999;
         }
 
         .filter-header.collapsed .filter-header-arrow {
@@ -309,7 +313,8 @@
         }
 
         .filter-body {
-            padding: 18px;
+            padding: 16px;
+            border-top: 1px solid #f0f0f0;
             transition: all 0.3s ease;
         }
 
@@ -379,16 +384,26 @@
             border-radius: 8px;
         }
 
-        .select2-container--default.select2-container--focus .select2-selection--multiple {
-            border-color: #ff6200;
-            box-shadow: 0 0 0 2px rgba(255, 98, 0, 0.1);
-        }
-
+        /* Filter Actions - Horizontal scroll di mobile */
         .filter-actions {
             display: flex;
             gap: 10px;
             justify-content: flex-end;
             margin-top: 5px;
+            overflow-x: auto;
+            flex-wrap: nowrap;
+            -webkit-overflow-scrolling: touch;
+            padding-bottom: 4px;
+        }
+
+        .filter-actions::-webkit-scrollbar {
+            display: none;
+        }
+
+        .btn-filter,
+        .btn-reset {
+            flex-shrink: 0;
+            white-space: nowrap;
         }
 
         .btn-filter {
@@ -410,7 +425,6 @@
         .btn-filter:hover {
             background: #ff7b00;
             transform: translateY(-1px);
-            box-shadow: 0 4px 10px rgba(255, 98, 0, 0.3);
         }
 
         .btn-reset {
@@ -434,8 +448,6 @@
             background: #ff6200;
             border-color: #ff6200;
             color: white;
-            transform: translateY(-1px);
-            box-shadow: 0 4px 10px rgba(255, 98, 0, 0.3);
         }
 
         /* Loading Overlay */
@@ -452,10 +464,8 @@
             right: 0;
             bottom: 0;
             background: rgba(255, 255, 255, 0.8);
-            display: flex;
-            justify-content: center;
-            align-items: center;
             z-index: 10;
+            border-radius: 12px;
         }
 
         .ticket-loading::before {
@@ -484,9 +494,13 @@
         }
 
         /* ========== TICKET CARDS ========== */
+        .ticket-list {
+            background: transparent;
+        }
+
         .ticket-card {
             background: white;
-            border-radius: 10px;
+            border-radius: 12px;
             padding: 16px;
             margin-bottom: 12px;
             border: 1px solid #eaeaea;
@@ -516,7 +530,7 @@
         .ticket-header {
             display: flex;
             justify-content: space-between;
-            align-items: flex-start;
+            align-items: center;
             margin-bottom: 10px;
             flex-wrap: wrap;
             gap: 8px;
@@ -542,8 +556,6 @@
             -webkit-line-clamp: 2;
             -webkit-box-orient: vertical;
             overflow: hidden;
-            text-overflow: ellipsis;
-            word-break: break-word;
         }
 
         .ticket-meta {
@@ -559,20 +571,11 @@
             display: flex;
             align-items: center;
             gap: 5px;
-            flex-shrink: 0;
         }
 
         .ticket-meta-item i {
             font-size: 12px;
             color: #999;
-            flex-shrink: 0;
-        }
-
-        .ticket-meta-text {
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-            max-width: 120px;
         }
 
         .ticket-footer {
@@ -594,8 +597,6 @@
             display: inline-flex;
             align-items: center;
             gap: 4px;
-            line-height: 1;
-            white-space: nowrap;
         }
 
         .badge-assigned {
@@ -610,12 +611,12 @@
             border: 1px solid #ffe0b2;
         }
 
-        /* Status Badges - Sama seperti di show blade */
+        /* Status Badges */
         .status-badge {
-            padding: 6px 15px;
+            padding: 6px 12px;
             border-radius: 20px;
             font-weight: 600;
-            font-size: 12px;
+            font-size: 11px;
             text-transform: uppercase;
             letter-spacing: 0.5px;
             white-space: nowrap;
@@ -670,9 +671,9 @@
         }
 
         .status-closed {
-            background: #f8f9fa;
+            background: #e9ecef;
             color: #495057;
-            border: 1px solid #e9ecef;
+            border: 1px solid #dee2e6;
         }
 
         .status-cancelled {
@@ -681,16 +682,14 @@
             border: 1px solid #f5c6cb;
         }
 
-        /* Priority Badges - Sama seperti di show blade */
+        /* Priority Badges */
         .priority-badge {
-            padding: 5px 12px;
-            border-radius: 15px;
+            padding: 4px 10px;
+            border-radius: 12px;
             font-weight: 600;
-            font-size: 11px;
+            font-size: 10px;
             color: white !important;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
-            white-space: nowrap;
         }
 
         /* Empty State */
@@ -698,7 +697,7 @@
             text-align: center;
             padding: 60px 20px;
             background: white;
-            border-radius: 10px;
+            border-radius: 12px;
             border: 1px solid #eaeaea;
         }
 
@@ -733,7 +732,7 @@
             margin-top: 25px;
             padding: 15px;
             background: #f9f9f9;
-            border-radius: 10px;
+            border-radius: 12px;
             display: flex;
             justify-content: center;
         }
@@ -750,7 +749,6 @@
             border-color: #ddd;
             color: #666;
             border-radius: 8px;
-            margin: 0 2px;
             transition: all 0.2s ease;
         }
 
@@ -758,19 +756,17 @@
             background: #ff6200;
             border-color: #ff6200;
             color: white;
-            box-shadow: 0 4px 10px rgba(255, 98, 0, 0.3);
         }
 
         .pagination .page-link:hover {
             background: #ff7b00;
             border-color: #ff7b00;
             color: white;
-            transform: translateY(-1px);
         }
 
-        /* Modal */
+        /* ========== MODAL TICKET INFO (SAMA KAYAK CALENDAR) ========== */
         .ticket-info-item {
-            padding: 15px 0;
+            padding: 10px 0;
             border-bottom: 1px solid #f0f0f0;
         }
 
@@ -779,16 +775,15 @@
         }
 
         .ticket-info-label {
-            font-size: 12px;
-            color: #666;
-            margin-bottom: 5px;
+            font-size: 10px;
+            color: #999;
+            margin-bottom: 3px;
             font-weight: 600;
             text-transform: uppercase;
-            letter-spacing: 0.3px;
         }
 
         .ticket-info-value {
-            font-size: 16px;
+            font-size: 13px;
             color: #333;
             font-weight: 500;
         }
@@ -797,10 +792,24 @@
             background: #fff3cd;
             border: 1px solid #ffeeba;
             color: #856404;
-            padding: 15px;
+            padding: 10px;
             border-radius: 8px;
-            margin-top: 20px;
-            font-size: 14px;
+            margin-top: 12px;
+            font-size: 11px;
+        }
+
+        .modal-header {
+            background: #ff6200 !important;
+            color: white !important;
+            border-bottom: none;
+        }
+
+        .modal-header .modal-title {
+            color: white !important;
+        }
+
+        .modal-header .btn-close {
+            filter: brightness(0) invert(1);
         }
 
         /* Responsive */
@@ -812,41 +821,34 @@
 
             .action-buttons {
                 width: 100%;
-                gap: 10px;
             }
 
             .btn-modern {
                 flex: 1;
-                padding: 10px 15px;
-                font-size: 13px;
+                justify-content: center;
             }
 
-            .btn-export-group {
+            .search-form {
+                flex-direction: row;
+                gap: 8px;
+            }
+
+            .search-input-wrapper {
                 flex: 1;
-            }
-
-            .btn-export {
-                width: 100%;
-            }
-
-            .btn-create {
-                flex: 1;
-            }
-
-            .search-wrapper {
-                flex-direction: column;
-                align-items: stretch;
-                padding: 10px;
-            }
-
-            .search-input {
-                width: 100%;
-                padding: 10px 0;
+                padding: 0 12px;
             }
 
             .search-btn {
-                width: 100%;
-                justify-content: center;
+                padding: 10px 16px;
+                white-space: nowrap;
+            }
+
+            .search-btn span {
+                display: none;
+            }
+
+            .search-btn i {
+                margin: 0;
             }
 
             .filter-grid {
@@ -854,21 +856,10 @@
                 gap: 12px;
             }
 
-            .filter-actions {
-                flex-direction: column;
-            }
-
-            .btn-filter,
-            .btn-reset {
-                width: 100%;
-                justify-content: center;
-            }
-
             .ticket-meta {
                 overflow-x: auto;
                 flex-wrap: nowrap;
-                -webkit-overflow-scrolling: touch;
-                padding-bottom: 8px;
+                padding-bottom: 4px;
             }
 
             .ticket-meta::-webkit-scrollbar {
@@ -876,126 +867,101 @@
             }
 
             .ticket-meta-item {
-                flex: 0 0 auto;
+                flex-shrink: 0;
             }
 
-            .ticket-meta-text {
-                max-width: 100px;
+            .fab-export {
+                bottom: 70px;
+                right: 16px;
             }
 
-            .export-dropdown {
-                width: 100%;
-                right: auto;
-                left: 0;
+            .fab-button {
+                width: 48px;
+                height: 48px;
+            }
+
+            .fab-button i {
+                font-size: 20px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .ticket-card {
+                padding: 12px;
+            }
+
+            .ticket-title {
+                font-size: 14px;
+            }
+
+            .ticket-meta {
+                gap: 10px;
+            }
+
+            .ticket-meta-item {
+                font-size: 11px;
+            }
+
+            .fab-export {
+                bottom: 60px;
             }
         }
     </style>
 @endpush
 
 @section('content')
-    <!-- Header dengan Tombol Create & Export -->
+    <!-- Header dengan Tombol Create -->
     <div class="header-actions">
         <div class="page-title-section">
-            <h4><i class="fas fa-ticket-alt"></i>Ticket Management</h4>
+            <h4><i class="fas fa-clipboard-list"></i>Maintenance Request</h4>
         </div>
         <div class="action-buttons">
-            <!-- Export Dropdown with Modern Button -->
-            <div class="btn-export-group">
-                <button class="btn-modern btn-export">
-                    <i class="fas fa-download"></i> Export
-                    <i class="fas fa-file" style="font-size: 12px;"></i>
-                </button>
-                <div class="export-dropdown">
-                    <a href="#" onclick="alert('Export CSV feature coming soon!')">
-                        <i class="fas fa-file-csv"></i> Export as CSV
-                    </a>
-                    <a href="#" onclick="alert('Export Excel feature coming soon!')">
-                        <i class="fas fa-file-excel"></i> Export as Excel
-                    </a>
-                    <a href="#" onclick="alert('Export PDF feature coming soon!')">
-                        <i class="fas fa-file-pdf"></i> Export as PDF
-                    </a>
-                </div>
-            </div>
-
-            <!-- Create Ticket Button - Modern -->
             @if (in_array(auth()->user()->role, ['admin_eng', 'user', 'manager']))
                 <a href="{{ route('tickets.create') }}" class="btn-modern btn-create">
-                    <i class="fas fa-plus-circle"></i> New Ticket
+                    <i class="fas fa-plus-circle"></i> New MR
                 </a>
             @endif
         </div>
     </div>
 
-    <!-- SEARCH BAR -->
-    <div class="search-section">
-        <form action="{{ route('tickets.index') }}" method="GET" id="searchForm" class="ajax-filter-form">
-            <!-- Preserve existing filters -->
-            @if (request()->filled('status') &&
-                    !in_array(request('status'), ['open', 'pending_om', 'pending_vr', 'ready_for_closure']))
-                <input type="hidden" name="status" value="{{ request('status') }}">
-            @endif
-            @if (request()->filled('my_tickets'))
-                <input type="hidden" name="my_tickets" value="{{ request('my_tickets') }}">
-            @endif
-            @if (request()->filled('assigned'))
-                <input type="hidden" name="assigned" value="{{ request('assigned') }}">
-            @endif
-            @if (request()->filled('department_filter'))
-                <input type="hidden" name="department_filter" value="{{ request('department_filter') }}">
-            @endif
-            @if (request()->filled('stage'))
-                <input type="hidden" name="stage" value="{{ request('stage') }}">
-            @endif
-            @if (request()->filled('unassigned'))
-                <input type="hidden" name="unassigned" value="{{ request('unassigned') }}">
-            @endif
-
-            <div class="search-wrapper">
-                <input type="text" name="search" class="search-input"
-                    placeholder="Search by ticket number, title, user, or location..." value="{{ request('search') }}"
-                    autocomplete="off">
+    <!-- Search & Filter Section -->
+    <div class="search-filter-wrapper">
+        <!-- Search Bar -->
+        <div class="search-bar">
+            <form action="{{ route('tickets.index') }}" method="GET" id="searchForm" class="ajax-filter-form search-form">
+                <div class="search-input-wrapper">
+                    <i class="fas fa-search"></i>
+                    <input type="text" name="search" class="search-input"
+                        placeholder="Search by MR number, title, user, or location..." value="{{ request('search') }}"
+                        autocomplete="off">
+                </div>
                 <button type="submit" class="search-btn">
-                    <i class="fas fa-search"></i> Search
+                    <i class="fas fa-search"></i>
+                    <span>Search</span>
                 </button>
-            </div>
-        </form>
-    </div>
+            </form>
+        </div>
 
-    <!-- Filter Section -->
-    <div class="filter-section">
+        <!-- Filter Header -->
         <div class="filter-header {{ request()->anyFilled(['status', 'category', 'priority', 'department', 'date_from', 'date_to']) ? '' : 'collapsed' }}"
             id="filterToggle">
             <div class="filter-header-left">
                 <i class="fas fa-filter"></i>
                 <span>Advanced Filters</span>
+                @if (request()->anyFilled(['status', 'category', 'priority', 'department', 'date_from', 'date_to']))
+                    <span class="badge bg-warning text-dark ms-2" style="font-size: 10px;">Active</span>
+                @endif
             </div>
             <i class="fas fa-chevron-down filter-header-arrow"></i>
         </div>
+
+        <!-- Filter Body -->
         <div class="filter-body {{ request()->anyFilled(['status', 'category', 'priority', 'department', 'date_from', 'date_to']) ? '' : 'collapsed' }}"
             id="filterBody">
             <form action="{{ route('tickets.index') }}" method="GET" id="filterForm" class="ajax-filter-form">
-                <!-- Preserve special filters -->
-                @if (request()->filled('my_tickets'))
-                    <input type="hidden" name="my_tickets" value="{{ request('my_tickets') }}">
-                @endif
-                @if (request()->filled('assigned'))
-                    <input type="hidden" name="assigned" value="{{ request('assigned') }}">
-                @endif
-                @if (request()->filled('department_filter'))
-                    <input type="hidden" name="department_filter" value="{{ request('department_filter') }}">
-                @endif
-                @if (request()->filled('stage'))
-                    <input type="hidden" name="stage" value="{{ request('stage') }}">
-                @endif
-                @if (request()->filled('unassigned'))
-                    <input type="hidden" name="unassigned" value="{{ request('unassigned') }}">
-                @endif
-
                 <input type="hidden" name="search" value="{{ request('search') }}">
 
                 <div class="filter-grid">
-                    <!-- Status Filter -->
                     <div class="filter-item">
                         <label class="filter-label">Status</label>
                         <select name="status" class="filter-select">
@@ -1004,14 +970,13 @@
                                 @if ($value)
                                     <option value="{{ $value }}"
                                         {{ request('status') == $value ? 'selected' : '' }}>
-                                        {{ $label }}
+                                        {{ $value == 'pending_vr' ? 'PR Approval' : $label }}
                                     </option>
                                 @endif
                             @endforeach
                         </select>
                     </div>
 
-                    <!-- Priority Filter - MULTIPLE -->
                     <div class="filter-item">
                         <label class="filter-label">Priority</label>
                         <select name="priority[]" class="filter-select select2-multiple" multiple="multiple">
@@ -1024,7 +989,6 @@
                         </select>
                     </div>
 
-                    <!-- Category Filter - MULTIPLE -->
                     <div class="filter-item">
                         <label class="filter-label">Category</label>
                         <select name="category[]" class="filter-select select2-multiple" multiple="multiple">
@@ -1037,7 +1001,6 @@
                         </select>
                     </div>
 
-                    <!-- Department Filter - MULTIPLE -->
                     <div class="filter-item">
                         <label class="filter-label">Department</label>
                         <select name="department[]" class="filter-select select2-multiple" multiple="multiple">
@@ -1050,26 +1013,23 @@
                         </select>
                     </div>
 
-                    <!-- Date From -->
                     <div class="filter-item">
                         <label class="filter-label">Date From</label>
                         <input type="date" name="date_from" class="filter-input" value="{{ request('date_from') }}">
                     </div>
 
-                    <!-- Date To -->
                     <div class="filter-item">
                         <label class="filter-label">Date To</label>
                         <input type="date" name="date_to" class="filter-input" value="{{ request('date_to') }}">
                     </div>
                 </div>
 
-                <!-- Filter Actions -->
                 <div class="filter-actions">
                     <button type="submit" class="btn-filter">
                         <i class="fas fa-filter"></i> Apply Filters
                     </button>
                     <button type="button" class="btn-reset" id="resetFiltersBtn">
-                        <i class="fas fa-redo-alt"></i> Reset Filters
+                        <i class="fas fa-redo-alt"></i> Reset
                     </button>
                 </div>
             </form>
@@ -1080,6 +1040,41 @@
     <div id="ticket-list-container">
         @include('tickets.partials.ticket-cards', ['tickets' => $tickets])
     </div>
+
+    <!-- FLOATING EXPORT BUTTON (FAB) -->
+    <div class="fab-export">
+        <button class="fab-button" id="fabExportBtn">
+            <i class="fas fa-download"></i>
+        </button>
+        <div class="fab-menu">
+            <a href="#" onclick="exportTickets('csv'); return false;">
+                <i class="fas fa-file-csv"></i> Export CSV
+            </a>
+            <a href="#" onclick="exportTickets('pdf'); return false;">
+                <i class="fas fa-file-pdf"></i> Export PDF
+            </a>
+        </div>
+    </div>
+
+    <!-- ==================== MODAL TICKET INFO (ACCESS DENIED) ==================== -->
+    <div class="modal fade" id="ticketInfoModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-tools me-2"></i>Maintenance Request Information
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="ticket-info-content"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
 @endsection
 
 @push('scripts')
@@ -1089,7 +1084,7 @@
 
     <script>
         $(document).ready(function() {
-            // Initialize Select2 for multiple selects
+            // Initialize Select2
             $('.select2-multiple').select2({
                 width: '100%',
                 placeholder: 'Select options',
@@ -1106,17 +1101,12 @@
                 $(this).toggleClass('collapsed');
             });
 
-            // Toastr configuration
+            // Toastr config
             toastr.options = {
                 "closeButton": true,
                 "progressBar": true,
                 "positionClass": "toast-top-right",
-                "timeOut": "3000",
-                "extendedTimeOut": "1000",
-                "showEasing": "swing",
-                "hideEasing": "linear",
-                "showMethod": "fadeIn",
-                "hideMethod": "fadeOut"
+                "timeOut": "3000"
             };
 
             // AJAX Filter
@@ -1127,21 +1117,14 @@
 
             // Reset Filters
             $('#resetFiltersBtn').on('click', function() {
-                // Reset all form fields
                 $('#filterForm')[0].reset();
-
-                // Reset Select2
                 $('.select2-multiple').val(null).trigger('change');
-
-                // Clear date inputs
                 $('input[name="date_from"]').val('');
                 $('input[name="date_to"]').val('');
-
-                // Apply filters with empty values
                 applyFilters();
             });
 
-            // Handle pagination links
+            // Pagination
             $(document).on('click', '.pagination a', function(e) {
                 e.preventDefault();
                 let url = $(this).attr('href');
@@ -1151,16 +1134,12 @@
             function applyFilters() {
                 let formData = $('#filterForm').serialize();
                 let searchData = $('#searchForm').serialize();
-
-                // Combine both forms data
                 let params = new URLSearchParams(formData + '&' + searchData);
                 let url = '{{ route('tickets.index') }}?' + params.toString();
-
                 fetchTickets(url);
             }
 
             function fetchTickets(url) {
-                // Show loading
                 $('#ticket-list-container').addClass('ticket-loading');
 
                 $.ajax({
@@ -1171,20 +1150,14 @@
                         'X-Requested-With': 'XMLHttpRequest'
                     },
                     success: function(response) {
-                        // Extract only the ticket cards content
                         let tempDiv = $('<div>').html(response);
                         let newContent = tempDiv.find('#ticket-list-container').html();
-
                         if (newContent) {
                             $('#ticket-list-container').html(newContent);
                         } else {
                             $('#ticket-list-container').html(response);
                         }
-
-                        // Update browser URL without refresh
                         window.history.pushState({}, '', url);
-
-                        // Reinitialize Select2 for any new selects
                         $('.select2-multiple').select2({
                             width: '100%',
                             placeholder: 'Select options',
@@ -1193,8 +1166,7 @@
                         });
                     },
                     error: function(xhr) {
-                        toastr.error('Failed to load tickets. Please try again.');
-                        console.error('Error:', xhr);
+                        toastr.error('Failed to load maintenance requests.');
                     },
                     complete: function() {
                         $('#ticket-list-container').removeClass('ticket-loading');
@@ -1202,13 +1174,21 @@
                 });
             }
 
-            // Handle browser back/forward buttons
             window.onpopstate = function() {
                 location.reload();
             };
         });
 
-        // Helper functions
+        // Export function
+        function exportTickets(format) {
+            let url = '{{ route('tickets.export') }}?export=' + format;
+            let params = new URLSearchParams(window.location.search);
+            params.delete('page');
+            url += '&' + params.toString();
+            window.location.href = url;
+        }
+
+        // Helper function untuk status badge color
         function getStatusBadgeColor(status) {
             const colors = {
                 'open': 'primary',
@@ -1222,25 +1202,85 @@
                 'closed': 'dark',
                 'cancelled': 'danger'
             };
-            return colors[status] || 'secondary';
+            return colors[status?.toLowerCase()] || 'secondary';
         }
 
+        // Helper function untuk status display name
         function getStatusDisplayName(status) {
-            const displayNames = {
+            const names = {
                 'open': 'Open',
                 'received': 'Received',
                 'pending_om': 'OM Approval',
                 'in_progress': 'In Progress',
-                'pending_vr': 'VR Approval',
+                'pending_vr': 'PR Approval',
                 'completed': 'Completed',
                 'pending_gm': 'GM Approval',
                 'ready_for_closure': 'Ready for Closure',
                 'closed': 'Closed',
                 'cancelled': 'Cancelled'
             };
-            return displayNames[status] || status;
+            return names[status] || status;
         }
 
+        // Helper function untuk escape HTML
+        function escapeHtml(text) {
+            if (!text) return '';
+            let div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Show modal info (access denied) - SAMA PERSIS KAYAK CALENDAR
+        function showTicketInfoModal(ticketInfo) {
+            let statusColor = getStatusBadgeColor(ticketInfo.status);
+            let displayStatus = getStatusDisplayName(ticketInfo.status);
+            let priorityColor = ticketInfo.priority_color || '#003366';
+
+            let modalContent = `
+                <div class="ticket-info-item">
+                    <div class="ticket-info-label">Request Number</div>
+                    <div class="ticket-info-value">
+                        <strong>${escapeHtml(ticketInfo.number)}</strong>
+                        <span class="badge bg-${statusColor} ms-2">${escapeHtml(displayStatus)}</span>
+                    </div>
+                </div>
+                <div class="ticket-info-item">
+                    <div class="ticket-info-label">Title</div>
+                    <div class="ticket-info-value">${escapeHtml(ticketInfo.title)}</div>
+                </div>
+                <div class="ticket-info-item">
+                    <div class="ticket-info-label">Priority</div>
+                    <div class="ticket-info-value">
+                        <span class="badge" style="background-color: ${priorityColor}; color: white">${escapeHtml(ticketInfo.priority || 'N/A')}</span>
+                    </div>
+                </div>
+                <div class="ticket-info-item">
+                    <div class="ticket-info-label">Created By</div>
+                    <div class="ticket-info-value">${escapeHtml(ticketInfo.created_by)}</div>
+                </div>
+                <div class="ticket-info-item">
+                    <div class="ticket-info-label">Department</div>
+                    <div class="ticket-info-value">${escapeHtml(ticketInfo.department)}</div>
+                </div>
+                <div class="ticket-info-item">
+                    <div class="ticket-info-label">Category</div>
+                    <div class="ticket-info-value">${escapeHtml(ticketInfo.category)}</div>
+                </div>
+                <div class="ticket-info-item">
+                    <div class="ticket-info-label">Created At</div>
+                    <div class="ticket-info-value">${escapeHtml(ticketInfo.created_at)}</div>
+                </div>
+                <div class="modal-warning">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <strong>Access Restricted:</strong> ${escapeHtml(ticketInfo.reason)}
+                </div>
+            `;
+
+            $('.ticket-info-content').html(modalContent);
+            $('#ticketInfoModal').modal('show');
+        }
+
+        // View ticket function
         function viewTicket(ticketId) {
             const checkAccessUrl = `{{ route('tickets.check-access', ':id') }}`.replace(':id', ticketId);
 
@@ -1252,63 +1292,17 @@
                 })
                 .then(response => response.json())
                 .then(data => {
-                    if (data.type === 'modal_info') {
-                        showTicketInfoModal(data.ticket_info);
-                    } else if (data.type === 'redirect') {
+                    if (data.type === 'redirect') {
                         window.location.href = data.url;
+                    } else if (data.type === 'modal_info') {
+                        showTicketInfoModal(data.ticket_info);
                     } else {
                         window.location.href = `{{ route('tickets.show', ':id') }}`.replace(':id', ticketId);
                     }
                 })
                 .catch(error => {
-                    console.error('Error checking access:', error);
                     window.location.href = `{{ route('tickets.show', ':id') }}`.replace(':id', ticketId);
                 });
-        }
-
-        function showTicketInfoModal(ticketInfo) {
-            const statusColor = getStatusBadgeColor(ticketInfo.status);
-            const displayStatus = getStatusDisplayName(ticketInfo.status);
-
-            const modalContent = `
-                <div class="ticket-info-item">
-                    <div class="ticket-info-label">Ticket Number</div>
-                    <div class="ticket-info-value">#${ticketInfo.number}</div>
-                </div>
-                <div class="ticket-info-item">
-                    <div class="ticket-info-label">Title</div>
-                    <div class="ticket-info-value">${ticketInfo.title}</div>
-                </div>
-                <div class="ticket-info-item">
-                    <div class="ticket-info-label">Status</div>
-                    <div class="ticket-info-value">
-                        <span class="badge bg-${statusColor}">${displayStatus}</span>
-                    </div>
-                </div>
-                <div class="ticket-info-item">
-                    <div class="ticket-info-label">Created By</div>
-                    <div class="ticket-info-value">${ticketInfo.created_by}</div>
-                </div>
-                <div class="ticket-info-item">
-                    <div class="ticket-info-label">Department</div>
-                    <div class="ticket-info-value">${ticketInfo.department}</div>
-                </div>
-                <div class="ticket-info-item">
-                    <div class="ticket-info-label">Category</div>
-                    <div class="ticket-info-value">${ticketInfo.category}</div>
-                </div>
-                <div class="ticket-info-item">
-                    <div class="ticket-info-label">Created At</div>
-                    <div class="ticket-info-value">${ticketInfo.created_at}</div>
-                </div>
-                <div class="modal-warning">
-                    <i class="fas fa-exclamation-triangle me-2"></i>
-                    <strong>Access Restricted:</strong> ${ticketInfo.reason}
-                </div>
-            `;
-
-            $('.ticket-info-content').html(modalContent);
-            $('#ticketInfoModal').modal('show');
         }
     </script>
 @endpush

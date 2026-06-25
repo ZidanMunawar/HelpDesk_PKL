@@ -15,8 +15,8 @@ class CalendarController extends Controller
      */
     public function index()
     {
-        // Kirim data priorities ke view untuk CSS dinamis
-        $priorities = Priority::where('status', 'active')->orderBy('level')->get();
+        // Ambil SEMUA priorities (termasuk yang non-active) untuk CSS dinamis
+        $priorities = Priority::orderBy('level')->get();
         return view('calendar.index', compact('priorities'));
     }
 
@@ -40,7 +40,7 @@ class CalendarController extends Controller
                 $events[] = [
                     'id' => 'created-' . $ticket->id,
                     'ticket_id' => $ticket->id,
-                    'title' => 'MR-' . $ticket->ticket_number,
+                    'title' => $ticket->ticket_number,
                     'start' => $ticket->created_at->format('Y-m-d'),
                     'end' => $ticket->created_at->format('Y-m-d'),
                     'color' => '#003366',
@@ -70,7 +70,7 @@ class CalendarController extends Controller
                 $events[] = [
                     'id' => 'closed-' . $ticket->id,
                     'ticket_id' => $ticket->id,
-                    'title' => 'MR-' . $ticket->ticket_number,
+                    'title' => $ticket->ticket_number,
                     'start' => $ticket->closed_at->format('Y-m-d'),
                     'end' => $ticket->closed_at->format('Y-m-d'),
                     'color' => '#ff6600',
@@ -100,7 +100,7 @@ class CalendarController extends Controller
     }
 
     /**
-     * Get status display name
+     * Get status display name (UBAH pending_vr jadi PR Approval)
      */
     private function getStatusDisplayName($status)
     {
@@ -109,7 +109,7 @@ class CalendarController extends Controller
             'received' => 'Received',
             'pending_om' => 'OM Approval',
             'in_progress' => 'In Progress',
-            'pending_vr' => 'VR Approval',
+            'pending_vr' => 'PR Approval',  // ✅ UBAH VR jadi PR
             'completed' => 'Completed',
             'pending_gm' => 'GM Approval',
             'ready_for_closure' => 'Ready for Closure',
@@ -206,7 +206,8 @@ class CalendarController extends Controller
     {
         $year = $request->year ?? date('Y');
         $month = $request->month ?? date('m');
-        $priorities = Priority::where('status', 'active')->orderBy('level')->get();
+        // Ambil SEMUA priorities (termasuk yang non-active)
+        $priorities = Priority::orderBy('level')->get();
 
         $tickets = Ticket::with(['user', 'priority', 'department', 'category'])->get();
 

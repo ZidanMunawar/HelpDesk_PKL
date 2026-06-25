@@ -20,6 +20,7 @@ use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use App\Http\Controllers\Controller;
 use App\Mail\TicketNotification;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class TicketController extends Controller
 {
@@ -34,8 +35,6 @@ class TicketController extends Controller
         $query = Ticket::with(['user', 'category', 'priority', 'location', 'assignedUser', 'department']);
 
         // ==================== FILTER BERDASARKAN ROLE ====================
-        // Technician & Manager bisa melihat semua ticket di index
-        // Filter khusus akan diterapkan berdasarkan parameter request
 
         // ==================== FILTER KHUSUS DARI SIDEBAR ====================
 
@@ -76,9 +75,10 @@ class TicketController extends Controller
                     ->where('current_stage', 1);
             }
 
-            if ($request->filled('status') && $request->status == 'pending_om' && $request->filled('unassigned')) {
-                $query->where('status', 'pending_om')
-                    ->where('current_stage', 3)
+
+
+            if ($request->filled('unassigned') && $request->unassigned == '1') {
+                $query->where('status', 'in_progress')
                     ->whereNull('assigned_to');
             }
 
@@ -101,15 +101,13 @@ class TicketController extends Controller
                         ->where('current_stage', 3);
                 }
                 if ($user->role === 'gm' && $request->status == 'pending_gm') {
-                    $query->where('status', 'pending_gm')
-                        ->where('current_stage', 8);
+                    $query->where('status', 'pending_gm');
                 }
             }
         }
 
         // ==================== FILTER STATUS ====================
         if ($request->filled('status') && $request->status !== '') {
-            // Skip jika sudah difilter khusus di atas
             $skipStatusFilter = false;
 
             if ($user->role === 'admin_eng' && in_array($request->status, ['open', 'pending_om', 'pending_vr', 'ready_for_closure'])) {
@@ -183,7 +181,7 @@ class TicketController extends Controller
         }
 
         // ==================== ORDER BY LATEST ====================
-        $tickets = $query->latest()->paginate(2)->withQueryString();
+        $tickets = $query->latest()->paginate(10)->withQueryString();
 
         // ==================== GET FILTER OPTIONS (HANYA ACTIVE) ====================
         $categories = Category::where('status', 'active')->orderBy('name')->get();
@@ -206,11 +204,6 @@ class TicketController extends Controller
         ];
 
         // ==================== STATUS COUNTS ====================
-        $baseCountQuery = Ticket::query();
-
-        // Untuk counts, kita tetap tampilkan semua (tidak difilter role)
-        // Agar badge counts di sidebar tetap akurat
-
         $statusCounts = [
             'all' => Ticket::count(),
             'open' => Ticket::where('status', 'open')->count(),
@@ -282,7 +275,7 @@ class TicketController extends Controller
     {
         $user = Auth::user();
 
-        // ==================== FIXED: TIGA ROLE YANG BISA CREATE: admin_eng, user, manager ====================
+        // ==================== TIGA ROLE YANG BISA CREATE: admin_eng, user, manager ====================
         if (!in_array($user->role, ['admin_eng', 'user', 'manager'])) {
             return redirect()->route('tickets.index')
                 ->with('error', 'You are not authorized to create tickets.');
@@ -293,6 +286,13 @@ class TicketController extends Controller
         $priorities = Priority::where('status', 'active')->orderBy('level', 'desc')->get();
         $locations = Location::where('status', 'active')->orderBy('name')->get();
 
+        // Cek apakah user bisa menggunakan saved signature (manager atau admin_eng)
+        $canUseSavedSignature = in_array($user->role, ['manager', 'admin_eng']);
+
+        // Ambil data signature user jika ada
+        $hasSavedSignature = $user->has_signature && $user->signature_path;
+        $signatureUrl = $hasSavedSignature ? Storage::url($user->signature_path) : null;
+
         Log::info('User creating ticket:', [
             'user_id' => $user->id,
             'role' => $user->role,
@@ -300,10 +300,19 @@ class TicketController extends Controller
             'department_name' => $user->department->name ?? 'No department',
             'categories_count' => $categories->count(),
             'priorities_count' => $priorities->count(),
-            'locations_count' => $locations->count()
+            'locations_count' => $locations->count(),
+            'can_use_saved_signature' => $canUseSavedSignature,
+            'has_saved_signature' => $hasSavedSignature
         ]);
 
-        return view('tickets.create', compact('categories', 'priorities', 'locations'));
+        return view('tickets.create', compact(
+            'categories',
+            'priorities',
+            'locations',
+            'canUseSavedSignature',
+            'hasSavedSignature',
+            'signatureUrl'
+        ));
     }
 
     /**
@@ -313,7 +322,7 @@ class TicketController extends Controller
     {
         $user = Auth::user();
 
-        // ==================== FIXED: SAMA DENGAN CREATE (admin_eng, user, manager) ====================
+        // ==================== SAMA DENGAN CREATE (admin_eng, user, manager) ====================
         if (!in_array($user->role, ['admin_eng', 'user', 'manager'])) {
             return response()->json([
                 'success' => false,
@@ -328,12 +337,12 @@ class TicketController extends Controller
             'title' => $request->title,
             'category_id' => $request->category_id,
             'has_signature' => !empty($request->signature_data),
-            'use_manager_signature' => $request->use_manager_signature,
+            'use_saved_signature' => $request->use_saved_signature,
             'attachments_count' => $request->hasFile('attachments') ? count($request->file('attachments')) : 0
         ]);
 
-        // Validate request
-        $request->validate([
+        // Validate request (tanpa validasi use_saved_signature)
+        $validator = validator($request->all(), [
             'title' => 'required|string|max:100',
             'description' => [
                 'required',
@@ -356,9 +365,48 @@ class TicketController extends Controller
             'location_manual' => 'nullable|required_without:location_id|string|max:255',
             'due_date' => 'nullable|date|after:now',
             'attachments.*' => 'nullable|file|mimes:jpg,jpeg,png,pdf,doc,docx|max:5120',
-            'signature_data' => 'required_without:use_manager_signature|string',
-            'use_manager_signature' => 'nullable|in:1',
+            'signature_data' => 'nullable|string',
+            // 'use_saved_signature' => 'nullable|in:1', // HAPUS validasi ini
         ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation error',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        // ==================== CUSTOM VALIDASI SIGNATURE ====================
+        $useSavedSignature = $request->input('use_saved_signature') == '1';
+        $hasSignatureData = $request->filled('signature_data') && $request->signature_data;
+
+        // Cek apakah user boleh menggunakan saved signature (manager atau admin_eng)
+        $canUseSavedSignature = in_array($user->role, ['manager', 'admin_eng']);
+
+        // Validasi: salah satu harus dipilih
+        if (!$useSavedSignature && !$hasSignatureData) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Please provide a signature or use saved signature.'
+            ], 422);
+        }
+
+        // Jika pilih saved signature tapi tidak punya hak akses
+        if ($useSavedSignature && !$canUseSavedSignature) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You are not authorized to use saved signature.'
+            ], 403);
+        }
+
+        // Jika pilih saved signature tapi tidak punya signature tersimpan
+        if ($useSavedSignature && (!$user->has_signature || !$user->signature_path)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You have not uploaded a signature in your profile. Please upload one first.'
+            ], 422);
+        }
 
         // Validasi: location_id atau location_manual harus ada salah satu
         if (!$request->location_id && !$request->location_manual) {
@@ -400,32 +448,31 @@ class TicketController extends Controller
             // Generate ticket number
             $ticketNumber = $this->generateTicketNumber();
 
-            // Save signature (jika tidak pakai manager signature)
+            // Save signature
             $signaturePath = null;
 
-            // Jika pakai manager signature
-            if ($request->use_manager_signature == '1') {
-                if ($user->role !== 'manager') {
-                    throw new \Exception('Only managers can use manager signature');
-                }
-
-                if (!$user->has_signature || !$user->signature_path) {
-                    throw new \Exception('You have not uploaded a signature in your profile');
-                }
-
+            // Jika menggunakan saved signature (untuk manager atau admin_eng)
+            if ($useSavedSignature) {
                 $signaturePath = $user->signature_path;
-                Log::info('Using manager signature:', ['path' => $signaturePath]);
+                Log::info('Using saved signature:', [
+                    'user_id' => $user->id,
+                    'role' => $user->role,
+                    'path' => $signaturePath
+                ]);
             }
             // Jika pakai signature baru dari modal
-            elseif ($request->signature_data && str_starts_with($request->signature_data, 'data:image/')) {
+            elseif ($hasSignatureData && str_starts_with($request->signature_data, 'data:image/')) {
                 $signaturePath = $this->saveSignature($request->signature_data, $ticketNumber, $user->id);
-                Log::info('Signature saved successfully:', ['path' => $signaturePath]);
+                Log::info('New signature saved successfully:', [
+                    'user_id' => $user->id,
+                    'path' => $signaturePath
+                ]);
             } else {
-                Log::error('No valid signature provided');
-                throw new \Exception('Please provide a signature');
+                throw new \Exception('No valid signature provided');
             }
 
             // Create ticket
+// Create ticket
             $ticketData = [
                 'ticket_number' => $ticketNumber,
                 'title' => $request->title,
@@ -434,7 +481,9 @@ class TicketController extends Controller
                 'priority_id' => $request->priority_id,
                 'department_id' => $request->department_id ?? $user->department_id,
                 'location_id' => $request->location_id,
-                'location_manual' => $request->location_manual,
+                'location_manual' => $request->location_type === 'manual'
+                    ? $request->location_manual . ' (' . ucfirst($request->manual_location_hotel) . ' Hotel)'
+                    : $request->location_manual,
                 'user_id' => $user->id,
                 'status' => 'open',
                 'current_stage' => 1,
@@ -463,7 +512,8 @@ class TicketController extends Controller
             Log::info('Reporter signature saved:', [
                 'ticket_id' => $ticket->id,
                 'user_id' => $user->id,
-                'stage' => 1
+                'stage' => 1,
+                'used_saved_signature' => $useSavedSignature
             ]);
 
             // Handle file attachments
@@ -488,10 +538,10 @@ class TicketController extends Controller
                 ]);
             }
 
-            // ✅ TAMBAH: Notifikasi ke user pembuat ticket
+            // Notifikasi ke user pembuat ticket
             $this->sendTicketCreatedNotification($ticket->user, $ticket);
 
-            // ✅ TAMBAH: Notifikasi ke Engineering Department (dengan email)
+            // Notifikasi ke Engineering Department (dengan email)
             $this->notifyEngineeringDepartment($ticket);
 
             // Log activity
@@ -532,6 +582,56 @@ class TicketController extends Controller
                 'message' => 'Failed to create ticket: ' . $e->getMessage()
             ], 500);
         }
+    }
+
+    /**
+     * Display the specified ticket
+     */
+    public function show($id)
+    {
+        $ticket = Ticket::with([
+            'user',
+            'category',
+            'priority',
+            'location',
+            'assignedUser',
+            'department',
+            'attachments',
+            'comments.user',
+            'approvals',
+            'signatures',
+            'voucherRequests'
+        ])->findOrFail($id);
+
+        $user = Auth::user();
+
+        // Check access
+        $canView = false;
+
+        switch ($user->role) {
+            case 'superadmin':
+            case 'admin_eng':
+            case 'om':
+            case 'gm':
+                $canView = true;
+                break;
+            case 'user':
+                $canView = ($ticket->user_id === $user->id);
+                break;
+            case 'technician':
+                $canView = ($ticket->assigned_to === $user->id);
+                break;
+            case 'manager':
+                $canView = ($ticket->department_id === $user->department_id);
+                break;
+        }
+
+        if (!$canView) {
+            return redirect()->route('tickets.index')
+                ->with('error', 'You do not have permission to view this ticket.');
+        }
+
+        return view('tickets.show', compact('ticket'));
     }
 
     /**
@@ -642,7 +742,6 @@ class TicketController extends Controller
                 'error' => $e->getMessage(),
                 'ticket_id' => $ticket->id
             ]);
-            // Don't throw, just log the error
         }
     }
 
@@ -651,12 +750,28 @@ class TicketController extends Controller
      */
     public function checkAccess($id)
     {
-        $ticket = Ticket::with(['user', 'category', 'department'])->findOrFail($id);
+        $ticket = Ticket::with(['user', 'category', 'department', 'priority'])->findOrFail($id);
         $user = Auth::user();
 
-        // ==================== LOGIKA AKSES DETAIL TICKET ====================
         $canViewFull = false;
         $reason = '';
+
+        // Helper function untuk status display (sama kayak calendar)
+        $getStatusDisplayName = function ($status) {
+            $displayNames = [
+                'open' => 'Open',
+                'received' => 'Received',
+                'pending_om' => 'OM Approval',
+                'in_progress' => 'In Progress',
+                'pending_vr' => 'PR Approval',
+                'completed' => 'Completed',
+                'pending_gm' => 'GM Approval',
+                'ready_for_closure' => 'Ready for Closure',
+                'closed' => 'Closed',
+                'cancelled' => 'Cancelled'
+            ];
+            return $displayNames[$status] ?? $status;
+        };
 
         switch ($user->role) {
             case 'superadmin':
@@ -673,7 +788,7 @@ class TicketController extends Controller
                     $reason = 'Ticket owner';
                 } else {
                     $canViewFull = false;
-                    $reason = 'This ticket belongs to another user';
+                    $reason = 'This maintenance request belongs to another user';
                 }
                 break;
 
@@ -683,7 +798,7 @@ class TicketController extends Controller
                     $reason = 'Assigned technician';
                 } else {
                     $canViewFull = false;
-                    $reason = 'Ticket not assigned to you';
+                    $reason = 'Maintenance request not assigned to you';
                 }
                 break;
 
@@ -693,7 +808,7 @@ class TicketController extends Controller
                     $reason = 'Department manager';
                 } else {
                     $canViewFull = false;
-                    $reason = 'Ticket from different department';
+                    $reason = 'Maintenance request from different department';
                 }
                 break;
 
@@ -710,10 +825,13 @@ class TicketController extends Controller
                     'number' => $ticket->ticket_number,
                     'title' => $ticket->title,
                     'status' => $ticket->status,
+                    'status_display' => $getStatusDisplayName($ticket->status),
                     'created_by' => $ticket->user->name,
                     'created_at' => $ticket->created_at->format('d M Y, H:i'),
                     'category' => $ticket->category->name,
                     'department' => $ticket->department->name ?? 'N/A',
+                    'priority' => $ticket->priority->name ?? 'N/A',
+                    'priority_color' => $ticket->priority->color ?? '#003366',
                     'reason' => $reason
                 ]
             ]);
@@ -740,13 +858,13 @@ class TicketController extends Controller
 
         $sequence = 1;
         if ($lastTicket) {
-            preg_match('/TKT-(\d{8})-(\d{4})/', $lastTicket->ticket_number, $matches);
+            preg_match('/MR-(\d{8})-(\d{2})/', $lastTicket->ticket_number, $matches);
             if (isset($matches[2])) {
                 $sequence = (int) $matches[2] + 1;
             }
         }
 
-        return 'TKT-' . $year . $month . $day . '-' . str_pad($sequence, 4, '0', STR_PAD_LEFT);
+        return 'MR-' . $year . $month . $day . '-' . str_pad($sequence, 2, '0', STR_PAD_LEFT);
     }
 
     /**
@@ -793,89 +911,40 @@ class TicketController extends Controller
     }
 
     /**
-     * Count characters with special handling for newlines (enter = 100)
-     * NOTE: Method ini masih ada tapi tidak digunakan lagi
+     * Get user signature for saved signature (AJAX)
+     * Untuk manager dan admin_eng
      */
-    private function countDescriptionCharacters($text)
+    public function getSavedSignature(Request $request)
     {
-        if (empty($text)) {
-            return 0;
+        $user = Auth::user();
+
+        // Hanya manager dan admin_eng yang bisa menggunakan saved signature
+        if (!in_array($user->role, ['manager', 'admin_eng'])) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized'
+            ], 403);
         }
 
-        $charCount = 0;
-        $length = strlen($text);
+        if ($user->has_signature && $user->signature_path) {
+            $signatureUrl = Storage::url($user->signature_path);
 
-        for ($i = 0; $i < $length; $i++) {
-            if ($text[$i] === "\n" || $text[$i] === "\r") {
-                $charCount += 100;
-            } else {
-                $charCount += 1;
-            }
+            return response()->json([
+                'success' => true,
+                'has_signature' => true,
+                'signature_url' => $signatureUrl,
+                'signature_name' => $user->name,
+                'signature_role' => $user->role === 'manager' ? 'Manager' : 'Admin Engineering',
+                'signature_date' => $user->signature_updated_at ?
+                    \Carbon\Carbon::parse($user->signature_updated_at)->format('d M Y H:i') : null
+            ]);
         }
 
-        return $charCount;
-    }
-
-    /**
-     * Validate description content
-     * NOTE: Method ini masih ada tapi tidak digunakan lagi
-     */
-    private function validateDescriptionContent($description)
-    {
-        if (is_null($description) || $description === '') {
-            return ['valid' => false, 'message' => 'Description is required'];
-        }
-
-        if (trim($description) === '') {
-            return ['valid' => false, 'message' => 'Description cannot contain only spaces or tabs'];
-        }
-
-        if (preg_match('/^[\n\r]+$/', $description)) {
-            return ['valid' => false, 'message' => 'Description cannot contain only line breaks (Enter)'];
-        }
-
-        $charCount = $this->countDescriptionCharacters($description);
-
-        if ($charCount > 1000) {
-            return ['valid' => false, 'message' => 'Description exceeds maximum 1000 characters. Each line break counts as 100 characters.'];
-        }
-
-        return ['valid' => true];
-    }
-
-    /**
-     * Count lines in description dengan fix width 773px - MONOSPACE
-     */
-    private function countLinesInDescription($text)
-    {
-        if (empty($text)) {
-            return 0;
-        }
-
-        $BOX_WIDTH = 773;
-        $CHAR_WIDTH_MONOSPACE = 8;
-        $CHARS_PER_LINE = floor($BOX_WIDTH / $CHAR_WIDTH_MONOSPACE);
-        $MAX_LINES = 12;
-
-        $lines = explode("\n", $text);
-        $totalLines = 0;
-
-        foreach ($lines as $index => $line) {
-            if ($index > 0) {
-                $totalLines++;
-            }
-
-            if (strlen($line) > 0) {
-                $linesNeeded = ceil(strlen($line) / $CHARS_PER_LINE);
-                $totalLines += $linesNeeded;
-            }
-
-            if ($totalLines > $MAX_LINES) {
-                break;
-            }
-        }
-
-        return $totalLines;
+        return response()->json([
+            'success' => true,
+            'has_signature' => false,
+            'message' => 'You have not uploaded a signature yet. Please upload in Profile > Signature.'
+        ]);
     }
 
     /**
@@ -919,36 +988,120 @@ class TicketController extends Controller
     }
 
     /**
-     * Get manager signature for dropdown (AJAX)
+     * Export tickets to CSV or PDF
      */
-    public function getManagerSignature(Request $request)
+    public function export(Request $request)
     {
         $user = Auth::user();
 
-        if ($user->role !== 'manager') {
-            return response()->json([
-                'success' => false,
-                'message' => 'Unauthorized'
-            ], 403);
+        // Build query dengan filter yang sama seperti index
+        $query = Ticket::with(['user', 'category', 'priority', 'location', 'assignedUser', 'department']);
+
+        // Apply filters (sama seperti di index)
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('ticket_number', 'like', "%{$search}%")
+                    ->orWhere('title', 'like', "%{$search}%")
+                    ->orWhere('description', 'like', "%{$search}%")
+                    ->orWhereHas('user', fn($q) => $q->where('name', 'like', "%{$search}%"))
+                    ->orWhereHas('location', fn($q) => $q->where('name', 'like', "%{$search}%"));
+            });
         }
 
-        if ($user->has_signature && $user->signature_path) {
-            $signatureUrl = Storage::url($user->signature_path);
+        if ($request->filled('status') && $request->status !== '') {
+            $query->where('status', $request->status);
+        }
 
-            return response()->json([
-                'success' => true,
-                'has_signature' => true,
-                'signature_url' => $signatureUrl,
-                'signature_name' => $user->name,
-                'signature_date' => $user->signature_updated_at ?
-                    \Carbon\Carbon::parse($user->signature_updated_at)->format('d M Y H:i') : null
+        if ($request->filled('category')) {
+            $categories = (array) $request->category;
+            if (!empty($categories)) {
+                $query->whereIn('category_id', $categories);
+            }
+        }
+
+        if ($request->filled('priority')) {
+            $priorities = (array) $request->priority;
+            if (!empty($priorities)) {
+                $query->whereIn('priority_id', $priorities);
+            }
+        }
+
+        if ($request->filled('department')) {
+            $departments = (array) $request->department;
+            if (!empty($departments)) {
+                $query->whereIn('department_id', $departments);
+            }
+        }
+
+        if ($request->filled('date_from')) {
+            $query->whereDate('created_at', '>=', $request->date_from);
+        }
+        if ($request->filled('date_to')) {
+            $query->whereDate('created_at', '<=', $request->date_to);
+        }
+
+        $tickets = $query->latest()->get();
+
+        $format = $request->export;
+
+        if ($format === 'csv') {
+            return $this->exportToCSV($tickets);
+        } elseif ($format === 'pdf') {
+            return view('tickets.exports.print', compact('tickets'));
+        }
+
+        return redirect()->route('tickets.index')->with('error', 'Invalid export format');
+    }
+
+    private function exportToCSV($tickets)
+    {
+        $filename = 'maintenance_requests_' . date('Ymd_His') . '.csv';
+
+        $headers = [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+        ];
+
+        $callback = function () use ($tickets) {
+            $file = fopen('php://output', 'w');
+            fwrite($file, "\xEF\xBB\xBF"); // UTF-8 BOM
+
+            // Header
+            fputcsv($file, [
+                'MR Number',
+                'Title',
+                'Status',
+                'Priority',
+                'Category',
+                'Department',
+                'Location',
+                'Created By',
+                'Created At',
+                'Due Date'
             ]);
-        }
 
-        return response()->json([
-            'success' => true,
-            'has_signature' => false,
-            'message' => 'You have not uploaded a signature yet. Please upload in Profile > Signature.'
-        ]);
+            // Data
+            foreach ($tickets as $ticket) {
+                $statusDisplay = $ticket->status == 'pending_vr' ? 'PR Approval' : ucfirst(str_replace('_', ' ', $ticket->status));
+
+                fputcsv($file, [
+                    $ticket->ticket_number,
+                    $ticket->title,
+                    $statusDisplay,
+                    $ticket->priority->name ?? 'N/A',
+                    $ticket->category->name ?? 'N/A',
+                    $ticket->department->name ?? 'N/A',
+                    $ticket->location->name ?? $ticket->location_manual ?? 'N/A',
+                    $ticket->user->name ?? 'N/A',
+                    $ticket->created_at->format('Y-m-d H:i:s'),
+                    $ticket->due_date ? $ticket->due_date->format('Y-m-d') : '-',
+                ]);
+            }
+
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
     }
 }

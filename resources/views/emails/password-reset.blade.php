@@ -1,96 +1,127 @@
-{{-- resources/views/emails/password-reset.blade.php --}}
-{{-- Template tunggal untuk semua reset password --}}
 <!DOCTYPE html>
-<html lang="en">
+<html>
 
 <head>
-    <meta charset="UTF-8">
+    <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reset Your Password</title>
+    <title>Reset Password | {{ config('app.name') }}</title>
     <style>
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Segoe UI', Arial, sans-serif;
             line-height: 1.6;
             color: #333;
-            margin: 0;
-            padding: 0;
-            background-color: #f4f4f4;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
         }
 
         .container {
-            max-width: 600px;
-            margin: 20px auto;
             background: white;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            border-radius: 12px;
             overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
         }
 
         .header {
-            background: linear-gradient(135deg, #003366 0%, #002244 100%);
-            padding: 30px;
+            background: #003366;
+            color: white;
+            padding: 25px 20px;
             text-align: center;
         }
 
         .header h1 {
-            color: white;
             margin: 0;
             font-size: 24px;
+            font-weight: 700;
+        }
+
+        .header h2 {
+            margin: 10px 0 0;
+            font-size: 16px;
+            font-weight: 500;
+            opacity: 0.9;
         }
 
         .content {
             padding: 30px;
         }
 
+        .greeting {
+            font-size: 16px;
+            margin-bottom: 20px;
+        }
+
         .button {
             display: inline-block;
-            padding: 12px 30px;
             background: #ff6600;
             color: white;
+            padding: 12px 28px;
             text-decoration: none;
-            border-radius: 5px;
-            font-weight: bold;
+            border-radius: 6px;
             margin: 20px 0;
+            font-weight: 600;
         }
 
         .button:hover {
-            background: #cc5200;
+            background: #e55a00;
+        }
+
+        .alert-warning {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 12px 16px;
+            margin: 20px 0;
+            border-radius: 6px;
+            font-size: 13px;
+        }
+
+        .alert-warning ul {
+            margin: 8px 0 0 20px;
+            padding: 0;
         }
 
         .footer {
             background: #f8f9fa;
             padding: 20px;
             text-align: center;
-            font-size: 12px;
-            color: #6c757d;
-            border-top: 1px solid #dee2e6;
+            border-top: 1px solid #e0e0e0;
         }
 
-        .warning {
-            color: #dc3545;
-            font-size: 13px;
-            margin-top: 20px;
+        .footer p {
+            margin: 5px 0;
+            color: #666;
+            font-size: 11px;
+        }
+
+        .footer a {
+            color: #ff6600;
+            text-decoration: none;
+        }
+
+        .url-box {
+            word-break: break-all;
+            background: #f8f9fa;
             padding: 10px;
-            background: #f8d7da;
-            border-radius: 5px;
-        }
-
-        .info-box {
-            background: #e6f0ff;
-            border-left: 4px solid #003366;
-            padding: 15px;
-            margin: 20px 0;
-            border-radius: 5px;
-        }
-
-        .badge {
-            display: inline-block;
-            padding: 3px 8px;
-            background: #ff6600;
-            color: white;
-            border-radius: 3px;
+            border-radius: 6px;
             font-size: 12px;
-            font-weight: bold;
+            color: #003366;
+            margin-top: 15px;
+        }
+
+        @media only screen and (max-width: 480px) {
+            body {
+                padding: 10px;
+            }
+
+            .content {
+                padding: 20px;
+            }
+
+            .button {
+                display: block;
+                text-align: center;
+            }
         }
     </style>
 </head>
@@ -98,54 +129,42 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>{{ config('app.name') }}</h1>
+            <h1>{{ config('app.name', 'MAINTENANCE SYSTEM') }}</h1>
+            <h2>Password Reset Request</h2>
         </div>
 
         <div class="content">
-            <h2>Hello, {{ $user->name }}!</h2>
-
-            @if (isset($source) && $source === 'profile')
-                <div class="info-box">
-                    <strong>🔐 Password Reset Request from Profile</strong><br>
-                    You requested to reset your password from your profile page.
-                </div>
-            @else
-                <div class="info-box">
-                    <strong>🔐 Password Reset Request</strong><br>
-                    You requested to reset your password from the login page.
-                </div>
-            @endif
-
-            <p>Click the button below to reset your password:</p>
-
-            <p style="text-align: center;">
-                <a href="{{ $resetLink }}" class="button">Reset Your Password</a>
-            </p>
-
-            <p><strong>⏰ This password reset link will expire in 60 minutes.</strong></p>
-
-            <p>If you did not request a password reset, please ignore this email or contact support if you have
-                concerns.</p>
-
-            <div class="warning">
-                <strong>⚠️ Security Notice:</strong> Never share this link with anyone. Our staff will never ask for
-                your password.
+            <div class="greeting">
+                <strong>Hello {{ $user->name }},</strong>
             </div>
 
-            <p style="margin-top: 30px;">
-                Best regards,<br>
-                {{ config('app.name') }} Team
-            </p>
+            <p>You are receiving this email because we received a password reset request for your account.</p>
 
-            <p style="font-size: 12px; color: #6c757d; margin-top: 30px; word-break: break-all;">
-                If you're having trouble clicking the button, copy and paste the URL below:<br>
-                <span style="color: #003366;">{{ $resetLink }}</span>
+            <div style="text-align: center;">
+                <a href="{{ $resetLink }}" class="button">Reset Password</a>
+            </div>
+
+            <div class="alert-warning">
+                <strong>⚠️ Security Notice:</strong>
+                <ul>
+                    <li>This password reset link will expire in <strong>60 minutes</strong>.</li>
+                    <li>If you did not request a password reset, no further action is required.</li>
+                    <li>Never share this link with anyone.</li>
+                </ul>
+            </div>
+
+            <p style="font-size: 12px; color: #666; margin-top: 20px;">
+                If you're unable to click the button, copy and paste this URL into your browser:
             </p>
+            <div class="url-box">
+                {{ $resetLink }}
+            </div>
         </div>
 
         <div class="footer">
+            <p>This is an automated notification from <strong>{{ config('app.name') }}</strong>.</p>
+            <p>If you did not request this, please ignore this email.</p>
             <p>&copy; {{ date('Y') }} {{ config('app.name') }}. All rights reserved.</p>
-            <p>This is an automated message, please do not reply to this email.</p>
         </div>
     </div>
 </body>

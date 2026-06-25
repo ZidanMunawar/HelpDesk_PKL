@@ -59,15 +59,17 @@ class User extends Authenticatable implements MustVerifyEmail
      *
      * @var array<string, string>
      */
-    protected $casts = [
-        'email_verified_at' => 'datetime',
-        'password' => 'hashed',
-        'created_at' => 'datetime',
-        'updated_at' => 'datetime',
-        'deleted_at' => 'datetime',
-        'has_signature' => 'boolean',
-        'signature_updated_at' => 'datetime',
-    ];
+protected $casts = [
+    'email_verified_at' => 'datetime',
+    'password' => 'hashed',
+    'created_at' => 'datetime',
+    'updated_at' => 'datetime',
+    'deleted_at' => 'datetime',
+    'has_signature' => 'boolean',
+    'signature_updated_at' => 'datetime',
+    'department_id' => 'integer', 
+    'id' => 'integer',              
+];
 
     // ==================== ROLE CHECKS ====================
 
@@ -1017,23 +1019,30 @@ class User extends Authenticatable implements MustVerifyEmail
 
         return $this;
     }
-
-    // app/Models/User.php - Perbaiki method sendPasswordResetNotification
-
     /**
      * Send password reset notification
-     * Override untuk menggunakan tabel password_resets dan email template yang konsisten
+     * Override untuk mendukung dua source: dari login page (guest) dan dari profile page (authenticated)
      */
     public function sendPasswordResetNotification($token)
     {
-        $resetLink = route('password.reset', ['token' => $token, 'email' => $this->email]);
+        // Deteksi source dari request atau dari parameter
+        $source = request()->input('source', 'system');
 
-        // Gunakan email template yang sama untuk konsistensi
+        // Tentukan route berdasarkan source
+        if ($source === 'profile') {
+            // Dari profile page - pakai route profile
+            $resetLink = route('profile.password.reset', ['token' => $token, 'email' => $this->email]);
+        } else {
+            // Dari login page - pakai route default
+            $resetLink = route('password.reset', ['token' => $token, 'email' => $this->email]);
+        }
+
+        // Kirim email
         \Illuminate\Support\Facades\Mail::send('emails.password-reset', [
             'user' => $this,
             'resetLink' => $resetLink,
             'expiry' => \Carbon\Carbon::now()->addHours(1),
-            'source' => 'system' // Tambahkan source untuk identifikasi
+            'source' => $source
         ], function ($message) {
             $message->to($this->email, $this->name)
                 ->subject('Reset Password Notification - ' . config('app.name'));

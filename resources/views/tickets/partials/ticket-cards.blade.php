@@ -1,20 +1,22 @@
-<!-- TICKET CARDS -->
 <div class="ticket-list">
+    @php
+        $statusDisplayMap = [
+            'open' => 'Open',
+            'received' => 'Received',
+            'pending_om' => 'OM Approval',
+            'in_progress' => 'In Progress',
+            'pending_vr' => 'PR Approval',
+            'completed' => 'Completed',
+            'pending_gm' => 'GM Approval',
+            'ready_for_closure' => 'Ready for Closure',
+            'closed' => 'Closed',
+            'cancelled' => 'Cancelled',
+        ];
+    @endphp
+
     @forelse($tickets as $ticket)
         @php
-            $statusDisplay =
-                [
-                    'open' => 'Open',
-                    'received' => 'Received',
-                    'pending_om' => 'OM Approval',
-                    'in_progress' => 'In Progress',
-                    'pending_vr' => 'VR Approval',
-                    'completed' => 'Completed',
-                    'pending_gm' => 'GM Approval',
-                    'ready_for_closure' => 'Ready for Closure',
-                    'closed' => 'Closed',
-                    'cancelled' => 'Cancelled',
-                ][$ticket->status] ?? str_replace('_', ' ', $ticket->status);
+            $statusDisplay = $statusDisplayMap[$ticket->status] ?? str_replace('_', ' ', $ticket->status);
         @endphp
 
         <div class="ticket-card" onclick="viewTicket({{ $ticket->id }})">
@@ -32,30 +34,25 @@
             <div class="ticket-meta">
                 <div class="ticket-meta-item">
                     <i class="fas fa-user"></i>
-                    <span class="ticket-meta-text" title="{{ $ticket->user->name }}">
-                        {{ Str::limit($ticket->user->name, 20) }}
-                    </span>
+                    <span title="{{ $ticket->user->name }}">{{ Str::limit($ticket->user->name, 20) }}</span>
                 </div>
 
                 <div class="ticket-meta-item">
                     <i class="fas fa-folder"></i>
-                    <span class="ticket-meta-text" title="{{ $ticket->category->name }}">
-                        {{ Str::limit($ticket->category->name, 20) }}
-                    </span>
+                    <span title="{{ $ticket->category->name }}">{{ Str::limit($ticket->category->name, 20) }}</span>
                 </div>
 
                 @if ($ticket->department)
                     <div class="ticket-meta-item">
                         <i class="fas fa-building"></i>
-                        <span class="ticket-meta-text" title="{{ $ticket->department->name }}">
-                            {{ Str::limit($ticket->department->name, 18) }}
-                        </span>
+                        <span
+                            title="{{ $ticket->department->name }}">{{ Str::limit($ticket->department->name, 18) }}</span>
                     </div>
                 @endif
 
                 <div class="ticket-meta-item">
                     <i class="fas fa-map-marker-alt"></i>
-                    <span class="ticket-meta-text">
+                    <span>
                         @if ($ticket->location)
                             {{ Str::limit($ticket->location->name, 18) }}
                             @if ($ticket->location->floor_number)
@@ -101,25 +98,26 @@
     @empty
         <div class="empty-state">
             <div class="empty-state-icon">
-                <i class="fas fa-ticket-alt"></i>
+                <i class="fas fa-clipboard-list"></i>
             </div>
-            <h5 class="empty-state-title">No Tickets Found</h5>
+            <h5 class="empty-state-title">No Maintenance Requests Found</h5>
             <p class="empty-state-text">
                 @if (request()->anyFilled(['search', 'status', 'category', 'priority', 'department', 'date_from', 'date_to']))
                     Try adjusting your search criteria or clear filters.
                 @else
-                    There are no tickets in the system yet.
+                    There are no maintenance requests in the system yet.
                 @endif
             </p>
             <div class="empty-state-buttons">
                 @if (request()->anyFilled(['search', 'status', 'category', 'priority', 'department', 'date_from', 'date_to']))
-                    <a href="{{ route('tickets.index', ['search' => request('search')]) }}" class="btn-reset">
+                    <button onclick="resetAllFilters()" class="btn-reset">
                         <i class="fas fa-redo-alt"></i> Clear Filters
-                    </a>
+                    </button>
                 @endif
                 @if (in_array(auth()->user()->role, ['admin_eng', 'user', 'manager']))
-                    <a href="{{ route('tickets.create') }}" class="btn-modern btn-create">
-                        <i class="fas fa-plus-circle"></i> Create New Ticket
+                    <a href="{{ route('tickets.create') }}" class="btn-modern btn-create"
+                        style="text-decoration: none;">
+                        <i class="fas fa-plus-circle"></i> Create New MR
                     </a>
                 @endif
             </div>
@@ -131,3 +129,9 @@
         {{ $tickets->withQueryString()->links('pagination::bootstrap-4') }}
     </div>
 </div>
+
+<script>
+    function resetAllFilters() {
+        window.location.href = '{{ route('tickets.index') }}';
+    }
+</script>

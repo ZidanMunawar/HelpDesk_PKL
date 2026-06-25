@@ -27,6 +27,9 @@ class Notification extends Model
         'read_at' => 'datetime',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
+            'user_id' => 'integer',
+    'ticket_id' => 'integer',
+    'is_read' => 'boolean',
     ];
 
     // Relationships

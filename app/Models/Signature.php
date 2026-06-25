@@ -31,7 +31,8 @@ class Signature extends Model
      */
     protected $casts = [
         'signed_at' => 'datetime',
-        // HAPUS 'updated_at' dari casts karena tidak ada di database
+        'ticket_id' => 'integer',
+        'user_id' => 'integer'
     ];
 
     /**

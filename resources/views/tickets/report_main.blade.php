@@ -18,15 +18,60 @@
             line-height: 1.3;
             color: #000000;
             background: #ffffff;
-            padding: 15px 15px 0 15px;
+            padding: 0;
             margin: 0;
             position: relative;
-            width: 210mm;
-            height: 297mm;
-            overflow: hidden;
+            min-height: 297mm;
         }
 
-        /* Watermark Status */
+        @media print {
+
+            html,
+            body {
+                margin: 0 !important;
+                padding: 0 !important;
+                height: auto !important;
+                overflow: hidden !important;
+            }
+
+            body {
+                padding: 0;
+                margin: 0;
+            }
+
+            .no-break {
+                page-break-inside: avoid;
+                break-inside: avoid;
+            }
+
+            .page-break {
+                page-break-before: always;
+            }
+
+            .signature-section,
+            .footer {
+                page-break-inside: avoid;
+                break-inside: avoid;
+            }
+
+            .description-wrapper {
+                overflow: hidden !important;
+                height: auto !important;
+                min-height: 210px;
+            }
+
+            .description-content {
+                overflow: hidden !important;
+                height: auto !important;
+                min-height: 200px;
+            }
+
+            *:last-child {
+                margin-bottom: 0 !important;
+                padding-bottom: 0 !important;
+            }
+        }
+
         .status-watermark {
             position: absolute;
             top: 45%;
@@ -44,16 +89,6 @@
             text-align: center;
         }
 
-        .container {
-            width: 100%;
-            height: 100%;
-            position: relative;
-            z-index: 1;
-            display: flex;
-            flex-direction: column;
-        }
-
-        /* HEADER */
         .header {
             display: flex;
             justify-content: space-between;
@@ -62,6 +97,7 @@
             padding-bottom: 5px;
             border-bottom: 2px solid #FF6B35;
             flex-shrink: 0;
+            position: relative;
         }
 
         .logo-section {
@@ -75,6 +111,10 @@
             object-fit: contain;
         }
 
+        .title-section {
+            text-align: right;
+        }
+
         .title-section h1 {
             color: #FF6B35;
             font-size: 18px;
@@ -84,7 +124,17 @@
             margin: 0;
         }
 
-        /* FORM META */
+        .header-status-text {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 12pt;
+            font-weight: bold;
+            color: #FF6B35;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
         .form-meta {
             margin-bottom: 6px;
             flex-shrink: 0;
@@ -145,7 +195,6 @@
             font-size: 9pt;
         }
 
-        /* TITLE FIELD */
         .full-width-field {
             display: flex;
             align-items: baseline;
@@ -167,7 +216,6 @@
             padding: 1px 3px;
         }
 
-        /* DESCRIPTION */
         .description-section {
             margin-bottom: 6px;
             flex-shrink: 0;
@@ -180,137 +228,125 @@
             margin-bottom: 3px;
         }
 
-        .description-box {
-            border: 1px solid #333;
-            padding: 8px 10px;
-            font-size: 10pt;
-            line-height: 1;
-            /* white-space: pre-wrap; */
-            word-wrap: break-word;
-            height: 200px;
+        .description-wrapper {
+            position: relative;
+            width: 100%;
+            max-width: 793px;
+            height: 210px;
+            border: 1px solid #ff6a2a;
+            border-radius: 6px;
+            overflow-x: auto;
             overflow-y: hidden;
-            width: 796px;
-            font-family: 'Lucida Console', Monaco, monospace !important;
-            font-size: 10pt !important;
-            line-height: 1 !important;
+            margin: 0 auto;
         }
 
-        /* FOLLOW UP */
+        .description-content {
+            width: 793px !important;
+            min-width: 793px !important;
+            max-width: 793px !important;
+            min-height: 200px !important;
+            height: 200px !important;
+            max-height: 200px !important;
+            padding: 8px 10px;
+            font-family: 'Lucida Console', Monaco, monospace !important;
+            font-size: 10pt !important;
+            line-height: 1.2 !important;
+            overflow: hidden !important;
+            border: none;
+            background: transparent;
+            color: #000000 !important;
+            display: block;
+            margin: 0 auto;
+            word-wrap: break-word;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        .description-container {
+            width: 100%;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            margin-bottom: 15px;
+        }
+
+        .scroll-hint {
+            font-size: 11px;
+            color: #999;
+            margin-bottom: 5px;
+            text-align: right;
+        }
+
+        .scroll-hint i {
+            color: #ff6a2a;
+            margin-right: 4px;
+        }
+
+        @media (max-width: 820px) {
+            .description-container {
+                overflow-x: auto;
+                border: 1px solid #eee;
+                border-radius: 4px;
+            }
+
+            .description-content {
+                width: 793px !important;
+                min-width: 793px !important;
+                margin: 0;
+            }
+        }
+
         .followup-section {
+            margin: 6px 0;
             flex-shrink: 0;
-            margin-bottom: 6px;
-            display: flex;
-            flex-direction: column;
-            height: auto;
-            width: 796px;
         }
 
         .followup-section label {
             font-weight: bold;
-            font-size: 9pt;
+            font-size: 10pt;
             display: block;
             margin-bottom: 3px;
         }
 
         .followup-container {
             border: 1px solid #333;
-            overflow-y: auto;
-            height: calc(100% - 18px);
-            /* Full height after label */
-            background: #ffffff47;
+            min-height: 20px;
+            background: transparent !important;
         }
 
         .followup-box {
             border-bottom: 1px dotted #ccc;
-            padding: 6px 8px;
+            padding: 8px 10px;
             font-size: 9pt;
-            line-height: 1.3;
-            white-space: pre-wrap;
-            word-wrap: break-word;
-
+            line-height: 1.4;
+            background: transparent !important;
         }
 
         .followup-box:last-child {
             border-bottom: none;
         }
 
+        .followup-header {
+            font-weight: 600;
+            margin-bottom: 4px;
+            color: #333;
+        }
+
+        .followup-text {
+            color: #555;
+            line-height: 1.4;
+            word-wrap: break-word;
+            white-space: normal;
+            padding-left: 10px;
+            border-left: 2px solid #FF6B35;
+        }
+
         .followup-box.empty-data {
-            color: #888;
+            color: #999;
             font-style: italic;
-            /* text-align: center;
-            padding: 10px; */
-        }
-
-        /* PR SECTION - WAJIB TAMPIL! */
-        .pr-section {
-            margin: 4px 0 8px 0;
             padding: 8px 10px;
-            border: 1px solid #333;
-            background: #fafafa49;
-            flex-shrink: 0;
-            width: 796px;
+            background: #fafafa !important;
         }
 
-        .pr-section label {
-            font-weight: bold;
-            font-size: 9pt;
-            display: block;
-            margin-bottom: 5px;
-            color: #FF6B35;
-        }
-
-        .pr-items {
-            font-size: 9pt;
-            line-height: 1.3;
-        }
-
-        .pr-item-row {
-            display: flex;
-            justify-content: space-between;
-            padding: 3px 0;
-            border-bottom: 1px dotted #ccc;
-        }
-
-        .pr-item-name {
-            flex: 2;
-        }
-
-        .pr-item-qty {
-            flex: 0.5;
-            text-align: center;
-        }
-
-        .pr-item-price {
-            flex: 1;
-            text-align: right;
-        }
-
-        .pr-total {
-            display: flex;
-            justify-content: space-between;
-            padding: 4px 0;
-            font-weight: bold;
-            border-top: 2px solid #333;
-            margin-top: 4px;
-        }
-
-        .pr-empty {
-            /* padding: 10px; */
-            /* text-align: center; */
-            color: #888;
-            font-style: italic;
-        }
-
-        /* DIVIDER ORANGE */
-        .pr-divider {
-            width: 100%;
-            height: 2px;
-            background-color: #FF6B35;
-            margin: 4px 0 8px 0;
-            flex-shrink: 0;
-        }
-
-        /* SIGNATURE SECTION - DIGEDEIN! */
         .signature-section {
             display: flex;
             justify-content: space-between;
@@ -323,39 +359,47 @@
         .signature-box {
             flex: 1;
             text-align: center;
-            padding: 0 5px;
+            padding: 0 3px;
             display: flex;
             flex-direction: column;
-            min-height: 160px;
-            /* DARI 140 JADI 160 */
+            min-height: 130px;
         }
 
         .signature-box .label {
             font-weight: bold;
-            font-size: 10pt;
-            /* DARI 9PT JADI 10PT */
-            margin-bottom: 10px;
+            font-size: 9pt;
+            margin-bottom: 6px;
             text-transform: uppercase;
             color: #333;
         }
 
         .signature-img {
-            max-width: 130px;
-            /* DARI 110 JADI 130 */
-            max-height: 60px;
-            /* DARI 45 JADI 60 */
+            max-width: 110px;
+            max-height: 50px;
             object-fit: contain;
-            margin: 0 auto 8px;
+            margin: 0 auto 5px;
             display: block;
+        }
+
+        .signature-placeholder {
+            width: 100%;
+            max-width: 110px;
+            max-height: 50px;
+            aspect-ratio: 3 / 2;
+            margin: 0 auto 5px;
+            background: transparent;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .name-line {
             width: 100%;
             margin: 0 auto;
-            padding: 5px 0;
+            padding: 4px 0;
             border-bottom: 1px solid #333;
-            font-size: 10pt;
-            /* DARI 9PT JADI 10PT */
+            font-size: 9pt;
             text-align: center;
             white-space: nowrap;
             overflow: hidden;
@@ -368,16 +412,14 @@
         }
 
         .signature-box .date-info {
-            margin-top: 5px;
-            font-size: 9pt;
-            /* DARI 7.5PT JADI 9PT */
+            margin-top: 3px;
+            font-size: 8pt;
             color: #555;
         }
 
-        /* COMPLETION SECTION */
         .completion-section {
-            margin: 6px 0;
-            padding: 3px 0;
+            margin: 4px 0;
+            padding: 2px 0;
             flex-shrink: 0;
         }
 
@@ -390,7 +432,6 @@
         .completion-field label {
             font-weight: bold;
             font-size: 10pt;
-            /* DIGEDEIN */
             white-space: nowrap;
             width: 140px;
         }
@@ -400,19 +441,17 @@
             font-size: 10pt;
         }
 
-        /* FLEX SPACER */
         .flex-spacer {
             flex: 1 1 auto;
             min-height: 5px;
-            max-height: 30px;
+            max-height: 20px;
             width: 100%;
         }
 
-        /* FOOTER */
-        /* FOOTER - STRETCH FULL */
         .footer {
             margin-top: 2px;
-            padding-top: 3px;
+            padding-top: 2px;
+            padding-bottom: 0;
             width: 100%;
             flex-shrink: 0;
             border-top: 1px solid #ddd;
@@ -422,14 +461,9 @@
 
         .footer img {
             width: 100%;
-            height: 100%;
-            /* Berubah dari 45px jadi 100% */
-            min-height: 50px;
-            /* Minimal tinggi */
-            max-height: 70px;
-            /* Maksimal tinggi */
-            object-fit: cover;
-            /* Cover biar stretch penuh */
+            height: auto;
+            max-height: 60px;
+            object-fit: contain;
             display: block;
         }
 
@@ -437,277 +471,418 @@
             text-align: center;
             font-size: 8pt;
             color: #666;
-            padding: 3px 0;
+            padding: 3px 0 0 0;
         }
 
         .no-break {
             page-break-inside: avoid;
+            break-inside: avoid;
         }
 
         .hidden {
             display: none;
         }
+
+        /* TAMBAHKAN INI */
+        .print-modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            z-index: 9999;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .print-modal {
+            background: white;
+            border-radius: 16px;
+            padding: 40px 30px;
+            text-align: center;
+            max-width: 420px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .print-modal .modal-icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+            display: block;
+        }
+
+        .print-modal h2 {
+            color: #FF6B35;
+            margin-bottom: 10px;
+            font-size: 22px;
+            font-weight: bold;
+        }
+
+        .print-modal .ticket-number {
+            color: #666;
+            margin-bottom: 10px;
+            font-size: 13px;
+            background: #f5f5f5;
+            padding: 8px 16px;
+            border-radius: 20px;
+            display: inline-block;
+        }
+
+        .print-modal .info-text {
+            color: #888;
+            margin-bottom: 30px;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .print-modal .print-btn {
+            background: #FF6B35;
+            color: white;
+            border: none;
+            padding: 16px 40px;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            width: 100%;
+            justify-content: center;
+        }
+
+        .print-modal .close-link {
+            display: block;
+            margin-top: 20px;
+            color: #999;
+            text-decoration: none;
+            font-size: 14px;
+            padding: 10px;
+            cursor: pointer;
+        }
+
+        @media screen and (max-width: 768px) {
+            .print-modal-overlay {
+                display: flex;
+            }
+
+            .print-content {
+                display: none;
+            }
+        }
+
+        @media screen and (min-width: 769px) {
+            .print-modal-overlay {
+                display: none !important;
+            }
+
+            .print-content {
+                display: block;
+            }
+        }
+
+        @media print {
+            .print-modal-overlay {
+                display: none !important;
+            }
+
+            .print-content {
+                display: block !important;
+            }
+        }
     </style>
 </head>
 
 <body>
-    <!-- Watermark Status -->
-    <div class="status-watermark">
-        {{ $statusDisplay }}
+    <!-- MODAL PRINT -->
+    <div class="print-modal-overlay" id="printModalOverlay">
+        <div class="print-modal">
+            <span class="modal-icon">🖨️</span>
+            <h2>Print Report</h2>
+            <div class="ticket-number">#{{ $ticket->ticket_number }}</div>
+            <p class="info-text">Tap button below to print</p>
+            <button class="print-btn" onclick="triggerPrint()">
+                <span class="btn-icon">📄</span> Print Now
+            </button>
+            <div class="close-link" onclick="window.close()">← Cancel</div>
+        </div>
     </div>
+    @php
+        $showWatermark = !empty($statusDisplay) && !in_array($statusDisplay, ['COMPLETED', 'CLOSED']);
+    @endphp
 
-    <div class="container">
-        <!-- Header -->
-        <div class="header no-break">
-            <div class="logo-section">
-                @if (file_exists(public_path('assets/images/logo.png')))
-                    <img src="{{ public_path('assets/images/logo.png') }}" alt="Company Logo">
-                @else
-                    <div style="color: #888; display: flex; align-items: center; height: 40px;">[LOGO]</div>
-                @endif
-            </div>
-            <div class="title-section">
-                <h1>MAINTENANCE<br>REQUEST</h1>
-            </div>
+    @if ($showWatermark)
+        <div class="status-watermark">
+            {{ $statusDisplay }}
         </div>
+    @endif
 
-        <!-- Form Meta -->
-        <div class="form-meta no-break">
-            <div class="form-row">
-                <div class="form-field">
-                    <label>TO</label>
-                    <span class="colon">:</span>
-                    <div class="text-content">ENGINEERING DEPT.</div>
-                </div>
-                <div class="form-field">
-                    <label class="orange-label">No</label>
-                    <span class="colon">:</span>
-                    <div class="field-without-line">{{ $ticket->ticket_number }}</div>
-                </div>
-            </div>
-            <div class="form-row">
-                <div class="form-field">
-                    <label>FROM</label>
-                    <span class="colon">:</span>
-                    <div class="field-content">{{ $helper->getUserName($ticket->user, '-') }}</div>
-                </div>
-                <div class="form-field">
-                    <label>Date</label>
-                    <span class="colon">:</span>
-                    <div class="field-content">{{ $ticket->created_at->format('d F Y') }}</div>
-                </div>
-            </div>
-            <div class="form-row">
-                <div class="form-field">
-                    <label>DEPT</label>
-                    <span class="colon">:</span>
-                    <div class="field-content">{{ $ticket->department->name ?? '-' }}</div>
-                </div>
-                <div class="form-field">
-                    <label>AREA</label>
-                    <span class="colon">:</span>
-                    <div class="field-content">
-                        @if ($ticket->location)
-                            {{ $ticket->location->name }}
-                            @if ($ticket->location->floor_number)
-                                (Fl {{ $ticket->location->floor_number }})
-                            @endif
-                        @elseif($ticket->location_manual)
-                            {{ $ticket->location_manual }}
-                        @else
-                            -
-                        @endif
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Title -->
-        <div class="full-width-field no-break">
-            <label>TITLE</label>
-            <span class="colon">:</span>
-            <div class="field-content">{{ $ticket->title ?? '-' }}</div>
-        </div>
-
-        <!-- Description -->
-        <div class="description-section no-break">
-            <label>PLEASE REPAIR :</label>
-            <div class="description-box">{!! nl2br(e(strip_tags($ticket->description))) ?: '-' !!}</div>
-        </div>
-
-        <!-- FOLLOW UP-->
-        <div class="followup-section no-break">
-            <label>FOLLOW UP :</label>
-            <div class="followup-container">
-                @php
-                    $realFollowUps = array_filter($followUpComments ?? [], function ($comment) {
-                        return !empty($comment['text']) && $comment['text'] !== '-';
-                    });
-                @endphp
-
-                @if (count($realFollowUps) > 0)
-                    @foreach ($realFollowUps as $comment)
-                        <div class="followup-box">
-                            @if (!empty($comment['date']))
-                                <strong>[{{ $comment['date'] }}] {{ $comment['user'] }}:</strong><br>
-                                {{ $comment['text'] }}
-                            @else
-                                &nbsp;
-                            @endif
-                        </div>
-                    @endforeach
-                @else<div class="followup-box empty-data">-</div>
-                @endif
-            </div>
-        </div>
-
-        <!-- PR SECTION - WAJIB TAMPIL! -->
-        <div class="pr-section no-break">
-            <label>PR / VOUCHER REQUEST :</label>
-            @if (isset($prData) && isset($prItems) && $prItems->count() > 0)
-                <div class="pr-items">
-                    @foreach ($prItems as $item)
-                        <div class="pr-item-row">
-                            <span class="pr-item-name">{{ $item->item_name ?: '-' }}</span>
-                            <span class="pr-item-qty">{{ $item->qty ?: '-' }}</span>
-                            <span class="pr-item-price">
-                                Rp {{ $item->unit_price ? number_format($item->unit_price, 0, ',', '.') : '-' }}
-                            </span>
-                        </div>
-                    @endforeach
-                    <div class="pr-total">
-                        <span>TOTAL</span>
-                        <span>Rp {{ $totalPRAmount ? number_format($totalPRAmount, 0, ',', '.') : '-' }}</span>
-                    </div>
-                </div>
+    <div class="header no-break">
+        <div class="logo-section">
+            @php
+                $logoPath = public_path('assets/images/logo.png');
+                $logoUrl = asset('assets/images/logo.png');
+                $hasLogo = file_exists($logoPath);
+            @endphp
+            @if ($hasLogo)
+                <img src="{{ $logoUrl }}" alt="Company Logo">
             @else
-                <div class="pr-empty">-</div>
+                <div style="color: #888; display: flex; align-items: center; height: 40px;">[LOGO]</div>
             @endif
         </div>
 
-        <!-- DIVIDER ORANGE -->
-        <div class="pr-divider"></div>
-
-        <!-- SIGNATURE SECTION 1 - DIGEDEIN -->
-        <div class="signature-section no-break">
-            <div class="signature-box">
-                <div class="label">REQUESTED BY</div>
-                @if ($helper->hasSignature(1, $signatures ?? []))
-                    <img src="{{ $helper->getSignaturePath(1, $signatures) }}" class="signature-img" alt="Signature">
-                @endif
-                <div
-                    class="name-line {{ !$helper->getSignatureData(1, $signatures ?? [], 'user', '-') ? 'empty' : '' }}">
-                    {{ $helper->getSignatureData(1, $signatures ?? [], 'user', '-') }}
-                </div>
-                <div class="date-info">
-                    {{ $helper->getSignatureData(1, $signatures ?? [], 'date', '-') }}
-                </div>
-            </div>
-            <div class="signature-box">
-                <div class="label">RECEIVED BY</div>
-                @if ($helper->hasSignature(2, $signatures ?? []))
-                    <img src="{{ $helper->getSignaturePath(2, $signatures) }}" class="signature-img" alt="Signature">
-                @endif
-                <div
-                    class="name-line {{ !$helper->getSignatureData(2, $signatures ?? [], 'user', '-') ? 'empty' : '' }}">
-                    {{ $helper->getSignatureData(2, $signatures ?? [], 'user', '-') }}
-                </div>
-                <div class="date-info">
-                    {{ $helper->getSignatureData(2, $signatures ?? [], 'date', '-') }}
-                </div>
-            </div>
-            <div class="signature-box">
-                <div class="label">APPROVED BY OM</div>
-                @if ($helper->hasSignature(3, $signatures ?? []))
-                    <img src="{{ $helper->getSignaturePath(3, $signatures) }}" class="signature-img" alt="Signature">
-                @endif
-                <div
-                    class="name-line {{ !$helper->getSignatureData(3, $signatures ?? [], 'user', '-') ? 'empty' : '' }}">
-                    {{ $helper->getSignatureData(3, $signatures ?? [], 'user', '-') }}
-                </div>
-                <div class="date-info">
-                    {{ $helper->getSignatureData(3, $signatures ?? [], 'date', '-') }}
-                </div>
-            </div>
+        <div class="header-status-text">
+            {{ $statusDisplay }}
         </div>
 
-        <!-- COMPLETION -->
-        <div class="completion-section no-break">
-            <div class="completion-field">
-                <label>WORK WAS DONE ON</label>
+        <div class="title-section">
+            <h1>MAINTENANCE<br>REQUEST</h1>
+        </div>
+    </div>
+
+    <div class="form-meta no-break">
+        <div class="form-row">
+            <div class="form-field">
+                <label>TO</label>
+                <span class="colon">:</span>
+                <div class="text-content">ENGINEERING DEPT.</div>
+            </div>
+            <div class="form-field">
+                <label class="orange-label">No</label>
+                <span class="colon">:</span>
+                <div class="field-without-line">{{ $ticket->ticket_number }}</div>
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-field">
+                <label>FROM</label>
+                <span class="colon">:</span>
+                <div class="field-content">{{ $helper->getUserName($ticket->user, '-') }}</div>
+            </div>
+            <div class="form-field">
+                <label>Date</label>
+                <span class="colon">:</span>
+                <div class="field-content">{{ $ticket->created_at->format('d F Y') }}</div>
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-field">
+                <label>DEPT</label>
+                <span class="colon">:</span>
+                <div class="field-content">{{ $ticket->department->name ?? '-' }}</div>
+            </div>
+            <div class="form-field">
+                <label>AREA</label>
                 <span class="colon">:</span>
                 <div class="field-content">
-                    {{ $ticket->resolved_at ? $ticket->resolved_at->format('d F Y, H:i') : '-' }}</div>
-            </div>
-            <div class="completion-field">
-                <label>TECHNICIAN</label>
-                <span class="colon">:</span>
-                <div class="field-content">{{ $helper->getUserName($ticket->assignedUser ?? null, '-') }}</div>
-            </div>
-        </div>
-
-        <!-- FLEX SPACER -->
-        <div class="flex-spacer"></div>
-
-        <!-- SIGNATURE SECTION 2 - DIGEDEIN -->
-        <div class="signature-section no-break">
-            <div class="signature-box">
-                <div class="label">COMPLETED BY</div>
-                @if ($helper->hasSignature(6, $signatures ?? []))
-                    <img src="{{ $helper->getSignaturePath(6, $signatures) }}" class="signature-img" alt="Signature">
-                @endif
-                <div
-                    class="name-line {{ !$helper->getSignatureData(6, $signatures ?? [], 'user', '-') ? 'empty' : '' }}">
-                    {{ $helper->getSignatureData(6, $signatures ?? [], 'user', '-') }}
+                    @if ($ticket->location)
+                        {{ $ticket->location->name }}
+                        @if ($ticket->location->floor_number)
+                            (Fl {{ $ticket->location->floor_number }})
+                        @endif
+                    @elseif($ticket->location_manual)
+                        {{ $ticket->location_manual }}
+                    @else
+                        -
+                    @endif
                 </div>
-                <div class="date-info">
-                    {{ $helper->getSignatureData(6, $signatures ?? [], 'date', '-') }}
-                </div>
-            </div>
-            <div class="signature-box">
-                <div class="label">CHECKED BY</div>
-                @if ($helper->hasSignature(7, $signatures ?? []))
-                    <img src="{{ $helper->getSignaturePath(7, $signatures) }}" class="signature-img" alt="Signature">
-                @endif
-                <div
-                    class="name-line {{ !$helper->getSignatureData(7, $signatures ?? [], 'user', '-') ? 'empty' : '' }}">
-                    {{ $helper->getSignatureData(7, $signatures ?? [], 'user', '-') }}
-                </div>
-                <div class="date-info">
-                    {{ $helper->getSignatureData(7, $signatures ?? [], 'date', '-') }}
-                </div>
-            </div>
-            <div class="signature-box">
-                <div class="label">APPROVED BY GM</div>
-                @if ($helper->hasSignature(8, $signatures ?? []))
-                    <img src="{{ $helper->getSignaturePath(8, $signatures) }}" class="signature-img"
-                        alt="Signature">
-                @endif
-                <div
-                    class="name-line {{ !$helper->getSignatureData(8, $signatures ?? [], 'user', '-') ? 'empty' : '' }}">
-                    {{ $helper->getSignatureData(8, $signatures ?? [], 'user', '-') }}
-                </div>
-                <div class="date-info">
-                    {{ $helper->getSignatureData(8, $signatures ?? [], 'date', '-') }}
-                </div>
-            </div>
-        </div>
-
-        <!-- FOOTER -->
-        <div class="footer no-break">
-            @if (file_exists(public_path('assets/images/footer.png')))
-                <img src="{{ public_path('assets/images/footer.png') }}" alt="Footer">
-            @else
-                <div
-                    style="width: 100%; height: 45px; background: #f0f0f0; border: 1px solid #ddd; display: flex; align-items: center; justify-content: center; color: #888; font-size: 8pt;">
-                    [FOOTER]
-                </div>
-            @endif
-            <div class="footer-info">
-                Generated on {{ now()->format('d F Y, H:i') }} | Ticket #{{ $ticket->ticket_number }}
             </div>
         </div>
     </div>
+
+    <div class="full-width-field no-break">
+        <label>TITLE</label>
+        <span class="colon">:</span>
+        <div class="field-content">{{ $ticket->title ?? '-' }}</div>
+    </div>
+
+    <div class="description-section no-break">
+        <label>PLEASE REPAIR :</label>
+        <div class="description-container">
+            <div class="description-wrapper">
+                <div class="description-content">{{ $ticket->description }}</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="followup-section no-break">
+        <label>FOLLOW UP :</label>
+        <div class="followup-container">
+            @php
+                $realFollowUps = array_filter($followUpComments ?? [], function ($comment) {
+                    return !empty($comment['text']) && $comment['text'] !== '-';
+                });
+            @endphp
+
+            @if (count($realFollowUps) > 0)
+                @foreach ($realFollowUps as $comment)
+                    <div class="followup-box">
+                        <div class="followup-header">
+                            <strong>[{{ $comment['date'] }}] {{ $comment['user'] }}:</strong>
+                        </div>
+                        <div class="followup-text">{{ $comment['text'] }}</div>
+                    </div>
+                @endforeach
+            @else
+                <div class="followup-box empty-data">
+                    No follow-up notes available
+                </div>
+            @endif
+        </div>
+    </div>
+
+    <div class="signature-section no-break">
+        <div class="signature-box">
+            <div class="label">REQUESTED BY</div>
+            @if ($helper->hasSignature(1, $signatures ?? []))
+                <img src="{{ $helper->getSignaturePath(1, $signatures) }}" class="signature-img" alt="Signature">
+            @else
+                <div class="signature-placeholder"></div>
+            @endif
+            <div class="name-line {{ !$helper->getSignatureData(1, $signatures ?? [], 'user', '-') ? 'empty' : '' }}">
+                {{ $helper->getSignatureData(1, $signatures ?? [], 'user', '-') }}
+            </div>
+            <div class="date-info">
+                {{ $helper->getSignatureData(1, $signatures ?? [], 'date', '-') }}
+            </div>
+        </div>
+
+        <div class="signature-box">
+            <div class="label">RECEIVED BY</div>
+            @if ($helper->hasSignature(2, $signatures ?? []))
+                <img src="{{ $helper->getSignaturePath(2, $signatures) }}" class="signature-img" alt="Signature">
+            @else
+                <div class="signature-placeholder"></div>
+            @endif
+            <div class="name-line {{ !$helper->getSignatureData(2, $signatures ?? [], 'user', '-') ? 'empty' : '' }}">
+                {{ $helper->getSignatureData(2, $signatures ?? [], 'user', '-') }}
+            </div>
+            <div class="date-info">
+                {{ $helper->getSignatureData(2, $signatures ?? [], 'date', '-') }}
+            </div>
+        </div>
+
+        <div class="signature-box">
+            <div class="label">APPROVED BY OM</div>
+            @if ($helper->hasSignature(3, $signatures ?? []))
+                <img src="{{ $helper->getSignaturePath(3, $signatures) }}" class="signature-img" alt="Signature">
+            @else
+                <div class="signature-placeholder"></div>
+            @endif
+            <div class="name-line {{ !$helper->getSignatureData(3, $signatures ?? [], 'user', '-') ? 'empty' : '' }}">
+                {{ $helper->getSignatureData(3, $signatures ?? [], 'user', '-') }}
+            </div>
+            <div class="date-info">
+                {{ $helper->getSignatureData(3, $signatures ?? [], 'date', '-') }}
+            </div>
+        </div>
+    </div>
+
+    <div class="completion-section no-break">
+        <div class="completion-field">
+            <label>WORK WAS DONE ON</label>
+            <span class="colon">:</span>
+            <div class="field-content">
+                {{ $ticket->resolved_at ? $ticket->resolved_at->format('d F Y, H:i') : '-' }}
+            </div>
+        </div>
+        <div class="completion-field">
+            <label>TECHNICIAN</label>
+            <span class="colon">:</span>
+            <div class="field-content">{{ $helper->getUserName($ticket->assignedUser ?? null, '-') }}</div>
+        </div>
+    </div>
+
+    <div class="flex-spacer"></div>
+
+    <div class="signature-section no-break">
+        <div class="signature-box">
+            <div class="label">COMPLETED BY</div>
+            @if ($helper->hasSignature(6, $signatures ?? []))
+                <img src="{{ $helper->getSignaturePath(6, $signatures) }}" class="signature-img" alt="Signature">
+            @else
+                <div class="signature-placeholder"></div>
+            @endif
+            <div class="name-line {{ !$helper->getSignatureData(6, $signatures ?? [], 'user', '-') ? 'empty' : '' }}">
+                {{ $helper->getSignatureData(6, $signatures ?? [], 'user', '-') }}
+            </div>
+            <div class="date-info">
+                {{ $helper->getSignatureData(6, $signatures ?? [], 'date', '-') }}
+            </div>
+        </div>
+
+        <div class="signature-box">
+            <div class="label">CHECKED BY</div>
+            @if ($helper->hasSignature(7, $signatures ?? []))
+                <img src="{{ $helper->getSignaturePath(7, $signatures) }}" class="signature-img" alt="Signature">
+            @else
+                <div class="signature-placeholder"></div>
+            @endif
+            <div class="name-line {{ !$helper->getSignatureData(7, $signatures ?? [], 'user', '-') ? 'empty' : '' }}">
+                {{ $helper->getSignatureData(7, $signatures ?? [], 'user', '-') }}
+            </div>
+            <div class="date-info">
+                {{ $helper->getSignatureData(7, $signatures ?? [], 'date', '-') }}
+            </div>
+        </div>
+
+        <div class="signature-box">
+            <div class="label">APPROVED BY GM</div>
+            @if ($helper->hasSignature(8, $signatures ?? []))
+                <img src="{{ $helper->getSignaturePath(8, $signatures) }}" class="signature-img" alt="Signature">
+            @else
+                <div class="signature-placeholder"></div>
+            @endif
+            <div class="name-line {{ !$helper->getSignatureData(8, $signatures ?? [], 'user', '-') ? 'empty' : '' }}">
+                {{ $helper->getSignatureData(8, $signatures ?? [], 'user', '-') }}
+            </div>
+            <div class="date-info">
+                {{ $helper->getSignatureData(8, $signatures ?? [], 'date', '-') }}
+            </div>
+        </div>
+    </div>
+
+    <div class="footer no-break">
+        @php
+            $footerPath = public_path('assets/images/footer.png');
+            $footerUrl = asset('assets/images/footer.png');
+            $hasFooter = file_exists($footerPath);
+        @endphp
+        @if ($hasFooter)
+            <img src="{{ $footerUrl }}" alt="Footer">
+        @else
+            <div
+                style="width: 100%; height: 45px; background: #f0f0f0; border: 1px solid #ddd; display: flex; align-items: center; justify-content: center; color: #888; font-size: 8pt;">
+                [FOOTER]
+            </div>
+        @endif
+        <div class="footer-info">
+            Generated on {{ now()->format('d F Y, H:i') }} | Ticket #{{ $ticket->ticket_number }}
+        </div>
+    </div>
+
+    <script>
+        function triggerPrint() {
+            document.getElementById('printModalOverlay').style.display = 'none';
+            document.querySelector('.print-content').style.display = 'block';
+            setTimeout(function() {
+                window.print();
+            }, 500);
+        }
+
+        @if (request()->has('print'))
+            if (window.innerWidth > 768) {
+                window.onload = function() {
+                    setTimeout(function() {
+                        window.print();
+                    }, 800);
+                };
+            }
+        @endif
+    </script>
 </body>
 
 </html>

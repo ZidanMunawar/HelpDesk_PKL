@@ -30,6 +30,20 @@
             font-size: 14px;
         }
 
+        .form-control,
+        .form-select,
+        textarea.form-control {
+            color: #1e1e1e;
+            font-weight: 400;
+        }
+
+        /* Saat typing/input juga tetep hitam */
+        .form-control:focus,
+        .form-select:focus,
+        textarea.form-control:focus {
+            color: #000000 !important;
+        }
+
         /* Length Menu Styling */
         #departmentsTable_wrapper .dataTables_length select {
             padding: 8px 35px 8px 15px;
@@ -146,16 +160,20 @@
             width: 100px;
         }
 
-        #departmentsTable thead th:nth-child(6) {
+        #departmentsTable thead th:nth-child(5) {
             width: 100px;
         }
 
         #departmentsTable thead th:nth-child(7) {
+            width: 100px;
+        }
+
+        #departmentsTable thead th:nth-child(8) {
             width: 120px;
         }
 
         #departmentsTable thead th:last-child {
-            width: 150px;
+            width: 180px;
         }
 
         #departmentsTable tbody td {
@@ -171,11 +189,15 @@
             text-align: center;
         }
 
-        #departmentsTable tbody td:nth-child(6) {
+        #departmentsTable tbody td:nth-child(5) {
             text-align: center;
         }
 
         #departmentsTable tbody td:nth-child(7) {
+            text-align: center;
+        }
+
+        #departmentsTable tbody td:nth-child(8) {
             text-align: center;
         }
 
@@ -215,7 +237,17 @@
             color: #212529;
         }
 
-        /* Button Action Styling (Kembali seperti sebelumnya) */
+        .badge-primary {
+            background-color: #003366;
+            color: white;
+        }
+
+        .badge-secondary {
+            background-color: #6c757d;
+            color: white;
+        }
+
+        /* Button Action Styling */
         .btn-xs.sharp {
             width: 32px;
             height: 32px;
@@ -236,6 +268,52 @@
 
         .d-flex .btn-xs.sharp:last-child {
             margin-right: 0;
+        }
+
+        /* Toggle Switch Styling */
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 24px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: 0.3s;
+            border-radius: 24px;
+        }
+
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: 0.3s;
+            border-radius: 50%;
+        }
+
+        input:checked+.toggle-slider {
+            background-color: #003366;
+        }
+
+        input:checked+.toggle-slider:before {
+            transform: translateX(26px);
         }
 
         /* Responsive adjustments */
@@ -337,12 +415,24 @@
                             </div>
 
                             <!-- Status -->
-                            <div class="col-md-12 mb-3">
+                            <div class="col-md-6 mb-3">
                                 <label class="form-label">Status <span class="text-danger">*</span></label>
                                 <select class="form-control" name="status" required>
                                     <option value="active">Active</option>
                                     <option value="inactive">Inactive</option>
                                 </select>
+                                <div class="invalid-feedback"></div>
+                            </div>
+
+                            <!-- Manager Access -->
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Manager Access</label>
+                                <select class="form-control" name="has_manager_access">
+                                    <option value="0">No (Standard Department)</option>
+                                    <option value="1">Yes (Has Manager Menu Access)</option>
+                                </select>
+                                <small class="text-muted">Enable if this department should have access to manager menu with
+                                    statistics</small>
                                 <div class="invalid-feedback"></div>
                             </div>
 
@@ -400,12 +490,24 @@
                             </div>
 
                             <!-- Status -->
-                            <div class="col-md-12 mb-3">
+                            <div class="col-md-6 mb-3">
                                 <label class="form-label">Status <span class="text-danger">*</span></label>
                                 <select class="form-control" id="edit_status" name="status" required>
                                     <option value="active">Active</option>
                                     <option value="inactive">Inactive</option>
                                 </select>
+                                <div class="invalid-feedback"></div>
+                            </div>
+
+                            <!-- Manager Access -->
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Manager Access</label>
+                                <select class="form-control" id="edit_has_manager_access" name="has_manager_access">
+                                    <option value="0">No (Standard Department)</option>
+                                    <option value="1">Yes (Has Manager Menu Access)</option>
+                                </select>
+                                <small class="text-muted">Enable if this department should have access to manager menu with
+                                    statistics</small>
                                 <div class="invalid-feedback"></div>
                             </div>
 
@@ -451,6 +553,7 @@
                                     <th>Department Name</th>
                                     <th>Manager</th>
                                     <th>Total Users</th>
+                                    <th>Manager Access</th>
                                     <th>Description</th>
                                     <th>Status</th>
                                     <th>Created</th>
@@ -487,6 +590,17 @@
                                             <span
                                                 class="badge badge-info">{{ $department->active_users_count ?? 0 }}</span>
                                         </td>
+                                        <td>
+                                            @if ($department->has_manager_access)
+                                                <span class="badge badge-primary">
+                                                    <i class="fas fa-user-tie me-1"></i> Yes
+                                                </span>
+                                            @else
+                                                <span class="badge badge-secondary">
+                                                    <i class="fas fa-user me-1"></i> No
+                                                </span>
+                                            @endif
+                                        </td>
                                         <td>{{ $department->description ? Str::limit($department->description, 50) : '-' }}
                                         </td>
                                         <td>
@@ -511,7 +625,9 @@
                                                         data-name="{{ $department->name }}"
                                                         data-manager-id="{{ $department->manager_id }}"
                                                         data-description="{{ $department->description }}"
-                                                        data-status="{{ $department->status }}" title="Edit">
+                                                        data-status="{{ $department->status }}"
+                                                        data-has-manager-access="{{ $department->has_manager_access ? '1' : '0' }}"
+                                                        title="Edit">
                                                         <i class="fas fa-pencil-alt"></i>
                                                     </button>
 
@@ -523,6 +639,16 @@
                                                         title="{{ $department->status === 'active' ? 'Deactivate' : 'Activate' }}">
                                                         <i
                                                             class="fas fa-{{ $department->status === 'active' ? 'ban' : 'check' }}"></i>
+                                                    </button>
+
+                                                    <button type="button"
+                                                        class="btn btn-{{ $department->has_manager_access ? 'secondary' : 'primary' }} btn-sm shadow btn-xs sharp me-1 toggle-manager-access"
+                                                        data-id="{{ $department->id }}"
+                                                        data-name="{{ $department->name }}"
+                                                        data-has-access="{{ $department->has_manager_access ? '1' : '0' }}"
+                                                        title="{{ $department->has_manager_access ? 'Remove Manager Access' : 'Grant Manager Access' }}">
+                                                        <i
+                                                            class="fas fa-{{ $department->has_manager_access ? 'user-slash' : 'user-tie' }}"></i>
                                                     </button>
 
                                                     <button type="button"
@@ -602,22 +728,22 @@
                 },
                 "columnDefs": [{
                         "orderable": false,
-                        "targets": [7]
+                        "targets": [8]
                     },
                     {
                         "className": "text-center",
-                        "targets": [0, 3, 5, 6, 7]
+                        "targets": [0, 3, 4, 6, 7, 8]
                     }
                 ],
                 "dom": '<"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6"f>>rtip',
                 "drawCallback": function(settings) {
-                    // Handle empty table on draw
                     var api = this.api();
                     if (api.rows().count() === 0) {
                         var tbody = $(this).find('tbody');
                         if (tbody.find('tr').length === 0) {
                             tbody.html(
-                                '<tr><td colspan="8" class="text-center">No departments found</td></tr>'
+                                '<tr><td colspan="9" class="text-center">No departments found</td>' +
+                                '</tr>'
                             );
                         }
                     }
@@ -625,37 +751,40 @@
                         'pagination-gutter pagination-primary');
                 },
                 "initComplete": function(settings, json) {
-                    // Handle empty table on init
                     if (this.api().rows().count() === 0) {
                         var tbody = $('#departmentsTable tbody');
                         if (tbody.find('tr').length === 0) {
                             tbody.html(
-                                '<tr><td colspan="8" class="text-center">No departments found</td></tr>'
+                                '<tr><td colspan="9" class="text-center">No departments found</td>' +
+                                '</tr>'
                             );
                         }
                     }
                 }
             });
 
-            // Delegasi event untuk edit, toggle, delete
+            // Delegasi event untuk edit department
             $(document).on('click', '.edit-department', function() {
                 var id = $(this).data('id');
                 var name = $(this).data('name');
                 var managerId = $(this).data('manager-id');
                 var description = $(this).data('description');
                 var status = $(this).data('status');
+                var hasManagerAccess = $(this).data('has-manager-access');
 
                 $('#edit_department_id').val(id);
                 $('#edit_name').val(name);
                 $('#edit_manager_id').val(managerId);
                 $('#edit_description').val(description);
                 $('#edit_status').val(status);
+                $('#edit_has_manager_access').val(hasManagerAccess);
 
                 $('.form-control').removeClass('is-invalid');
                 $('.invalid-feedback').text('');
                 $('#editDepartmentModal').modal('show');
             });
 
+            // Toggle Department Status
             $(document).on('click', '.toggle-status', function() {
                 var departmentId = $(this).data('id');
                 var departmentName = $(this).data('name');
@@ -664,7 +793,7 @@
 
                 Swal.fire({
                     title: 'Change Department Status?',
-                    html: `Are you sure you want to change <strong>${departmentName}</strong>'s status?`,
+                    html: `Are you sure you want to change <strong>${departmentName}</strong>'s status to <strong>${newStatus.toUpperCase()}</strong>?`,
                     icon: 'question',
                     showCancelButton: true,
                     confirmButtonColor: '#3085d6',
@@ -712,6 +841,70 @@
                 });
             });
 
+            // Toggle Manager Access
+            $(document).on('click', '.toggle-manager-access', function() {
+                var departmentId = $(this).data('id');
+                var departmentName = $(this).data('name');
+                var hasAccess = $(this).data('has-access') == '1';
+                var newAccess = !hasAccess;
+                var actionText = newAccess ? 'grant' : 'remove';
+                var actionTitle = newAccess ? 'Grant Manager Access' : 'Remove Manager Access';
+
+                Swal.fire({
+                    title: actionTitle,
+                    html: `Are you sure you want to <strong>${actionText}</strong> manager access for <strong>${departmentName}</strong>?<br><br>` +
+                        (newAccess ?
+                            '<span class="text-primary">This department will have access to the Manager Menu with statistics.</span>' :
+                            '<span class="text-warning">This department will lose access to the Manager Menu.</span>'
+                        ),
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonColor: newAccess ? '#28a745' : '#dc3545',
+                    cancelButtonColor: '#6c757d',
+                    confirmButtonText: newAccess ? 'Yes, Grant Access' : 'Yes, Remove Access',
+                    cancelButtonText: 'Cancel'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        $.ajax({
+                            url: "{{ route('admin.departments.toggle-manager-access', ':id') }}"
+                                .replace(':id', departmentId),
+                            type: 'POST',
+                            data: {
+                                _token: '{{ csrf_token() }}'
+                            },
+                            success: function(response) {
+                                if (response.success) {
+                                    Swal.fire({
+                                        icon: 'success',
+                                        title: 'Success!',
+                                        text: response.message,
+                                        showConfirmButton: false,
+                                        timer: 1500
+                                    }).then(() => {
+                                        location.reload();
+                                    });
+                                } else {
+                                    Swal.fire({
+                                        icon: 'error',
+                                        title: 'Error!',
+                                        text: response.message
+                                    });
+                                }
+                            },
+                            error: function(xhr) {
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'Error!',
+                                    text: xhr.responseJSON?.message ||
+                                        'An error occurred. Please try again.'
+                                });
+                            }
+                        });
+                    }
+                });
+            });
+
+            // Delete Department
             $(document).on('click', '.delete-department', function() {
                 var departmentId = $(this).data('id');
                 var departmentName = $(this).data('name');
@@ -851,7 +1044,7 @@
                 $.ajax({
                     url: "{{ route('admin.departments.update', ':id') }}".replace(':id',
                         departmentId),
-                    type: 'POST', // Use POST with _method
+                    type: 'POST',
                     data: formData + '&_method=PUT',
                     success: function(response) {
                         submitBtn.prop('disabled', false).html(originalText);

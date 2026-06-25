@@ -1,4 +1,3 @@
-<!-- sidebar-style.blade.php -->
 <style>
     /* ========================================
        VARIABLES & GLOBAL STYLES
@@ -8,6 +7,8 @@
         --primary-dark: #CC6200;
         --primary-light: #FFA347;
         --primary-gradient: linear-gradient(135deg, #FF7B00 0%, #FF5500 100%);
+        --navy-dark: #1a2b4c;
+        --navy-gradient: linear-gradient(135deg, #1a2b4c 0%, #0f1a30 100%);
         --secondary-color: #6c757d;
         --success-color: #28a745;
         --info-color: #17a2b8;
@@ -25,8 +26,20 @@
     }
 
     /* ========================================
-       DESKTOP OVERRIDES
+       DESKTOP SIDEBAR STYLES (TETAP DEFAULT)
     ======================================== */
+    .deznav {
+        background: var(--white) !important;
+        box-shadow: var(--shadow) !important;
+    }
+
+    .deznav .metismenu>li>a {
+        color: var(--text-dark) !important;
+        position: relative;
+        display: block !important;
+        padding-right: 40px !important;
+    }
+
     .deznav .metismenu>li>a.active {
         color: var(--primary-color) !important;
         background: rgba(255, 123, 0, 0.1) !important;
@@ -37,16 +50,140 @@
         background: rgba(255, 123, 0, 0.05) !important;
     }
 
+    .deznav .metismenu .has-arrow:after {
+        border-color: var(--text-light) !important;
+        right: 15px !important;
+    }
+
+    .deznav .metismenu .has-arrow.active:after {
+        border-color: var(--primary-color) !important;
+    }
+
+    .deznav .metismenu ul {
+        background: var(--light-color) !important;
+    }
+
+    .deznav .metismenu ul a {
+        color: var(--text-light) !important;
+        position: relative;
+        display: block !important;
+        padding-right: 40px !important;
+    }
+
+    .deznav .metismenu ul a:hover {
+        color: var(--primary-color) !important;
+        background: rgba(255, 123, 0, 0.05) !important;
+    }
+
+    .deznav .metismenu ul a.active {
+        color: var(--primary-color) !important;
+    }
+
+    /* ========================================
+       QUICK CREATE BUTTON - FIX FOR COLLAPSED SIDEBAR
+    ======================================== */
     .add-menu-sidebar {
-        background: var(--primary-gradient) !important;
+        background: var(--navy-gradient) !important;
+        border: none !important;
+        color: white !important;
+        border-radius: 8px !important;
+        margin: 15px !important;
+        padding: 12px !important;
+        text-align: center !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 8px;
+        transition: var(--transition) !important;
     }
 
     .add-menu-sidebar:hover {
-        background: linear-gradient(135deg, #FF5500 0%, #CC6200 100%) !important;
+        background: linear-gradient(135deg, #2a3b5c 0%, #1a2b4c 100%) !important;
+        transform: translateY(-2px);
     }
 
-    .badge-primary {
-        background-color: var(--primary-color) !important;
+    .add-menu-sidebar i {
+        font-size: 16px;
+    }
+
+    /* When sidebar is collapsed (mini mode) */
+    .deznav.deznav-mini .add-menu-sidebar .nav-text,
+    .deznav.mini-sidebar .add-menu-sidebar .nav-text {
+        display: none !important;
+    }
+
+    .deznav.deznav-mini .add-menu-sidebar i,
+    .deznav.mini-sidebar .add-menu-sidebar i {
+        margin-right: 0 !important;
+        font-size: 20px;
+    }
+
+    .deznav.deznav-mini .add-menu-sidebar,
+    .deznav.mini-sidebar .add-menu-sidebar {
+        padding: 12px !important;
+        justify-content: center !important;
+    }
+
+    /* Responsive: hide text on tablet, keep icon */
+    @media screen and (max-width: 992px) and (min-width: 769px) {
+        .add-menu-sidebar .nav-text {
+            display: none !important;
+        }
+
+        .add-menu-sidebar i {
+            margin-right: 0 !important;
+            font-size: 18px;
+        }
+
+        .add-menu-sidebar {
+            justify-content: center !important;
+        }
+    }
+
+    /* Hide on mobile - we have FAB */
+    @media screen and (max-width: 768px) {
+        .add-menu-sidebar {
+            display: none !important;
+        }
+    }
+
+    /* Copyright */
+    .copyright {
+        color: var(--text-light) !important;
+    }
+
+    /* ========================================
+       SIDEBAR BADGE - POSITION ABSOLUTE DI KANAN
+    ======================================== */
+    .sidebar-badge {
+        position: absolute;
+        right: 15px;
+        top: 50%;
+        transform: translateY(-50%);
+        background: var(--danger-color);
+        color: white;
+        font-size: 10px;
+        font-weight: 600;
+        padding: 2px 6px;
+        border-radius: 10px;
+        min-width: 18px;
+        text-align: center;
+        line-height: 1.2;
+        z-index: 1;
+    }
+
+    /* Badge dengan warna khusus untuk status tertentu */
+    .sidebar-badge.badge-warning {
+        background: var(--warning-color);
+        color: #212529;
+    }
+
+    .sidebar-badge.badge-success {
+        background: var(--success-color);
+    }
+
+    .sidebar-badge.badge-info {
+        background: var(--info-color);
     }
 
     /* ========================================
@@ -220,7 +357,7 @@
             color: var(--primary-color);
         }
 
-        /* Floating Action Button (FAB) */
+        /* Floating Action Button (FAB) - NAVY */
         .mobile-nav-item.mobile-fab {
             position: relative;
             top: -20px;
@@ -230,11 +367,11 @@
             width: 56px;
             height: 56px;
             border-radius: 50%;
-            background: var(--primary-gradient);
+            background: var(--navy-gradient);
             display: flex;
             align-items: center;
             justify-content: center;
-            box-shadow: 0 4px 12px rgba(255, 123, 0, 0.4);
+            box-shadow: 0 4px 12px rgba(26, 43, 76, 0.4);
             transition: var(--transition);
         }
 
@@ -246,7 +383,7 @@
 
         .fab-button:active {
             transform: scale(0.95);
-            box-shadow: 0 2px 8px rgba(255, 123, 0, 0.4);
+            box-shadow: 0 2px 8px rgba(26, 43, 76, 0.4);
         }
 
         /* Mobile Badge */
@@ -276,7 +413,7 @@
             justify-content: space-between;
             align-items: center;
             padding: 20px;
-            background: var(--primary-gradient);
+            background: var(--navy-gradient);
             color: var(--white);
             position: sticky;
             top: 0;
@@ -331,7 +468,7 @@
             width: 60px;
             height: 60px;
             border-radius: 50%;
-            background: var(--primary-gradient);
+            background: var(--navy-gradient);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -357,7 +494,7 @@
             color: var(--text-light);
         }
 
-        /* Accordion Menu Styles - FIXED */
+        /* Accordion Menu Styles */
         .mobile-menu-accordion {
             background: var(--white);
             border-radius: 10px;
@@ -401,7 +538,7 @@
         }
 
         .mobile-menu-accordion-header:active {
-            background: rgba(255, 123, 0, 0.1);
+            background: rgba(255, 123, 0, 0.05);
         }
 
         .mobile-menu-accordion-content {
@@ -411,10 +548,8 @@
             background: var(--light-color);
         }
 
-        /* PERBAIKAN UTAMA: Kalau expanded, langsung set height auto */
         .mobile-menu-accordion-content.expanded {
             max-height: 1000px !important;
-            /* Important untuk override inline style */
         }
 
         .mobile-menu-sublink {
@@ -427,6 +562,7 @@
             font-weight: 500;
             border-top: 1px solid rgba(0, 0, 0, 0.05);
             transition: var(--transition);
+            position: relative;
         }
 
         .mobile-menu-sublink i {
@@ -465,6 +601,7 @@
             font-weight: 600;
             transition: var(--transition);
             border: 1px solid var(--border-color);
+            position: relative;
         }
 
         .mobile-menu-link i {
@@ -486,7 +623,7 @@
         }
 
         .mobile-menu-link:active {
-            background: rgba(255, 123, 0, 0.1);
+            background: rgba(255, 123, 0, 0.05);
             border-color: var(--primary-color);
             transform: scale(0.98);
         }
@@ -508,7 +645,7 @@
         /* ACTIVE STATE STYLES */
         .mobile-menu-link.active,
         .mobile-menu-sublink.active {
-            background: rgba(255, 123, 0, 0.15) !important;
+            background: rgba(255, 123, 0, 0.1) !important;
             border-color: var(--primary-color) !important;
             color: var(--primary-color) !important;
         }
@@ -519,7 +656,7 @@
         }
 
         .mobile-menu-sublink.active {
-            background: rgba(255, 123, 0, 0.1) !important;
+            background: rgba(255, 123, 0, 0.08) !important;
         }
 
         /* Section Styles */

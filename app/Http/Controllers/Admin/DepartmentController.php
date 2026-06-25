@@ -47,6 +47,7 @@ class DepartmentController extends Controller
             'manager_id' => 'nullable|exists:users,id',
             'description' => 'nullable|string',
             'status' => 'required|in:active,inactive',
+            'has_manager_access' => 'sometimes|boolean', // <-- TAMBAHKAN
         ]);
 
         if ($validator->fails()) {
@@ -64,6 +65,7 @@ class DepartmentController extends Controller
                 'manager_id' => $request->manager_id,
                 'description' => $request->description,
                 'status' => $request->status,
+                'has_manager_access' => $request->has_manager_access ?? false, // <-- TAMBAHKAN
             ]);
 
             // Log activity
@@ -108,6 +110,7 @@ class DepartmentController extends Controller
             'manager_id' => 'nullable|exists:users,id',
             'description' => 'nullable|string',
             'status' => 'required|in:active,inactive',
+            'has_manager_access' => 'sometimes|boolean', // <-- TAMBAHKAN
         ]);
 
         if ($validator->fails()) {
@@ -127,6 +130,7 @@ class DepartmentController extends Controller
                 'manager_id' => $request->manager_id,
                 'description' => $request->description,
                 'status' => $request->status,
+                'has_manager_access' => $request->has_manager_access ?? false, // <-- TAMBAHKAN
             ]);
 
             // Log activity
@@ -241,6 +245,49 @@ class DepartmentController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to update status: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Toggle manager access for department
+     */
+    public function toggleManagerAccess(Request $request, Department $department)
+    {
+        DB::beginTransaction();
+        try {
+            $oldAccess = $department->has_manager_access;
+            $newAccess = !$oldAccess;
+
+            $oldValues = ['has_manager_access' => $oldAccess];
+            $newValues = ['has_manager_access' => $newAccess];
+
+            $department->update(['has_manager_access' => $newAccess]);
+
+            // Log activity
+            ActivityLog::create([
+                'user_id' => Auth::id(),
+                'ticket_id' => null,
+                'action' => 'manager_access_changed',
+                'description' => 'Changed manager access for department ' . $department->name . ' from ' . ($oldAccess ? 'Yes' : 'No') . ' to ' . ($newAccess ? 'Yes' : 'No'),
+                'old_values' => $oldValues,
+                'new_values' => $newValues,
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->userAgent(),
+            ]);
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Manager access updated successfully!',
+                'data' => $department->fresh()
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to update manager access: ' . $e->getMessage()
             ], 500);
         }
     }

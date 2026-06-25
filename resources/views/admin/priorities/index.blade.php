@@ -20,6 +20,20 @@
     <link rel="stylesheet" href="{{ asset('assets/vendor/sweetalert2/dist/sweetalert2.min.css') }}">
 
     <style>
+        .form-control,
+        .form-select,
+        textarea.form-control {
+            color: #1e1e1e;
+            font-weight: 400;
+        }
+
+        /* Saat typing/input juga tetep hitam */
+        .form-control:focus,
+        .form-select:focus,
+        textarea.form-control:focus {
+            color: #000000 !important;
+        }
+
         /* ===== RESPONSIVE CARD STYLING ===== */
         .priority-card {
             transition: all 0.3s ease;

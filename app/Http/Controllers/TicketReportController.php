@@ -12,22 +12,19 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
-use Spatie\LaravelPdf\Enums\Format;
-use Spatie\LaravelPdf\Enums\Orientation;
-use Spatie\LaravelPdf\Facades\Pdf;
-use setasign\Fpdi\Fpdi;
 
 class TicketReportController extends Controller
 {
     /**
-     * Generate PDF report for ticket with 3 options:
-     * - full: Main report + attachments
+     * Generate HTML report for ticket with options:
+     * - full: Main report + attachments + PR photos
      * - main: Main report only
      * - attachments: Attachments only
+     * - pr_photos: PR photos only
      */
     public function generateReport($id, Request $request)
     {
-        $type = $request->get('type', 'full'); // full, main, attachments
+        $type = $request->get('type', 'full');
 
         $ticket = Ticket::with([
             'user',
@@ -44,33 +41,22 @@ class TicketReportController extends Controller
                     ->orderBy('created_at', 'asc');
             },
             'signatures.user',
-            'voucherRequests.items',
+            'voucherRequests.attachments',
             'approval'
         ])->findOrFail($id);
 
         $user = Auth::user();
 
-        // Check permission
+        // Authorization check
         if (!$this->canViewTicket($user, $ticket)) {
             abort(403, 'Unauthorized access to this ticket report');
         }
 
-        // Buat folder temp jika belum ada
-        $this->ensureDirectoryExists(storage_path('app/temp'));
-
         // Get signatures
         $signatures = $this->getSignatures($ticket);
 
-        // Get PR data
-        $prData = null;
-        $prItems = collect([]);
-        $totalPRAmount = 0;
-
-        if ($ticket->voucherRequests->count() > 0) {
-            $prData = $ticket->voucherRequests->first();
-            $prItems = $prData->items;
-            $totalPRAmount = $prData->total_amount;
-        }
+        // Get PR photos (dari voucher_requests attachments)
+        $prPhotos = $this->getPRPhotos($ticket);
 
         // Get follow-up comments
         $followUpComments = $this->getFollowUpComments($ticket);
@@ -86,9 +72,6 @@ class TicketReportController extends Controller
         $mainData = [
             'ticket' => $ticket,
             'signatures' => $signatures,
-            'prData' => $prData,
-            'prItems' => $prItems,
-            'totalPRAmount' => $totalPRAmount,
             'followUpComments' => $followUpComments,
             'fileAttachments' => $fileAttachments,
             'currentDate' => now()->format('d F Y'),
@@ -97,17 +80,39 @@ class TicketReportController extends Controller
             'helper' => $this,
         ];
 
-        // Data untuk attachments
+        // Data untuk attachments (foto dari ticket)
         $attachmentData = [
             'ticket' => $ticket,
             'imageAttachments' => $imageAttachments,
             'helper' => $this,
         ];
 
+        // Data untuk PR photos
+        $prPhotosData = [
+            'ticket' => $ticket,
+            'prPhotos' => $prPhotos,
+            'helper' => $this,
+        ];
+
         // Generate berdasarkan type
         switch ($type) {
+            case 'pr_photos':
+                // Kalau gak ada PR photos, kasih response sesuai
+                if (count($prPhotos) == 0) {
+                    // Kalau request AJAX/API
+                    if ($request->ajax() || $request->wantsJson()) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'No PR photos found for this ticket'
+                        ], 404);
+                    }
+                    // Kalau request browser biasa
+                    abort(404, 'No PR photos found');
+                }
+                return view('tickets.report_pr_photos', $prPhotosData);
+
             case 'attachments':
-                // Validasi apakah ada attachments
+                // Kalau gak ada image attachments
                 if (count($imageAttachments) == 0) {
                     if ($request->ajax() || $request->wantsJson()) {
                         return response()->json([
@@ -117,236 +122,84 @@ class TicketReportController extends Controller
                     }
                     abort(404, 'No image attachments found');
                 }
-
-                // Generate hanya attachments
-                $pdfPath = storage_path('app/temp/attachments_' . uniqid() . '.pdf');
-
-                Pdf::view('tickets.report_attachments', $attachmentData)
-                    ->format(Format::A4)
-                    ->orientation(Orientation::Portrait)
-                    ->margins(8, 8, 8, 8)
-                    ->save($pdfPath);
-
-                $filename = 'attachments-' . $ticket->ticket_number . '.pdf';
-
-                return response()->file($pdfPath, [
-                    'Content-Type' => 'application/pdf',
-                    'Content-Disposition' => 'attachment; filename="' . $filename . '"'
-                ])->deleteFileAfterSend(true);
+                return view('tickets.report_attachments', $attachmentData);
 
             case 'main':
-                // Generate hanya main report
-                $pdfPath = storage_path('app/temp/main_' . uniqid() . '.pdf');
-
-                Pdf::view('tickets.report_main', $mainData)
-                    ->format(Format::A4)
-                    ->orientation(Orientation::Portrait)
-                    ->margins(8, 8, 8, 8)
-                    ->save($pdfPath);
-
-                $filename = 'report-' . $ticket->ticket_number . '.pdf';
-
-                return response()->file($pdfPath, [
-                    'Content-Type' => 'application/pdf',
-                    'Content-Disposition' => 'attachment; filename="' . $filename . '"'
-                ])->deleteFileAfterSend(true);
+                return view('tickets.report_main', $mainData);
 
             case 'full':
             default:
-                // Generate main report
-                $mainPdfPath = storage_path('app/temp/main_' . uniqid() . '.pdf');
-
-                Pdf::view('tickets.report_main', $mainData)
-                    ->format(Format::A4)
-                    ->orientation(Orientation::Portrait)
-                    ->margins(8, 8, 8, 8)
-                    ->save($mainPdfPath);
-
-                // Jika ada attachments, merge
-                if (count($imageAttachments) > 0) {
-                    $attachmentPdfPath = storage_path('app/temp/attachment_' . uniqid() . '.pdf');
-
-                    Pdf::view('tickets.report_attachments', $attachmentData)
-                        ->format(Format::A4)
-                        ->orientation(Orientation::Portrait)
-                        ->margins(8, 8, 8, 8)
-                        ->save($attachmentPdfPath);
-
-                    $outputPath = storage_path('app/temp/final_' . uniqid() . '.pdf');
-                    $this->mergePdfs([$mainPdfPath, $attachmentPdfPath], $outputPath);
-
-                    // Hapus file sementara
-                    @unlink($mainPdfPath);
-                    @unlink($attachmentPdfPath);
-
-                    $filename = 'ticket-' . $ticket->ticket_number . '-full.pdf';
-
-                    return response()->file($outputPath, [
-                        'Content-Type' => 'application/pdf',
-                        'Content-Disposition' => 'attachment; filename="' . $filename . '"'
-                    ])->deleteFileAfterSend(true);
-                }
-
-                // Jika tidak ada attachments, return main report langsung
-                $filename = 'ticket-' . $ticket->ticket_number . '-full.pdf';
-
-                return response()->file($mainPdfPath, [
-                    'Content-Type' => 'application/pdf',
-                    'Content-Disposition' => 'attachment; filename="' . $filename . '"'
-                ])->deleteFileAfterSend(true);
+                // Full report selalu tampil walaupun attachments/PR photos kosong
+                return view('tickets.report_full', [
+                    'mainData' => $mainData,
+                    'attachmentData' => $attachmentData,
+                    'prPhotosData' => $prPhotosData,
+                    'hasPrPhotos' => count($prPhotos) > 0,
+                    'hasAttachments' => count($imageAttachments) > 0,
+                    'ticket' => $ticket,
+                ]);
         }
     }
 
     /**
-     * View PDF in browser with 3 options
+     * View HTML report (alias dari generateReport)
      */
     public function viewReport($id, Request $request)
     {
-        $type = $request->get('type', 'full'); // full, main, attachments
+        return $this->generateReport($id, $request);
+    }
 
-        $ticket = Ticket::with([
-            'user',
-            'category',
-            'priority',
-            'location',
-            'department',
-            'assignedUser',
-            'attachments',
-            'comments' => function ($query) {
-                $query->where('is_followup', true)
-                    ->where('is_internal', 0)
-                    ->with('user')
-                    ->orderBy('created_at', 'asc');
-            },
-            'signatures.user',
-            'voucherRequests.items',
-        ])->findOrFail($id);
+    /**
+     * Detect if request is from mobile device
+     */
+    private function isMobileDevice(Request $request)
+    {
+        $userAgent = $request->header('User-Agent');
+        $mobileKeywords = ['Mobile', 'Android', 'iPhone', 'iPad', 'iPod', 'webOS', 'BlackBerry', 'Windows Phone'];
 
-        $user = Auth::user();
-
-        if (!$this->canViewTicket($user, $ticket)) {
-            abort(403, 'Unauthorized access to this ticket report');
+        foreach ($mobileKeywords as $keyword) {
+            if (stripos($userAgent, $keyword) !== false) {
+                return true;
+            }
         }
 
-        // Buat folder temp
-        $this->ensureDirectoryExists(storage_path('app/temp'));
+        return false;
+    }
 
-        // Get signatures
-        $signatures = $this->getSignatures($ticket);
+    /**
+     * Get PR photos from voucher requests
+     */
+    private function getPRPhotos($ticket)
+    {
+        $prPhotos = [];
 
-        // Get PR data
-        $prData = null;
-        $prItems = collect([]);
-        $totalPRAmount = 0;
+        foreach ($ticket->voucherRequests as $pr) {
+            foreach ($pr->attachments as $attachment) {
+                $extension = strtolower(pathinfo($attachment->file_name, PATHINFO_EXTENSION));
+                $isImage = in_array($extension, ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'svg']);
 
-        if ($ticket->voucherRequests->count() > 0) {
-            $prData = $ticket->voucherRequests->first();
-            $prItems = $prData->items;
-            $totalPRAmount = $prData->total_amount;
-        }
-
-        // Get follow-up comments
-        $followUpComments = $this->getFollowUpComments($ticket);
-
-        // Filter attachments
-        $imageAttachments = $this->getImageAttachments($ticket);
-        $fileAttachments = $this->getFileAttachments($ticket);
-
-        $statusDisplay = $this->getStatusDisplay($ticket->status);
-
-        // Data untuk main report
-        $mainData = [
-            'ticket' => $ticket,
-            'signatures' => $signatures,
-            'prData' => $prData,
-            'prItems' => $prItems,
-            'totalPRAmount' => $totalPRAmount,
-            'followUpComments' => $followUpComments,
-            'fileAttachments' => $fileAttachments,
-            'currentDate' => now()->format('d F Y'),
-            'currentDateTime' => now()->format('d F Y, H:i'),
-            'statusDisplay' => $statusDisplay,
-            'helper' => $this,
-        ];
-
-        // Data untuk attachments
-        $attachmentData = [
-            'ticket' => $ticket,
-            'imageAttachments' => $imageAttachments,
-            'helper' => $this,
-        ];
-
-        // Generate berdasarkan type
-        switch ($type) {
-            case 'attachments':
-                // Validasi attachments
-                if (count($imageAttachments) == 0) {
-                    abort(404, 'No image attachments found');
+                if (Storage::disk('public')->exists($attachment->file_path)) {
+                    $prPhotos[] = (object) [
+                        'id' => $attachment->id,
+                        'file_name' => $attachment->file_name,
+                        'file_path' => $attachment->file_path,
+                        'file_size' => $attachment->file_size,
+                        'created_at' => $attachment->created_at,
+                        'vr_number' => $pr->vr_number,
+                        'extension' => $extension,
+                        'is_image' => $isImage,
+                        'url' => asset('storage/' . $attachment->file_path),
+                        'absolute_path' => storage_path('app/public/' . $attachment->file_path),
+                    ];
                 }
-
-                $pdfPath = storage_path('app/temp/attachments_' . uniqid() . '.pdf');
-
-                Pdf::view('tickets.report_attachments', $attachmentData)
-                    ->format(Format::A4)
-                    ->orientation(Orientation::Portrait)
-                    ->margins(8, 8, 8, 8)
-                    ->save($pdfPath);
-
-                return response()->file($pdfPath, [
-                    'Content-Type' => 'application/pdf',
-                    'Content-Disposition' => 'inline; filename="attachments-' . $ticket->ticket_number . '.pdf"'
-                ])->deleteFileAfterSend(true);
-
-            case 'main':
-                $pdfPath = storage_path('app/temp/main_' . uniqid() . '.pdf');
-
-                Pdf::view('tickets.report_main', $mainData)
-                    ->format(Format::A4)
-                    ->orientation(Orientation::Portrait)
-                    ->margins(8, 8, 8, 8)
-                    ->save($pdfPath);
-
-                return response()->file($pdfPath, [
-                    'Content-Type' => 'application/pdf',
-                    'Content-Disposition' => 'inline; filename="report-' . $ticket->ticket_number . '.pdf"'
-                ])->deleteFileAfterSend(true);
-
-            case 'full':
-            default:
-                $mainPdfPath = storage_path('app/temp/main_' . uniqid() . '.pdf');
-
-                Pdf::view('tickets.report_main', $mainData)
-                    ->format(Format::A4)
-                    ->orientation(Orientation::Portrait)
-                    ->margins(8, 8, 8, 8)
-                    ->save($mainPdfPath);
-
-                if (count($imageAttachments) > 0) {
-                    $attachmentPdfPath = storage_path('app/temp/attachment_' . uniqid() . '.pdf');
-
-                    Pdf::view('tickets.report_attachments', $attachmentData)
-                        ->format(Format::A4)
-                        ->orientation(Orientation::Portrait)
-                        ->margins(8, 8, 8, 8)
-                        ->save($attachmentPdfPath);
-
-                    $outputPath = storage_path('app/temp/final_' . uniqid() . '.pdf');
-                    $this->mergePdfs([$mainPdfPath, $attachmentPdfPath], $outputPath);
-
-                    @unlink($mainPdfPath);
-                    @unlink($attachmentPdfPath);
-
-                    return response()->file($outputPath, [
-                        'Content-Type' => 'application/pdf',
-                        'Content-Disposition' => 'inline; filename="ticket-' . $ticket->ticket_number . '-full.pdf"'
-                    ])->deleteFileAfterSend(true);
-                }
-
-                return response()->file($mainPdfPath, [
-                    'Content-Type' => 'application/pdf',
-                    'Content-Disposition' => 'inline; filename="ticket-' . $ticket->ticket_number . '-full.pdf"'
-                ])->deleteFileAfterSend(true);
+            }
         }
+
+        usort($prPhotos, function ($a, $b) {
+            return strtotime($a->created_at) - strtotime($b->created_at);
+        });
+
+        return $prPhotos;
     }
 
     /**
@@ -360,8 +213,18 @@ class TicketReportController extends Controller
             $extension = strtolower(pathinfo($attachment->file_name, PATHINFO_EXTENSION));
             $isImage = in_array($extension, ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'svg']);
 
-            if ($isImage && Storage::disk('public')->exists($attachment->file_path)) {
-                $imageAttachments[] = $attachment;
+            if (Storage::disk('public')->exists($attachment->file_path)) {
+                $imageAttachments[] = (object) [
+                    'id' => $attachment->id,
+                    'file_name' => $attachment->file_name,
+                    'file_path' => $attachment->file_path,
+                    'file_size' => $attachment->file_size,
+                    'created_at' => $attachment->created_at,
+                    'extension' => $extension,
+                    'is_image' => $isImage,
+                    'url' => asset('storage/' . $attachment->file_path),
+                    'absolute_path' => storage_path('app/public/' . $attachment->file_path),
+                ];
             }
         }
 
@@ -379,8 +242,17 @@ class TicketReportController extends Controller
             $extension = strtolower(pathinfo($attachment->file_name, PATHINFO_EXTENSION));
             $isImage = in_array($extension, ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'svg']);
 
-            if (!$isImage) {
-                $fileAttachments[] = $attachment;
+            if (!$isImage && Storage::disk('public')->exists($attachment->file_path)) {
+                $fileAttachments[] = (object) [
+                    'id' => $attachment->id,
+                    'file_name' => $attachment->file_name,
+                    'file_path' => $attachment->file_path,
+                    'file_size' => $attachment->file_size,
+                    'file_type' => $attachment->file_type,
+                    'created_at' => $attachment->created_at,
+                    'extension' => $extension,
+                    'url' => asset('storage/' . $attachment->file_path),
+                ];
             }
         }
 
@@ -388,23 +260,31 @@ class TicketReportController extends Controller
     }
 
     /**
-     * Get follow-up comments - HANYA yang memiliki flag is_followup = true
+     * Get follow-up comments
      */
     private function getFollowUpComments($ticket)
     {
         $followUps = [];
 
         foreach ($ticket->comments as $comment) {
-            if (!$comment->is_followup)
+            $isFollowUp = $comment->is_followup;
+
+            $content = strtolower($comment->comment);
+            $hasFollowUpKeyword = str_contains($content, 'follow-up') ||
+                str_contains($content, 'followup') ||
+                str_contains($content, 'completion notes');
+
+            if (!$isFollowUp && !$hasFollowUpKeyword) {
                 continue;
+            }
 
             $text = $comment->comment;
 
-            // Bersihkan teks dari prefix
             $text = preg_replace('/^Work completed by technician\.?\s*/i', '', $text);
             $text = preg_replace('/^Completion Notes:\s*/i', '', $text);
             $text = preg_replace('/^VR Requested\.?\s*/i', '', $text);
             $text = preg_replace('/^Admin Follow-up Notes:\s*/i', '', $text);
+            $text = preg_replace('/^PR Requested\.?\s*/i', '', $text);
             $text = trim($text);
 
             if (!empty($text) && $text !== '-') {
@@ -443,7 +323,7 @@ class TicketReportController extends Controller
             'received' => 'RECEIVED',
             'pending_om' => 'OM APPROVAL',
             'in_progress' => 'IN PROGRESS',
-            'pending_vr' => 'VR APPROVAL',
+            'pending_vr' => 'PR APPROVAL',
             'completed' => 'COMPLETED',
             'pending_gm' => 'GM APPROVAL',
             'ready_for_closure' => 'READY FOR CLOSURE',
@@ -454,43 +334,7 @@ class TicketReportController extends Controller
     }
 
     /**
-     * Merge multiple PDF files into one using FPDI
-     */
-    private function mergePdfs($inputFiles, $outputFile)
-    {
-        $pdf = new Fpdi();
-
-        foreach ($inputFiles as $file) {
-            if (!file_exists($file)) {
-                continue;
-            }
-
-            $pageCount = $pdf->setSourceFile($file);
-
-            for ($pageNo = 1; $pageNo <= $pageCount; $pageNo++) {
-                $templateId = $pdf->importPage($pageNo);
-                $size = $pdf->getTemplateSize($templateId);
-
-                $pdf->AddPage($size['orientation'], [$size['width'], $size['height']]);
-                $pdf->useTemplate($templateId);
-            }
-        }
-
-        $pdf->Output('F', $outputFile);
-    }
-
-    /**
-     * Ensure directory exists
-     */
-    private function ensureDirectoryExists($path)
-    {
-        if (!is_dir($path)) {
-            mkdir($path, 0755, true);
-        }
-    }
-
-    /**
-     * Save PDF to storage
+     * Save report as HTML
      */
     public function saveReport($id, Request $request)
     {
@@ -507,40 +351,51 @@ class TicketReportController extends Controller
         }
 
         try {
-            // Buat folder reports jika belum ada
             $this->ensureDirectoryExists(storage_path('app/public/reports'));
-            $this->ensureDirectoryExists(storage_path('app/temp'));
 
-            // Get data
             $signatures = $this->getSignatures($ticket);
+            $prPhotos = $this->getPRPhotos($ticket);
             $followUpComments = $this->getFollowUpComments($ticket);
             $imageAttachments = $this->getImageAttachments($ticket);
             $fileAttachments = $this->getFileAttachments($ticket);
+            $statusDisplay = $this->getStatusDisplay($ticket->status);
 
-            // Main report data
             $mainData = [
                 'ticket' => $ticket,
                 'signatures' => $signatures,
-                'prData' => $ticket->voucherRequests->first(),
-                'prItems' => $ticket->voucherRequests->first()?->items ?? collect([]),
-                'totalPRAmount' => $ticket->voucherRequests->first()?->total_amount ?? 0,
                 'followUpComments' => $followUpComments,
                 'fileAttachments' => $fileAttachments,
                 'currentDate' => now()->format('d F Y'),
-                'statusDisplay' => $this->getStatusDisplay($ticket->status),
+                'statusDisplay' => $statusDisplay,
                 'helper' => $this,
             ];
 
-            // Attachment data
             $attachmentData = [
                 'ticket' => $ticket,
                 'imageAttachments' => $imageAttachments,
                 'helper' => $this,
             ];
 
-            $filename = '';
+            $prPhotosData = [
+                'ticket' => $ticket,
+                'prPhotos' => $prPhotos,
+                'helper' => $this,
+            ];
+
+            $html = '';
 
             switch ($type) {
+                case 'pr_photos':
+                    if (count($prPhotos) == 0) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'No PR photos found'
+                        ], 404);
+                    }
+                    $html = view('tickets.report_pr_photos', $prPhotosData)->render();
+                    $filename = 'reports/pr-photos-' . $ticket->ticket_number . '-' . time() . '.html';
+                    break;
+
                 case 'attachments':
                     if (count($imageAttachments) == 0) {
                         return response()->json([
@@ -548,75 +403,37 @@ class TicketReportController extends Controller
                             'message' => 'No image attachments found'
                         ], 404);
                     }
-
-                    $pdfPath = storage_path('app/temp/attachments_' . uniqid() . '.pdf');
-
-                    Pdf::view('tickets.report_attachments', $attachmentData)
-                        ->format(Format::A4)
-                        ->orientation(Orientation::Portrait)
-                        ->margins(8, 8, 8, 8)
-                        ->save($pdfPath);
-
-                    $filename = 'reports/attachments-' . $ticket->ticket_number . '-' . time() . '.pdf';
-                    copy($pdfPath, storage_path('app/public/' . $filename));
-                    @unlink($pdfPath);
+                    $html = view('tickets.report_attachments', $attachmentData)->render();
+                    $filename = 'reports/attachments-' . $ticket->ticket_number . '-' . time() . '.html';
                     break;
 
                 case 'main':
-                    $pdfPath = storage_path('app/temp/main_' . uniqid() . '.pdf');
-
-                    Pdf::view('tickets.report_main', $mainData)
-                        ->format(Format::A4)
-                        ->orientation(Orientation::Portrait)
-                        ->margins(8, 8, 8, 8)
-                        ->save($pdfPath);
-
-                    $filename = 'reports/report-' . $ticket->ticket_number . '-' . time() . '.pdf';
-                    copy($pdfPath, storage_path('app/public/' . $filename));
-                    @unlink($pdfPath);
+                    $html = view('tickets.report_main', $mainData)->render();
+                    $filename = 'reports/report-' . $ticket->ticket_number . '-' . time() . '.html';
                     break;
 
                 case 'full':
                 default:
-                    $mainPdfPath = storage_path('app/temp/main_' . uniqid() . '.pdf');
-
-                    Pdf::view('tickets.report_main', $mainData)
-                        ->format(Format::A4)
-                        ->orientation(Orientation::Portrait)
-                        ->margins(8, 8, 8, 8)
-                        ->save($mainPdfPath);
-
-                    if (count($imageAttachments) > 0) {
-                        $attachmentPdfPath = storage_path('app/temp/attachment_' . uniqid() . '.pdf');
-
-                        Pdf::view('tickets.report_attachments', $attachmentData)
-                            ->format(Format::A4)
-                            ->orientation(Orientation::Portrait)
-                            ->margins(8, 8, 8, 8)
-                            ->save($attachmentPdfPath);
-
-                        $outputPath = storage_path('app/temp/final_' . uniqid() . '.pdf');
-                        $this->mergePdfs([$mainPdfPath, $attachmentPdfPath], $outputPath);
-
-                        @unlink($mainPdfPath);
-                        @unlink($attachmentPdfPath);
-
-                        $filename = 'reports/ticket-' . $ticket->ticket_number . '-full-' . time() . '.pdf';
-                        copy($outputPath, storage_path('app/public/' . $filename));
-                        @unlink($outputPath);
-                    } else {
-                        $filename = 'reports/ticket-' . $ticket->ticket_number . '-full-' . time() . '.pdf';
-                        copy($mainPdfPath, storage_path('app/public/' . $filename));
-                        @unlink($mainPdfPath);
-                    }
+                    $html = view('tickets.report_full', [
+                        'mainData' => $mainData,
+                        'attachmentData' => $attachmentData,
+                        'prPhotosData' => $prPhotosData,
+                        'hasPrPhotos' => count($prPhotos) > 0,
+                        'hasAttachments' => count($imageAttachments) > 0,
+                        'ticket' => $ticket,
+                    ])->render();
+                    $filename = 'reports/ticket-' . $ticket->ticket_number . '-full-' . time() . '.html';
                     break;
             }
+
+            $fullPath = storage_path('app/public/' . $filename);
+            file_put_contents($fullPath, $html);
 
             return response()->json([
                 'success' => true,
                 'message' => 'Report saved successfully',
                 'path' => $filename,
-                'url' => Storage::url($filename)
+                'url' => asset('storage/' . $filename)
             ]);
 
         } catch (\Exception $e) {
@@ -628,7 +445,7 @@ class TicketReportController extends Controller
     }
 
     /**
-     * Helper method untuk mendapatkan nama user
+     * Helper methods
      */
     public function getUserName($user, $fallback = '-')
     {
@@ -637,9 +454,6 @@ class TicketReportController extends Controller
         return $user->name ?? $fallback;
     }
 
-    /**
-     * Helper method untuk mendapatkan role user
-     */
     public function getUserRole($user, $fallback = '-')
     {
         if (!$user)
@@ -647,9 +461,6 @@ class TicketReportController extends Controller
         return ucfirst($user->role) ?? $fallback;
     }
 
-    /**
-     * Helper method untuk format tanggal
-     */
     public function formatDate($date, $format = 'd/m/Y', $fallback = '-')
     {
         if (!$date)
@@ -661,42 +472,29 @@ class TicketReportController extends Controller
         }
     }
 
-    /**
-     * Helper method untuk cek apakah signature ada
-     */
     public function hasSignature($stage, $signatures)
     {
         if (!isset($signatures[$stage]))
             return false;
-
         $signature = $signatures[$stage];
         if (!$signature->signature_path)
             return false;
-
         return Storage::disk('public')->exists($signature->signature_path);
     }
 
-    /**
-     * Helper method untuk mendapatkan signature path
-     */
     public function getSignaturePath($stage, $signatures, $fallback = null)
     {
         if ($this->hasSignature($stage, $signatures)) {
-            return storage_path('app/public/' . $signatures[$stage]->signature_path);
+            return asset('storage/' . $signatures[$stage]->signature_path);
         }
         return $fallback;
     }
 
-    /**
-     * Helper untuk mendapatkan data signature
-     */
     public function getSignatureData($stage, $signatures, $field = 'user', $fallback = '-')
     {
         if (!isset($signatures[$stage]))
             return $fallback;
-
         $signature = $signatures[$stage];
-
         switch ($field) {
             case 'user':
                 return $this->getUserName($signature->user ?? null, $fallback);
@@ -709,57 +507,52 @@ class TicketReportController extends Controller
         }
     }
 
-    /**
-     * Check if user can view ticket
-     */
     private function canViewTicket($user, $ticket)
     {
         if (!$user)
             return false;
-
         switch ($user->role) {
             case 'superadmin':
             case 'admin_eng':
             case 'om':
             case 'gm':
                 return true;
-
             case 'user':
                 return $ticket->user_id === $user->id;
-
             case 'technician':
                 return $ticket->assigned_to === $user->id || $ticket->user_id === $user->id;
-
             case 'manager':
                 return $ticket->department_id === $user->department_id;
-
             default:
                 return false;
         }
     }
 
-    /**
-     * Clean up old temp files (bisa dijalankan via cron)
-     */
+    private function ensureDirectoryExists($path)
+    {
+        if (!is_dir($path)) {
+            mkdir($path, 0755, true);
+        }
+    }
+
     public function cleanupTempFiles()
     {
-        $tempDir = storage_path('app/temp');
-        if (!is_dir($tempDir))
+        $reportDir = storage_path('app/public/reports');
+        if (!is_dir($reportDir))
             return;
 
-        $files = glob($tempDir . '/*.pdf');
+        $files = glob($reportDir . '/*.html');
         $now = time();
 
         foreach ($files as $file) {
-            // Hapus file yang lebih dari 1 jam
-            if (is_file($file) && ($now - filemtime($file)) > 3600) {
+            if (is_file($file) && ($now - filemtime($file)) > 86400) {
                 @unlink($file);
             }
         }
 
         return response()->json([
             'success' => true,
-            'message' => 'Temp files cleaned up'
+            'message' => 'Old reports cleaned up'
         ]);
     }
 }

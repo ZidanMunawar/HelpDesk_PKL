@@ -42,8 +42,8 @@
         }
 
         /* ============================================
-                                                MAINTENANCE REQUEST HEADER - Navy & Orange Theme
-                                            ============================================ */
+                                                                                                                MAINTENANCE REQUEST HEADER - Navy & Orange Theme
+                                                                                                            ============================================ */
         .ticket-header-container {
             background: white;
             border: 2px solid var(--navy);
@@ -126,8 +126,8 @@
         }
 
         /* ============================================
-                                                STATUS & PRIORITY BADGES - Solid Colors
-                                            ============================================ */
+                                                                                                                STATUS & PRIORITY BADGES - Solid Colors
+                                                                                                            ============================================ */
         .status-badge {
             padding: 6px 15px;
             border-radius: 20px;
@@ -189,8 +189,8 @@
         }
 
         /* ============================================
-                                                CURRENT STAGE INFO - Orange Solid
-                                            ============================================ */
+                                                                                                                CURRENT STAGE INFO - Orange Solid
+                                                                                                            ============================================ */
         .stage-info {
             background: var(--orange);
             color: white;
@@ -234,8 +234,8 @@
         }
 
         /* ============================================
-                                                ACTION BUTTONS - Solid Colors
-                                            ============================================ */
+                                                                                                                ACTION BUTTONS - Solid Colors
+                                                                                                            ============================================ */
         .action-buttons {
             display: flex;
             flex-wrap: wrap;
@@ -314,8 +314,8 @@
         }
 
         /* ============================================
-                                                TICKET BODY
-                                            ============================================ */
+                                                                                                                TICKET BODY
+                                                                                                            ============================================ */
         .ticket-body {
             background: white;
             border: 1px solid #e0e0e0;
@@ -436,8 +436,8 @@
         }
 
         /* ============================================
-                                                ATTACHMENTS - More organized
-                                            ============================================ */
+                                                                                                                ATTACHMENTS - More organized
+                                                                                                            ============================================ */
         .attachments-section {
             margin-top: 25px;
         }
@@ -590,8 +590,8 @@
         }
 
         /* ============================================
-            SIGNATURES SECTION - With Toggle & Responsive
-        ============================================ */
+                                                                            SIGNATURES SECTION - With Toggle & Responsive
+                                                                        ============================================ */
         .signatures-section {
             background: white;
             border: 1px solid #e0e0e0;
@@ -793,8 +793,8 @@
         }
 
         /* ============================================
-                                                PURCHASE REQUEST (PR) SECTION
-                                            ============================================ */
+                                                                                                                PURCHASE REQUEST (PR) SECTION
+                                                                                                            ============================================ */
         .pr-alert {
             background: #fff8e1;
             border: 1px solid #ffe082;
@@ -866,8 +866,8 @@
         }
 
         /* ============================================
-                            APPROVAL STATUS - Horizontal di semua device
-                        ============================================ */
+                                                                                            APPROVAL STATUS - Horizontal di semua device
+                                                                                        ============================================ */
         .approval-status {
             background: white;
             border: 1px solid #e0e0e0;
@@ -962,8 +962,8 @@
         }
 
         /* ============================================
-                                                DUE DATE WIDGET
-                                            ============================================ */
+                                                                                                                DUE DATE WIDGET
+                                                                                                            ============================================ */
         .due-date-compact {
             background: var(--navy);
             color: white;
@@ -1021,8 +1021,8 @@
         }
 
         /* ============================================
-                                                COMMENTS SECTION
-                                            ============================================ */
+                                                                                                                COMMENTS SECTION
+                                                                                                            ============================================ */
         .comments-section {
             background: white;
             border: 1px solid #e0e0e0;
@@ -1201,8 +1201,8 @@
         }
 
         /* ============================================
-                                                ACTIVITY SECTION
-                                            ============================================ */
+                                                                                                                ACTIVITY SECTION
+                                                                                                            ============================================ */
         .activity-section {
             background: #f8f9fa;
             border: 1px solid #e0e0e0;
@@ -1345,8 +1345,8 @@
         }
 
         /* ============================================
-                                                MODAL STYLES
-                                            ============================================ */
+                                                                                                                MODAL STYLES
+                                                                                                            ============================================ */
         .modal-dialog {
             margin: 0.5rem;
             max-width: 500px;
@@ -1420,8 +1420,8 @@
         }
 
         /* ============================================
-                                                MOBILE RESPONSIVE
-                                            ============================================ */
+                                                                                                                MOBILE RESPONSIVE
+                                                                                                            ============================================ */
         @media (min-width: 993px) {
             .info-grid {
                 grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -1957,6 +1957,14 @@
         ]);
 
         $needsAdminFollowup = $ticket->approval->needs_admin_followup ?? false;
+
+        $hasPRPhotos = false;
+        foreach ($ticket->voucherRequests as $pr) {
+            if ($pr->attachments && $pr->attachments->count() > 0) {
+                $hasPRPhotos = true;
+                break;
+            }
+        }
     @endphp
 
     <div class="row">
@@ -2257,7 +2265,11 @@
                         <i class="fas fa-check-circle"></i><span>Receive Request</span>
                     </button>
                 @endif
-
+                @if (in_array($user->role, ['admin_eng', 'superadmin']) && $ticket->status === 'open')
+                    <button class="btn-action btn-primary" onclick="openEditTicketModal()" style="background: #17a2b8;">
+                        <i class="fas fa-edit"></i><span> Edit Ticket</span>
+                    </button>
+                @endif
                 @if (in_array('om_approve', $availableActions))
                     <button class="btn-action btn-success" onclick="openOmApproveModal()">
                         <i class="fas fa-thumbs-up"></i> <span>OM Approve</span>
@@ -2862,8 +2874,8 @@
     </div>
 
     <!-- ============================================
-                                            MODALS
-                                        ============================================ -->
+                                                                                                            MODALS
+                                                                                                        ============================================ -->
 
     <!-- Add Follow-up Modal -->
     <div class="modal fade" id="addFollowupModal" tabindex="-1">
@@ -3555,8 +3567,6 @@
                         aria-label="Close"></button>
                 </div>
                 <div class="modal-body" style="padding: 20px;">
-                    <h6 class="text-muted mb-2" style="font-size: 12px; letter-spacing: 0.5px;">DOWNLOAD</h6>
-
                     <div class="report-option" onclick="generateReport('full')" data-bs-dismiss="modal"
                         style="display: flex; align-items: center; gap: 15px; padding: 15px; border: 1px solid #e0e0e0; border-radius: 8px; margin-bottom: 10px; cursor: pointer;">
                         <div
@@ -3565,9 +3575,9 @@
                         </div>
                         <div style="flex: 1;">
                             <div style="font-weight: 600; color: #333;">Full Report</div>
-                            <div style="font-size: 12px; color: #666;">Dengan semua attachments</div>
+                            <div style="font-size: 12px; color: #666;">Report + Attachments + PR Photos</div>
                         </div>
-                        <i class="fas fa-download" style="color: #999;"></i>
+                        <i class="fas fa-print" style="color: #999;"></i>
                     </div>
 
                     <div class="report-option" onclick="generateReport('main')" data-bs-dismiss="modal"
@@ -3578,14 +3588,14 @@
                         </div>
                         <div style="flex: 1;">
                             <div style="font-weight: 600; color: #333;">Report Only</div>
-                            <div style="font-size: 12px; color: #666;">Tanpa attachments</div>
+                            <div style="font-size: 12px; color: #666;">Tanpa attachments & PR photos</div>
                         </div>
-                        <i class="fas fa-download" style="color: #999;"></i>
+                        <i class="fas fa-print" style="color: #999;"></i>
                     </div>
 
-                    @if ($hasImageAttachments)
+                    @if ($imageAttachments && $imageAttachments->count() > 0)
                         <div class="report-option" onclick="generateReport('attachments')" data-bs-dismiss="modal"
-                            style="display: flex; align-items: center; gap: 15px; padding: 15px; border: 1px solid #e0e0e0; border-radius: 8px; margin-bottom: 20px; cursor: pointer;">
+                            style="display: flex; align-items: center; gap: 15px; padding: 15px; border: 1px solid #e0e0e0; border-radius: 8px; margin-bottom: 10px; cursor: pointer;">
                             <div
                                 style="width: 40px; height: 40px; background: #e8f5e9; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
                                 <i class="fas fa-images" style="color: #198754; font-size: 20px;"></i>
@@ -3594,44 +3604,24 @@
                                 <div style="font-weight: 600; color: #333;">Attachments Only</div>
                                 <div style="font-size: 12px; color: #666;">{{ $imageAttachments->count() }} foto</div>
                             </div>
-                            <i class="fas fa-download" style="color: #999;"></i>
+                            <i class="fas fa-print" style="color: #999;"></i>
                         </div>
                     @endif
 
-                    <div class="preview-section">
-                        <h6 class="text-muted mb-2" style="font-size: 12px; letter-spacing: 0.5px;">PREVIEW</h6>
-                        <div class="row g-2">
-                            <div class="col-4">
-                                <div class="report-option preview-option" onclick="viewReportModal('full')"
-                                    data-bs-dismiss="modal"
-                                    style="text-align: center; padding: 12px; border: 1px solid #e0e0e0; border-radius: 8px; cursor: pointer;">
-                                    <i class="fas fa-eye"
-                                        style="color: #17a2b8; font-size: 20px; margin-bottom: 5px; display: block;"></i>
-                                    <span style="font-size: 11px; font-weight: 500;">Full</span>
-                                </div>
+                    @if (isset($hasPRPhotos) && $hasPRPhotos)
+                        <div class="report-option" onclick="generateReport('pr_photos')" data-bs-dismiss="modal"
+                            style="display: flex; align-items: center; gap: 15px; padding: 15px; border: 1px solid #e0e0e0; border-radius: 8px; margin-bottom: 10px; cursor: pointer;">
+                            <div
+                                style="width: 40px; height: 40px; background: #fff3e0; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                                <i class="fas fa-receipt" style="color: #ff9800; font-size: 20px;"></i>
                             </div>
-                            <div class="col-4">
-                                <div class="report-option preview-option" onclick="viewReportModal('main')"
-                                    data-bs-dismiss="modal"
-                                    style="text-align: center; padding: 12px; border: 1px solid #e0e0e0; border-radius: 8px; cursor: pointer;">
-                                    <i class="fas fa-eye"
-                                        style="color: #17a2b8; font-size: 20px; margin-bottom: 5px; display: block;"></i>
-                                    <span style="font-size: 11px; font-weight: 500;">Report</span>
-                                </div>
+                            <div style="flex: 1;">
+                                <div style="font-weight: 600; color: #333;">PR Photos Only</div>
+                                <div style="font-size: 12px; color: #666;">Purchase Request photos</div>
                             </div>
-                            <div class="col-4">
-                                @if ($hasImageAttachments)
-                                    <div class="report-option preview-option" onclick="viewReportModal('attachments')"
-                                        data-bs-dismiss="modal"
-                                        style="text-align: center; padding: 12px; border: 1px solid #e0e0e0; border-radius: 8px; cursor: pointer;">
-                                        <i class="fas fa-eye"
-                                            style="color: #17a2b8; font-size: 20px; margin-bottom: 5px; display: block;"></i>
-                                        <span style="font-size: 11px; font-weight: 500;">Photos</span>
-                                    </div>
-                                @endif
-                            </div>
+                            <i class="fas fa-print" style="color: #999;"></i>
                         </div>
-                    </div>
+                    @endif
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-light" data-bs-dismiss="modal">Close</button>
@@ -3639,6 +3629,78 @@
             </div>
         </div>
     </div>
+    <!-- Edit Ticket Modal (Admin only - saat status OPEN) -->
+    @if (in_array($user->role, ['admin_eng', 'superadmin']) && $ticket->status === 'open')
+        <div class="modal fade" id="editTicketModal" tabindex="-1">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header"
+                        style="background: linear-gradient(135deg, #003366, #1e4a7a); color: white;">
+                        <h5 class="modal-title">
+                            <i class="fas fa-edit me-2"></i> Edit Maintenance Request
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <form id="editTicketForm">
+                        @csrf
+                        @method('PUT')
+                        <div class="modal-body">
+                            <div class="alert alert-info mb-3" style="font-size: 13px;">
+                                <i class="fas fa-info-circle me-2"></i>
+                                You can only edit <strong>Priority</strong> and <strong>Category</strong> while the ticket
+                                is still <strong>OPEN</strong>.
+                            </div>
+
+                            <!-- Category -->
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Category <span class="text-danger">*</span></label>
+                                <select name="category_id" id="editCategoryId" class="form-select select2-edit"
+                                    style="width: 100%;" required>
+                                    <option value="">-- Select Category --</option>
+                                    @foreach ($categories as $category)
+                                        <option value="{{ $category->id }}"
+                                            {{ $ticket->category_id == $category->id ? 'selected' : '' }}>
+                                            {{ $category->name }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                                <div class="invalid-feedback"></div>
+                            </div>
+
+                            <!-- Priority -->
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Priority <span class="text-danger">*</span></label>
+                                <select name="priority_id" id="editPriorityId" class="form-select select2-edit"
+                                    style="width: 100%;" required>
+                                    <option value="">-- Select Priority --</option>
+                                    @foreach ($priorities as $priority)
+                                        <option value="{{ $priority->id }}"
+                                            {{ $ticket->priority_id == $priority->id ? 'selected' : '' }}>
+                                            {{ $priority->name }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                                <div class="invalid-feedback"></div>
+                            </div>
+
+                            <div class="alert alert-warning mt-3" style="font-size: 12px;">
+                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                Changing priority may affect the ticket's processing order.
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                <i class="fas fa-times me-1"></i> Cancel
+                            </button>
+                            <button type="submit" class="btn" style="background: #ff6600; color: white;">
+                                <i class="fas fa-save me-1"></i> Save Changes
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    @endif
 @endsection
 
 @push('scripts')
@@ -4255,30 +4317,24 @@
 
         function generateReport(type) {
             $('#reportModal').modal('hide');
-            let url = '';
-            switch (type) {
-                case 'full':
-                    url = '{{ route('tickets.report.download', $ticket->id) }}?type=full';
-                    break;
-                case 'main':
-                    url = '{{ route('tickets.report.download', $ticket->id) }}?type=main';
-                    break;
-                case 'attachments':
-                    url = '{{ route('tickets.report.download', $ticket->id) }}?type=attachments';
-                    break;
+
+            // Check ukuran layar
+            const isSmallScreen = window.innerWidth <= 768;
+
+            if (isSmallScreen) {
+                // Layar kecil: buka di tab/window baru (modal muncul via CSS)
+                const url = '{{ route('tickets.report.view', $ticket->id) }}?type=' + type;
+                window.open(url, '_blank');
+            } else {
+                // Desktop: buka tab baru dengan auto-print
+                const url = '{{ route('tickets.report.view', $ticket->id) }}?type=' + type + '&print=1';
+                window.open(url, '_blank');
             }
-            Swal.fire({
-                title: 'Generating Report',
-                text: 'Please wait...',
-                allowOutsideClick: false,
-                didOpen: () => Swal.showLoading()
-            });
-            window.location.href = url;
-            setTimeout(() => Swal.close(), 3000);
         }
 
         function viewReportModal(type) {
             $('#reportModal').modal('hide');
+
             let url = '';
             switch (type) {
                 case 'full':
@@ -4290,17 +4346,84 @@
                 case 'attachments':
                     url = '{{ route('tickets.report.view', $ticket->id) }}?type=attachments';
                     break;
+                default:
+                    url = '{{ route('tickets.report.view', $ticket->id) }}?type=full';
+                    break;
             }
-            $('#reportPreviewFrame').attr('src', 'about:blank');
-            $('#reportPreviewModal').modal('show');
-            setTimeout(() => $('#reportPreviewFrame').attr('src', url), 100);
+
+            window.open(url, '_blank');
         }
 
         function printReport() {
-            const iframe = document.getElementById('reportPreviewFrame');
-            if (iframe.contentWindow) iframe.contentWindow.print();
-            else toastr.error('Cannot print: Report not loaded yet');
-        }
+            window.print();
+        } // ==================== EDIT TICKET MODAL ====================
+        @if (in_array($user->role, ['admin_eng', 'superadmin']) && $ticket->status === 'open')
+            // Initialize Select2 for modal
+            function initEditSelect2() {
+                $('#editCategoryId, #editPriorityId').select2({
+                    width: '100%',
+                    placeholder: 'Select an option',
+                    allowClear: true,
+                    dropdownParent: $('#editTicketModal')
+                });
+            }
+
+            function openEditTicketModal() {
+                // Refresh Select2 options (in case categories/priorities changed)
+                initEditSelect2();
+                $('#editTicketModal').modal('show');
+            }
+
+            // Submit Edit Form
+            $('#editTicketForm').on('submit', function(e) {
+                e.preventDefault();
+
+                const categoryId = $('#editCategoryId').val();
+                const priorityId = $('#editPriorityId').val();
+
+                if (!categoryId) {
+                    toastr.error('Please select a category');
+                    return;
+                }
+                if (!priorityId) {
+                    toastr.error('Please select a priority');
+                    return;
+                }
+
+                const $btn = $(this).find('button[type="submit"]');
+                const originalText = $btn.html();
+                $btn.html('<i class="fas fa-spinner fa-spin me-1"></i> Saving...').prop('disabled', true);
+
+                $.ajax({
+                    url: '{{ route('tickets.update-detail', $ticket->id) }}',
+                    method: 'POST',
+                    data: {
+                        _token: '{{ csrf_token() }}',
+                        _method: 'PUT',
+                        category_id: categoryId,
+                        priority_id: priorityId
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            toastr.success('Ticket updated successfully');
+                            setTimeout(() => location.reload(), 1000);
+                        } else {
+                            toastr.error(response.message || 'Failed to update ticket');
+                        }
+                    },
+                    error: function(xhr) {
+                        let message = 'Failed to update ticket';
+                        if (xhr.responseJSON && xhr.responseJSON.message) {
+                            message = xhr.responseJSON.message;
+                        }
+                        toastr.error(message);
+                    },
+                    complete: function() {
+                        $btn.html(originalText).prop('disabled', false);
+                    }
+                });
+            });
+        @endif
     </script>
 @endpush
 

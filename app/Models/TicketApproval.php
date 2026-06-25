@@ -55,6 +55,12 @@ class TicketApproval extends Model
         'gm_approved_at' => 'datetime',
         'admin_checked_at' => 'datetime',
         'vr_created_at' => 'datetime',
+            'ticket_id' => 'integer',
+    'admin_eng_received_by' => 'integer',
+    'om_approved_by' => 'integer',
+    'user_checked_by' => 'integer',
+    'gm_approved_by' => 'integer',
+    'vr_created_by' => 'integer',
     ];
 
     // ==================== RELATIONSHIPS ====================

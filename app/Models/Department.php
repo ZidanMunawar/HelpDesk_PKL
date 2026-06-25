@@ -21,6 +21,7 @@ class Department extends Model
         'manager_id',
         'description',
         'status',
+        'has_manager_access', // <-- TAMBAHKAN INI
     ];
 
     /**
@@ -32,6 +33,7 @@ class Department extends Model
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
         'deleted_at' => 'datetime',
+        'has_manager_access' => 'boolean', // <-- TAMBAHKAN INI (cast ke boolean)
     ];
 
     /**
@@ -48,6 +50,14 @@ class Department extends Model
     public function scopeInactive($query)
     {
         return $query->where('status', 'inactive');
+    }
+
+    /**
+     * Scope for departments that have manager access
+     */
+    public function scopeHasManagerAccess($query)
+    {
+        return $query->where('has_manager_access', true);
     }
 
     // Relationships
@@ -130,5 +140,24 @@ class Department extends Model
     public function getTruncatedDescriptionAttribute()
     {
         return $this->description ? Str::limit($this->description, 50) : '-';
+    }
+
+    /**
+     * Check if department has manager access
+     */
+    public function getHasManagerAccessLabelAttribute()
+    {
+        return $this->has_manager_access ? 'Yes' : 'No';
+    }
+
+    /**
+     * Get manager access badge HTML
+     */
+    public function getManagerAccessBadgeAttribute()
+    {
+        if ($this->has_manager_access) {
+            return '<span class="badge badge-primary"><i class="fas fa-user-tie me-1"></i>Manager Access</span>';
+        }
+        return '<span class="badge badge-secondary"><i class="fas fa-user me-1"></i>Standard</span>';
     }
 }

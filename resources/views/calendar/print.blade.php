@@ -197,7 +197,7 @@
             flex-shrink: 0;
         }
 
-        /* Dynamic priority styles from database */
+        /* Dynamic priority styles from database - all priorities including inactive */
         @foreach ($priorities as $priority)
             .priority-{{ strtolower(str_replace(' ', '-', $priority->name)) }} i.flag-icon {
                 color: {{ $priority->color }} !important;
@@ -206,6 +206,13 @@
             .priority-{{ strtolower(str_replace(' ', '-', $priority->name)) }} .ticket-number {
                 color: white;
             }
+
+            /* Optional: add opacity for inactive priorities */
+            @if ($priority->status != 'active')
+                .priority-{{ strtolower(str_replace(' ', '-', $priority->name)) }} {
+                    opacity: 0.7;
+                }
+            @endif
         @endforeach
 
         .event-item .ticket-number {
@@ -247,6 +254,12 @@
             align-items: center;
             gap: 8px;
             font-size: 11px;
+        }
+
+        /* Legend item inactive style */
+        .legend-item.inactive-priority {
+            opacity: 0.6;
+            filter: grayscale(0.2);
         }
 
         .legend-color {
@@ -737,9 +750,15 @@
             <div class="legend-divider"></div>
             <div class="legend-group">
                 @foreach ($priorities as $priority)
-                    <div class="legend-item">
+                    <div class="legend-item {{ $priority->status != 'active' ? 'inactive-priority' : '' }}"
+                        @if ($priority->status != 'active') title="Priority is inactive" @endif>
                         <i class="fas fa-flag" style="color: {{ $priority->color }};"></i>
-                        <span>{{ ucfirst(strtolower($priority->name)) }}</span>
+                        <span>
+                            {{ ucfirst(strtolower($priority->name)) }}
+                            @if ($priority->status != 'active')
+                                <small style="color: #999; font-size: 9px;">(inactive)</small>
+                            @endif
+                        </span>
                     </div>
                 @endforeach
             </div>

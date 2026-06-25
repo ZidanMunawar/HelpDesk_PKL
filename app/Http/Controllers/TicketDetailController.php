@@ -12,6 +12,8 @@ use App\Models\Ticket;
 use App\Models\TicketApproval;
 use App\Models\TicketComment;
 use App\Models\User;
+use App\Models\Category;
+use App\Models\Priority;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -40,7 +42,7 @@ class TicketDetailController extends Controller
             'comments.attachments',
             'activities.user',
             'signatures.user',
-            'voucherRequests.items',
+            'voucherRequests.attachments',
             'approval'
         ])->findOrFail($id);
 
@@ -73,12 +75,18 @@ class TicketDetailController extends Controller
         // Hanya AdminEng, OM, GM yang bisa save signature
         $canSaveSignature = in_array($user->role, ['admin_eng', 'om', 'gm']);
 
+        // Get categories and priorities for edit modal (admin only)
+        $categories = Category::where('status', 'active')->orderBy('name')->get();
+        $priorities = Priority::where('status', 'active')->orderBy('level')->get();
+
         return view('tickets.show', compact(
             'ticket',
             'technicians',
             'departments',
             'hasSignature',
-            'canSaveSignature'
+            'canSaveSignature',
+            'categories',
+            'priorities'
         ));
     }
 
@@ -184,7 +192,6 @@ class TicketDetailController extends Controller
 
     /**
      * Admin Engineering receive ticket - DENGAN OPSI SIGNATURE BARU
-     * PERUBAHAN: Tambah notifikasi ke User bahwa ticket diterima
      */
     public function receiveTicket(Request $request, $id)
     {
@@ -208,7 +215,7 @@ class TicketDetailController extends Controller
         if ($ticket->status !== 'open') {
             return response()->json([
                 'success' => false,
-                'message' => 'Ticket is not in open status'
+                'message' => 'Ticket is not in open status. Current status: ' . $ticket->status
             ], 403);
         }
 
@@ -265,13 +272,13 @@ class TicketDetailController extends Controller
             ActivityLog::create([
                 'user_id' => $user->id,
                 'ticket_id' => $ticket->id,
-                'action' => 'received',
+                'action' => 'status_changed',
                 'description' => 'Ticket received by Admin Engineering',
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->userAgent(),
             ]);
 
-            // ✅ PERUBAHAN: Notifikasi ke User bahwa ticket diterima
+            // Notifikasi ke User bahwa ticket diterima
             $this->sendNotification(
                 $ticket->user,
                 $ticket,
@@ -300,10 +307,6 @@ class TicketDetailController extends Controller
 
     /**
      * OM Approve/Reject ticket - DENGAN OPSI SIGNATURE BARU
-     * PERUBAHAN:
-     * - Hapus notifikasi ke user saat approve
-     * - Tambah notifikasi ke Admin Eng saat reject
-     * - User dapat notifikasi umum saat reject
      */
     public function omAction(Request $request, $id)
     {
@@ -326,10 +329,11 @@ class TicketDetailController extends Controller
 
         $ticket = Ticket::findOrFail($id);
 
-        if ($ticket->status !== 'received') {
+        // ✅ PERBAIKAN: Status harus 'pending_om', BUKAN 'received'
+        if ($ticket->status !== 'pending_om') {
             return response()->json([
                 'success' => false,
-                'message' => 'Ticket is not received status'
+                'message' => 'Ticket is not pending OM approval. Current status: ' . $ticket->status
             ], 403);
         }
 
@@ -359,13 +363,13 @@ class TicketDetailController extends Controller
                 ActivityLog::create([
                     'user_id' => $user->id,
                     'ticket_id' => $ticket->id,
-                    'action' => 'om_rejected',
+                    'action' => 'status_changed',
                     'description' => 'Ticket rejected by OM',
                     'ip_address' => $request->ip(),
                     'user_agent' => $request->userAgent(),
                 ]);
 
-                // ✅ PERUBAHAN: Notifikasi ke Admin Eng bahwa OM menolak
+                // Notifikasi ke Admin Eng bahwa OM menolak
                 $adminEngUsers = User::where('role', 'admin_eng')->where('status', 'active')->get();
                 foreach ($adminEngUsers as $adminUser) {
                     $this->sendNotification(
@@ -377,7 +381,7 @@ class TicketDetailController extends Controller
                     );
                 }
 
-                // ✅ PERUBAHAN: Notifikasi umum ke user (tidak detail)
+                // Notifikasi umum ke user
                 $this->sendNotification(
                     $ticket->user,
                     $ticket,
@@ -417,8 +421,8 @@ class TicketDetailController extends Controller
                 ]);
 
                 $ticket->update([
-                    'status' => 'pending_om',
-                    'current_stage' => 3,
+                    'status' => 'in_progress',
+                    'current_stage' => 4,
                 ]);
 
                 $approval = TicketApproval::firstOrCreate(['ticket_id' => $ticket->id]);
@@ -431,13 +435,13 @@ class TicketDetailController extends Controller
                 ActivityLog::create([
                     'user_id' => $user->id,
                     'ticket_id' => $ticket->id,
-                    'action' => 'om_approved',
+                    'action' => 'status_changed',
                     'description' => 'Ticket approved by OM',
                     'ip_address' => $request->ip(),
                     'user_agent' => $request->userAgent(),
                 ]);
 
-                // ✅ Notifikasi ke Admin Eng (tetap dipertahankan)
+                // Notifikasi ke Admin Eng
                 $adminEngUsers = User::where('role', 'admin_eng')->where('status', 'active')->get();
                 foreach ($adminEngUsers as $adminUser) {
                     $this->sendNotification(
@@ -448,8 +452,6 @@ class TicketDetailController extends Controller
                         'assignment'
                     );
                 }
-
-                // ❌ HAPUS: Tidak ada notifikasi ke user untuk OM Approve
             }
 
             DB::commit();
@@ -472,7 +474,6 @@ class TicketDetailController extends Controller
 
     /**
      * Technician complete work - DENGAN FOLLOW-UP
-     * PERUBAHAN: User tetap dapat notifikasi baik dengan atau tanpa follow-up
      */
     public function technicianComplete(Request $request, $id)
     {
@@ -554,7 +555,7 @@ class TicketDetailController extends Controller
                 ActivityLog::create([
                     'user_id' => $user->id,
                     'ticket_id' => $ticket->id,
-                    'action' => 'completion_notes_skipped',
+                    'action' => 'commented',
                     'description' => 'Technician skipped follow-up notes, admin needs to add',
                     'ip_address' => $request->ip(),
                     'user_agent' => $request->userAgent(),
@@ -574,14 +575,14 @@ class TicketDetailController extends Controller
                 ActivityLog::create([
                     'user_id' => $user->id,
                     'ticket_id' => $ticket->id,
-                    'action' => 'completion_note',
+                    'action' => 'commented',
                     'description' => 'Technician added follow-up notes: ' . Str::limit($request->completion_notes, 100),
                     'ip_address' => $request->ip(),
                     'user_agent' => $request->userAgent(),
                 ]);
             }
 
-            // ✅ PERUBAHAN: User tetap mendapat notifikasi work completed (baik dengan atau tanpa follow-up)
+            // Notifikasi ke user
             $this->sendNotification(
                 $ticket->user,
                 $ticket,
@@ -648,7 +649,7 @@ class TicketDetailController extends Controller
             ActivityLog::create([
                 'user_id' => $user->id,
                 'ticket_id' => $ticket->id,
-                'action' => 'admin_followup_added',
+                'action' => 'commented',
                 'description' => 'Admin added follow-up notes',
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->userAgent(),
@@ -746,7 +747,7 @@ class TicketDetailController extends Controller
             ActivityLog::create([
                 'user_id' => $user->id,
                 'ticket_id' => $ticket->id,
-                'action' => 'vr_requested',
+                'action' => 'status_changed',
                 'description' => 'VR requested by technician',
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->userAgent(),
@@ -783,7 +784,6 @@ class TicketDetailController extends Controller
 
     /**
      * User/Manager check completion
-     * PERUBAHAN: Tambah notifikasi ke Admin Eng saat reject
      */
     public function userCheck(Request $request, $id)
     {
@@ -843,7 +843,7 @@ class TicketDetailController extends Controller
                 ActivityLog::create([
                     'user_id' => $user->id,
                     'ticket_id' => $ticket->id,
-                    'action' => 'rejected',
+                    'action' => 'status_changed',
                     'description' => 'Completion rejected by reporter',
                     'ip_address' => $request->ip(),
                     'user_agent' => $request->userAgent(),
@@ -860,7 +860,7 @@ class TicketDetailController extends Controller
                     );
                 }
 
-                // ✅ PERUBAHAN: Tambah notifikasi ke Admin Eng
+                // Notifikasi ke Admin Eng
                 $adminEngUsers = User::where('role', 'admin_eng')->where('status', 'active')->get();
                 foreach ($adminEngUsers as $adminUser) {
                     $this->sendNotification(
@@ -917,7 +917,7 @@ class TicketDetailController extends Controller
                 ActivityLog::create([
                     'user_id' => $user->id,
                     'ticket_id' => $ticket->id,
-                    'action' => 'accepted',
+                    'action' => 'status_changed',
                     'description' => 'Completion accepted by ' . $user->role,
                     'ip_address' => $request->ip(),
                     'user_agent' => $request->userAgent(),
@@ -955,11 +955,6 @@ class TicketDetailController extends Controller
 
     /**
      * GM Approve/Reject - DENGAN OPSI SIGNATURE BARU
-     * PERUBAHAN:
-     * - Hapus notifikasi ke User dan Technician saat approve
-     * - Hanya Admin Eng yang dapat notifikasi approve
-     * - Tambah notifikasi ke Admin Eng saat reject
-     * - User dapat notifikasi umum saat reject
      */
     public function gmAction(Request $request, $id)
     {
@@ -985,7 +980,7 @@ class TicketDetailController extends Controller
         if ($ticket->status !== 'pending_gm') {
             return response()->json([
                 'success' => false,
-                'message' => 'Ticket is not pending GM approval'
+                'message' => 'Ticket is not pending GM approval. Current status: ' . $ticket->status
             ], 403);
         }
 
@@ -1015,13 +1010,13 @@ class TicketDetailController extends Controller
                 ActivityLog::create([
                     'user_id' => $user->id,
                     'ticket_id' => $ticket->id,
-                    'action' => 'gm_rejected',
+                    'action' => 'status_changed',
                     'description' => 'Ticket rejected by GM',
                     'ip_address' => $request->ip(),
                     'user_agent' => $request->userAgent(),
                 ]);
 
-                // ✅ PERUBAHAN: Notifikasi ke Admin Eng bahwa GM menolak
+                // Notifikasi ke Admin Eng
                 $adminEngUsers = User::where('role', 'admin_eng')->where('status', 'active')->get();
                 foreach ($adminEngUsers as $adminUser) {
                     $this->sendNotification(
@@ -1033,7 +1028,7 @@ class TicketDetailController extends Controller
                     );
                 }
 
-                // ✅ PERUBAHAN: Notifikasi umum ke user (tidak detail)
+                // Notifikasi umum ke user
                 $this->sendNotification(
                     $ticket->user,
                     $ticket,
@@ -1088,13 +1083,13 @@ class TicketDetailController extends Controller
                 ActivityLog::create([
                     'user_id' => $user->id,
                     'ticket_id' => $ticket->id,
-                    'action' => 'gm_approved',
+                    'action' => 'status_changed',
                     'description' => 'Ticket approved by GM - Ready for administrative closure',
                     'ip_address' => $request->ip(),
                     'user_agent' => $request->userAgent(),
                 ]);
 
-                // ✅ PERUBAHAN: Hanya Admin Eng yang mendapat notifikasi approve
+                // Hanya Admin Eng yang mendapat notifikasi approve
                 $adminEngUsers = User::where('role', 'admin_eng')->where('status', 'active')->get();
                 foreach ($adminEngUsers as $adminUser) {
                     $this->sendNotification(
@@ -1105,9 +1100,6 @@ class TicketDetailController extends Controller
                         'closure'
                     );
                 }
-
-                // ❌ HAPUS: Notifikasi ke User dan Technician untuk GM Approve
-                // User akan mendapat notifikasi di Tahap 15 saat ticket di-close
             }
 
             DB::commit();
@@ -1239,7 +1231,6 @@ class TicketDetailController extends Controller
 
     /**
      * Cancel ticket
-     * PERUBAHAN: Hapus notifikasi ke Technician
      */
     public function cancelTicket(Request $request, $id)
     {
@@ -1291,7 +1282,7 @@ class TicketDetailController extends Controller
             ActivityLog::create([
                 'user_id' => $user->id,
                 'ticket_id' => $ticket->id,
-                'action' => 'cancelled',
+                'action' => 'status_changed',
                 'description' => 'Ticket cancelled by ' . $user->name,
                 'old_values' => json_encode(['status' => $oldStatus]),
                 'new_values' => json_encode(['status' => 'cancelled']),
@@ -1299,7 +1290,7 @@ class TicketDetailController extends Controller
                 'user_agent' => $request->userAgent(),
             ]);
 
-            // ✅ PERUBAHAN: Hanya notifikasi ke User (hapus Technician)
+            // Notifikasi ke User
             $this->sendNotification(
                 $ticket->user,
                 $ticket,
@@ -1374,7 +1365,7 @@ class TicketDetailController extends Controller
             ActivityLog::create([
                 'user_id' => $user->id,
                 'ticket_id' => $ticket->id,
-                'action' => 'admin_closed',
+                'action' => 'status_changed',
                 'description' => 'Ticket administratively closed by ' . $user->name,
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->userAgent(),
@@ -1559,7 +1550,7 @@ class TicketDetailController extends Controller
         if ($ticket->status !== 'received') {
             return response()->json([
                 'success' => false,
-                'message' => 'Ticket is not in received status'
+                'message' => 'Ticket is not in received status. Current status: ' . $ticket->status
             ], 403);
         }
 
@@ -1573,7 +1564,7 @@ class TicketDetailController extends Controller
             ActivityLog::create([
                 'user_id' => $user->id,
                 'ticket_id' => $ticket->id,
-                'action' => 'continued_to_om',
+                'action' => 'status_changed',
                 'description' => 'Ticket continued to OM for approval',
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->userAgent(),
@@ -1650,7 +1641,10 @@ class TicketDetailController extends Controller
             }
 
             foreach ($ticket->voucherRequests as $vr) {
-                $vr->items()->delete();
+                foreach ($vr->attachments as $attachment) {
+                    Storage::disk('public')->delete($attachment->file_path);
+                    $attachment->delete();
+                }
                 $vr->delete();
             }
 
@@ -1676,7 +1670,6 @@ class TicketDetailController extends Controller
 
     /**
      * QUICK APPROVE - Untuk user yang sudah punya signature
-     * PERUBAHAN: Sesuaikan dengan alur notifikasi yang baru
      */
     public function quickApprove(Request $request, $id)
     {
@@ -1768,7 +1761,6 @@ class TicketDetailController extends Controller
                         'admin_eng_received_at' => now(),
                     ]);
 
-                    // ✅ Notifikasi ke User bahwa ticket diterima
                     $this->sendNotification(
                         $ticket->user,
                         $ticket,
@@ -1791,7 +1783,6 @@ class TicketDetailController extends Controller
                         'om_approved_at' => now(),
                     ]);
 
-                    // ✅ Notifikasi ke Admin Eng (tidak ke user)
                     $adminEngUsers = User::where('role', 'admin_eng')->where('status', 'active')->get();
                     foreach ($adminEngUsers as $adminUser) {
                         $this->sendNotification(
@@ -1818,7 +1809,6 @@ class TicketDetailController extends Controller
                         'gm_approved_at' => now(),
                     ]);
 
-                    // ✅ Hanya Admin Eng yang mendapat notifikasi
                     $adminEngUsers = User::where('role', 'admin_eng')->where('status', 'active')->get();
                     foreach ($adminEngUsers as $adminUser) {
                         $this->sendNotification(
@@ -1978,6 +1968,102 @@ class TicketDetailController extends Controller
 
         } catch (\Exception $e) {
             Log::error('Notification creation failed: ' . $e->getMessage());
+        }
+    }
+    /**
+     * Update ticket category and priority (Admin only, when status is OPEN)
+     */
+    public function updateDetail(Request $request, $id)
+    {
+        $user = Auth::user();
+
+        // Only admin_eng and superadmin can edit
+        if (!in_array($user->role, ['admin_eng', 'superadmin'])) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You are not authorized to edit this ticket'
+            ], 403);
+        }
+
+        $ticket = Ticket::findOrFail($id);
+
+        // Only allow edit when status is OPEN
+        if ($ticket->status !== 'open') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Ticket can only be edited when status is OPEN. Current status: ' . $ticket->status
+            ], 403);
+        }
+
+        $request->validate([
+            'category_id' => 'required|exists:categories,id',
+            'priority_id' => 'required|exists:priorities,id',
+        ]);
+
+        // Check if category is active
+        $category = Category::where('id', $request->category_id)->where('status', 'active')->first();
+        if (!$category) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Selected category is not available or inactive'
+            ], 422);
+        }
+
+        // Check if priority is active
+        $priority = Priority::where('id', $request->priority_id)->where('status', 'active')->first();
+        if (!$priority) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Selected priority is not available or inactive'
+            ], 422);
+        }
+
+        DB::beginTransaction();
+        try {
+            $oldValues = [
+                'category_id' => $ticket->category_id,
+                'category_name' => $ticket->category->name ?? 'N/A',
+                'priority_id' => $ticket->priority_id,
+                'priority_name' => $ticket->priority->name ?? 'N/A'
+            ];
+
+            $ticket->update([
+                'category_id' => $request->category_id,
+                'priority_id' => $request->priority_id,
+            ]);
+
+            $newValues = [
+                'category_id' => $ticket->category_id,
+                'category_name' => $ticket->category->name ?? 'N/A',
+                'priority_id' => $ticket->priority_id,
+                'priority_name' => $ticket->priority->name ?? 'N/A'
+            ];
+
+            ActivityLog::create([
+                'user_id' => $user->id,
+                'ticket_id' => $ticket->id,
+                'action' => 'updated',
+                'description' => 'Ticket details updated by ' . $user->name . ': Category and Priority changed',
+                'old_values' => json_encode($oldValues),
+                'new_values' => json_encode($newValues),
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->userAgent(),
+            ]);
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Ticket updated successfully!'
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Edit ticket detail error: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to update ticket: ' . $e->getMessage()
+            ], 500);
         }
     }
 }

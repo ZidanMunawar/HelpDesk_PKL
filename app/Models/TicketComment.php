@@ -16,12 +16,16 @@ class TicketComment extends Model
         'user_id',
         'comment',
         'is_internal',
+        'is_followup', 
     ];
 
     protected $casts = [
         'is_internal' => 'boolean',
+        'is_followup' => 'boolean', 
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
+            'ticket_id' => 'integer',
+    'user_id' => 'integer',
     ];
 
     // Relationships
@@ -51,5 +55,11 @@ class TicketComment extends Model
     public function scopeInternal($query)
     {
         return $query->where('is_internal', true);
+    }
+
+    // Scope untuk follow-up comments
+    public function scopeFollowUp($query)
+    {
+        return $query->where('is_followup', true);
     }
 }

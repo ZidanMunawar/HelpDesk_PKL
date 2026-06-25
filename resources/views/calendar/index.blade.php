@@ -101,14 +101,6 @@
             color: white;
         }
 
-        .calendar-tooltip .status-badge {
-            display: inline-block;
-            padding: 2px 6px;
-            border-radius: 20px;
-            font-size: 9px;
-            font-weight: 600;
-        }
-
         .calendar-tooltip .access-warning {
             margin-top: 5px;
             padding-top: 5px;
@@ -397,6 +389,12 @@
             color: white;
         }
 
+        /* Sembunyikan tombol more di week & day view */
+        .fc-timegrid .fc-daygrid-more-link,
+        .fc-timegrid-event-harness .fc-daygrid-more-link {
+            display: none !important;
+        }
+
         /* Modal Bootstrap untuk pilih bulan */
         .month-year-modal .modal-content {
             border-radius: 16px;
@@ -520,6 +518,15 @@
             border-radius: 8px;
             margin-top: 12px;
             font-size: 11px;
+        }
+
+        /* Status Badge Styles - Manual Colors */
+        .status-badge-manual {
+            display: inline-block;
+            padding: 2px 10px;
+            border-radius: 20px;
+            font-size: 10px;
+            font-weight: 600;
         }
 
         /* ========== RESPONSIVE STYLES ========== */
@@ -893,10 +900,10 @@
         let modalListenersAttached = false;
         let calendarObserver = null;
 
-        // Priority data from database (passed from backend)
+        // Priority data from database
         const priorities = @json($priorities);
 
-        // Create priority color map for quick lookup
+        // Create priority color map
         const priorityColorMap = {};
         priorities.forEach(priority => {
             priorityColorMap[priority.name.toUpperCase()] = priority.color;
@@ -913,36 +920,66 @@
             'July', 'August', 'September', 'October', 'November', 'December'
         ];
 
-        function getStatusBadgeColor(status) {
+        // ========== STATUS MAPPING ==========
+        // Mapping dari display name ke status code asli (untuk tooltip)
+        const statusCodeMap = {
+            'Open': 'open',
+            'Received': 'received',
+            'OM Approval': 'pending_om',
+            'In Progress': 'in_progress',
+            'PR Approval': 'pending_vr',
+            'Completed': 'completed',
+            'GM Approval': 'pending_gm',
+            'Ready for Closure': 'ready_for_closure',
+            'Closed': 'closed',
+            'Cancelled': 'cancelled'
+        };
+
+        // Mapping dari status code ke display name
+        const statusDisplayMap = {
+            'open': 'Open',
+            'received': 'Received',
+            'pending_om': 'OM Approval',
+            'in_progress': 'In Progress',
+            'pending_vr': 'PR Approval',
+            'completed': 'Completed',
+            'pending_gm': 'GM Approval',
+            'ready_for_closure': 'Ready for Closure',
+            'closed': 'Closed',
+            'cancelled': 'Cancelled'
+        };
+
+        // Status color mapping berdasarkan status code (HEX)
+        function getStatusColorByCode(statusCode) {
             const colors = {
-                'open': 'primary',
-                'received': 'info',
-                'pending_om': 'warning',
-                'in_progress': 'info',
-                'pending_vr': 'warning',
-                'completed': 'success',
-                'pending_gm': 'warning',
-                'ready_for_closure': 'info',
-                'closed': 'dark',
-                'cancelled': 'danger'
+                'open': '#003366',
+                'received': '#17a2b8',
+                'pending_om': '#ffc107',
+                'in_progress': '#17a2b8',
+                'pending_vr': '#ffc107',
+                'completed': '#28a745',
+                'pending_gm': '#ffc107',
+                'ready_for_closure': '#17a2b8',
+                'closed': '#343a40',
+                'cancelled': '#dc3545'
             };
-            return colors[status?.toLowerCase().replace(/_/g, '_') || 'open'] || 'secondary';
+            return colors[statusCode] || '#6c757d';
         }
 
-        function getStatusDisplayName(status) {
-            const names = {
-                'open': 'Open',
-                'received': 'Received',
-                'pending_om': 'OM Approval',
-                'in_progress': 'In Progress',
-                'pending_vr': 'VR Approval',
-                'completed': 'Completed',
-                'pending_gm': 'GM Approval',
-                'ready_for_closure': 'Ready for Closure',
-                'closed': 'Closed',
-                'cancelled': 'Cancelled'
-            };
-            return names[status] || status;
+        // Status text color (warning status pakai teks gelap)
+        function getStatusTextColorByCode(statusCode) {
+            const warningStatuses = ['pending_om', 'pending_vr', 'pending_gm'];
+            return warningStatuses.includes(statusCode) ? '#212529' : 'white';
+        }
+
+        // Get display name dari status code
+        function getStatusDisplayName(statusCode) {
+            return statusDisplayMap[statusCode] || statusCode;
+        }
+
+        // Get status code dari display name
+        function getStatusCodeFromDisplay(displayName) {
+            return statusCodeMap[displayName] || displayName?.toLowerCase() || 'open';
         }
 
         function destroyAllTippyInstances() {
@@ -958,7 +995,8 @@
             destroyAllTippyInstances();
 
             let events = document.querySelectorAll(
-                '.fc-event, .fc-timegrid-event, .fc-daygrid-event, .fc-daygrid-more-link');
+                '.fc-event, .fc-timegrid-event, .fc-daygrid-event, .fc-daygrid-more-link'
+            );
 
             events.forEach(event => {
                 if (event.classList.contains('fc-daygrid-more-link')) {
@@ -975,13 +1013,19 @@
                 let title = event.getAttribute('data-title');
                 let priority = event.getAttribute('data-priority');
                 let priorityColor = event.getAttribute('data-priority-color') || getPriorityColor(priority);
-                let status = event.getAttribute('data-status');
+                let statusDisplay = event.getAttribute('data-status');
                 let createdBy = event.getAttribute('data-created-by');
                 let department = event.getAttribute('data-department');
                 let type = event.getAttribute('data-type');
                 let eventDate = event.getAttribute('data-event-date');
 
                 if (!ticketNumber) return;
+
+                // 🔥 KONVERSI display name ke status code
+                let statusCode = getStatusCodeFromDisplay(statusDisplay);
+                let statusColor = getStatusColorByCode(statusCode);
+                let statusTextColor = getStatusTextColorByCode(statusCode);
+                let statusDisplayName = statusDisplay || getStatusDisplayName(statusCode);
 
                 let accessMessage = '';
                 let accessClass = '';
@@ -1000,13 +1044,11 @@
                     accessClass = 'access-allowed';
                 }
 
-                let badgeStyle = priorityColor ? `style="background-color: ${priorityColor}"` : '';
-
                 let tooltipContent = `
                     <div class="calendar-tooltip">
                         <div class="tooltip-title">
-                            <span>🔧${ticketNumber}</span>
-                            ${priority ? `<span class="priority-badge" ${badgeStyle}>${priority}</span>` : ''}
+                            <span>🔧 ${ticketNumber}</span>
+                            ${priority ? `<span class="priority-badge" style="background-color: ${priorityColor}">${priority}</span>` : ''}
                         </div>
                         <div class="tooltip-row">
                             <div class="tooltip-label">Title:</div>
@@ -1015,7 +1057,7 @@
                         <div class="tooltip-row">
                             <div class="tooltip-label">Status:</div>
                             <div class="tooltip-value">
-                                ${status ? `<span class="status-badge bg-${getStatusBadgeColor(status)}">${status}</span>` : 'N/A'}
+                                <span class="status-badge-manual" style="background-color: ${statusColor}; color: ${statusTextColor};">${statusDisplayName}</span>
                             </div>
                         </div>
                         <div class="tooltip-row">
@@ -1065,7 +1107,6 @@
             el.setAttribute('data-event-date', eventProps.event_date || '');
             el.setAttribute('data-priority-name', eventProps.priority || '');
 
-            // Set border-left color based on priority
             if (priorityColor) {
                 el.style.borderLeftColor = priorityColor;
             }
@@ -1186,10 +1227,24 @@
                 navLinks: true,
                 editable: false,
                 selectable: true,
-                dayMaxEvents: 2,
                 weekends: true,
                 handleWindowResize: true,
                 windowResizeDelay: 100,
+
+                views: {
+                    dayGridMonth: {
+                        dayMaxEvents: 2,
+                        dayMaxEventRows: 2
+                    },
+                    timeGridWeek: {
+                        dayMaxEvents: false,
+                        eventDisplay: 'block'
+                    },
+                    timeGridDay: {
+                        dayMaxEvents: false,
+                        eventDisplay: 'block'
+                    }
+                },
 
                 events: function(fetchInfo, successCallback, failureCallback) {
                     $.ajax({
@@ -1234,7 +1289,6 @@
 
             calendar.render();
 
-            // Add click handler to title
             setTimeout(() => {
                 let titleEl = document.querySelector('.fc-toolbar-title');
                 if (titleEl && !titleEl.hasClickListener) {
@@ -1246,7 +1300,6 @@
                 }
             }, 500);
 
-            // Setup observer untuk tooltip
             if (calendarObserver) {
                 calendarObserver.disconnect();
             }
@@ -1311,8 +1364,10 @@
         }
 
         function showTicketInfoModal(ticketInfo) {
-            let statusColor = getStatusBadgeColor(ticketInfo.status);
-            let displayStatus = getStatusDisplayName(ticketInfo.status);
+            let statusCode = getStatusCodeFromDisplay(ticketInfo.status_display);
+            let statusColor = getStatusColorByCode(statusCode);
+            let statusTextColor = getStatusTextColorByCode(statusCode);
+            let statusDisplayName = ticketInfo.status_display || getStatusDisplayName(statusCode);
             let priorityColor = ticketInfo.priority_color || getPriorityColor(ticketInfo.priority);
 
             let modalContent = `
@@ -1320,7 +1375,7 @@
                     <div class="ticket-info-label">Request Number</div>
                     <div class="ticket-info-value">
                         <strong>${escapeHtml(ticketInfo.number)}</strong>
-                        <span class="badge bg-${statusColor} ms-2">${escapeHtml(displayStatus)}</span>
+                        <span class="status-badge-manual" style="background-color: ${statusColor}; color: ${statusTextColor}; margin-left: 8px;">${escapeHtml(statusDisplayName)}</span>
                     </div>
                 </div>
                 <div class="ticket-info-item">
@@ -1330,7 +1385,7 @@
                 <div class="ticket-info-item">
                     <div class="ticket-info-label">Priority</div>
                     <div class="ticket-info-value">
-                        <span class="badge" style="background-color: ${priorityColor}; color: white">${escapeHtml(ticketInfo.priority || 'N/A')}</span>
+                        <span class="status-badge-manual" style="background-color: ${priorityColor}; color: white;">${escapeHtml(ticketInfo.priority || 'N/A')}</span>
                     </div>
                 </div>
                 <div class="ticket-info-item">
@@ -1377,7 +1432,6 @@
             return div.innerHTML;
         }
 
-        // Initialize when document ready
         $(document).ready(function() {
             loadFilterState();
             initCalendar();
@@ -1390,7 +1444,6 @@
             };
         });
 
-        // Cleanup on page unload
         window.addEventListener('beforeunload', function() {
             if (calendarObserver) {
                 calendarObserver.disconnect();

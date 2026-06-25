@@ -3,89 +3,179 @@
 
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
     <title>{{ $title }} | {{ config('app.name') }}</title>
     <style>
+        /* Reset & Base Styles - Responsive First */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
-            font-family: 'Segoe UI', Arial, sans-serif;
-            line-height: 1.6;
-            color: #333;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            line-height: 1.5;
+            color: #1e2a3e;
+            background-color: #eef2f5;
+            margin: 0;
+            padding: 16px;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* Main Container */
+        .email-container {
             max-width: 600px;
             margin: 0 auto;
-            padding: 20px;
-            background: #f5f5f5;
-        }
-
-        .container {
-            background: white;
-            border-radius: 12px;
+            background-color: #ffffff;
+            border-radius: 20px;
             overflow: hidden;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05), 0 2px 4px rgba(0, 0, 0, 0.02);
         }
 
+        /* HEADER */
         .header {
-            background: #003366;
-            color: white;
-            padding: 25px 20px;
+            background: linear-gradient(135deg, #1a3c5e 0%, #0f2b44 100%);
+            padding: 28px 24px 24px;
             text-align: center;
+            border-bottom: 3px solid #f39c12;
+        }
+
+        .logo-wrapper {
+            margin-bottom: 16px;
+        }
+
+        .logo-img {
+            display: block;
+            margin: 0 auto;
+            max-width: 160px;
+            height: auto;
+            border: none;
+        }
+
+        /* Fallback teks jika gambar tidak tampil */
+        .logo-fallback {
+            display: none;
+            background: rgba(255, 255, 255, 0.12);
+            padding: 6px 18px;
+            border-radius: 60px;
+            width: fit-content;
+            margin: 0 auto;
+        }
+
+        .logo-fallback span {
+            color: #f39c12;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            font-size: 14px;
         }
 
         .header h1 {
-            margin: 0;
+            color: white;
             font-size: 24px;
             font-weight: 700;
-            letter-spacing: 1px;
+            margin: 8px 0 4px;
+            letter-spacing: -0.2px;
         }
 
         .header h2 {
-            margin: 10px 0 0;
+            color: rgba(255, 255, 255, 0.85);
             font-size: 16px;
             font-weight: 500;
-            opacity: 0.9;
+            margin: 6px 0 0;
         }
 
+        /* Content */
         .content {
-            background: white;
-            padding: 30px;
+            padding: 32px 28px;
+            background: #ffffff;
         }
 
         .greeting {
             font-size: 16px;
+            color: #1e2a3e;
             margin-bottom: 20px;
+            font-weight: 500;
         }
 
+        /* Message Box */
         .message-box {
-            background: #f8f9fa;
-            padding: 15px 20px;
-            border-radius: 8px;
+            background-color: #f8fafc;
+            border-left: 4px solid #f39c12;
+            padding: 16px 20px;
+            border-radius: 12px;
             margin: 20px 0;
-            border-left: 4px solid #ff6600;
+            font-size: 15px;
+            color: #1e2a3e;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
         }
 
         .message-box p {
             margin: 0;
-            color: #333;
+            line-height: 1.5;
+        }
+
+        /* Action Required Cards */
+        .action-required {
+            background: #fff8e7;
+            border: 1px solid #ffe0a3;
+            color: #a86800;
+            padding: 14px 18px;
+            border-radius: 14px;
+            margin: 20px 0;
+            text-align: left;
+            font-size: 14px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .action-required strong {
+            font-weight: 700;
+        }
+
+        .action-rejection {
+            background: #fef2f0;
+            border-color: #f5c2c7;
+            color: #b91c1c;
+        }
+
+        .action-closure {
+            background: #e6f4ea;
+            border-color: #b8e0c2;
+            color: #166534;
         }
 
         .ticket-info {
-            background: #f8f9fa;
-            padding: 20px;
-            border-radius: 8px;
-            margin: 20px 0;
+            background: #ffffff;
+            border: 1px solid #e9edf2;
+            border-radius: 20px;
+            padding: 6px 0;
+            margin: 28px 0;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
         }
 
         .ticket-info h3 {
-            color: #003366;
-            margin: 0 0 15px 0;
-            padding-bottom: 10px;
-            border-bottom: 2px solid #ff6600;
-            font-size: 16px;
+            background: #f9fbfd;
+            color: #1a3c5e;
+            margin: 0;
+            padding: 18px 24px 12px;
+            border-bottom: 1px solid #eef2f8;
+            font-size: 17px;
+            font-weight: 600;
+            letter-spacing: -0.2px;
         }
 
+        /* Info rows */
         .info-row {
             display: flex;
-            padding: 8px 0;
-            border-bottom: 1px solid #e0e0e0;
+            padding: 12px 24px;
+            border-bottom: 1px solid #f0f2f5;
+            align-items: flex-start;
+            flex-wrap: wrap;
         }
 
         .info-row:last-child {
@@ -93,206 +183,249 @@
         }
 
         .info-label {
-            width: 120px;
+            width: 130px;
             font-weight: 600;
-            color: #555;
+            color: #4b5e77;
+            font-size: 13px;
+            flex-shrink: 0;
         }
 
         .info-value {
             flex: 1;
-            color: #333;
+            color: #1e2a3e;
+            font-size: 14px;
+            font-weight: 500;
+            word-break: break-word;
         }
 
+        /* Badge styles - soft & accessible */
         .badge {
             display: inline-block;
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 11px;
+            padding: 5px 14px;
+            border-radius: 40px;
+            font-size: 12px;
             font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
+            letter-spacing: 0.3px;
+            background-color: #eef2ff;
+            color: #1e3a8a;
         }
 
-        .badge-open {
-            background: #1565c0;
-            color: white;
-        }
-
+        .badge-open,
         .badge-received {
-            background: #1565c0;
-            color: white;
+            background: #e0f2fe;
+            color: #0369a1;
         }
 
         .badge-pending_om {
-            background: #856404;
-            color: white;
+            background: #ffedd5;
+            color: #b45309;
         }
 
         .badge-in_progress {
-            background: #0c5460;
-            color: white;
+            background: #e0e7ff;
+            color: #3730a3;
         }
 
         .badge-pending_vr {
-            background: #ff8f00;
-            color: white;
+            background: #fef9c3;
+            color: #854d0e;
         }
 
         .badge-completed {
-            background: #155724;
-            color: white;
+            background: #dcfce7;
+            color: #15803d;
         }
 
         .badge-pending_gm {
-            background: #0d47a1;
-            color: white;
+            background: #fce7f3;
+            color: #9d174d;
         }
 
         .badge-ready_for_closure {
-            background: #0c5460;
-            color: white;
+            background: #d1fae5;
+            color: #0b5e42;
         }
 
         .badge-closed {
-            background: #495057;
-            color: white;
+            background: #e2e8f0;
+            color: #334155;
         }
 
         .badge-cancelled {
-            background: #721c24;
-            color: white;
+            background: #ffe4e2;
+            color: #b91c1c;
         }
 
+        /* priority badge clean */
         .priority-badge {
             display: inline-block;
-            padding: 3px 10px;
-            border-radius: 15px;
-            font-size: 10px;
-            font-weight: 600;
+            padding: 4px 14px;
+            border-radius: 30px;
+            font-size: 11px;
+            font-weight: 700;
             color: white;
+            background-color: #6c757d;
+        }
+
+        /* BUTTONS - NO COLOR CLASH (Dark blue + white text) */
+        .button-group {
+            text-align: center;
+            margin: 28px 0 16px;
         }
 
         .button {
             display: inline-block;
-            background: #ff6600;
-            color: white;
+            background-color: #1e4663;
+            color: white !important;
             padding: 12px 28px;
             text-decoration: none;
-            border-radius: 6px;
-            margin: 20px 0;
+            border-radius: 50px;
             font-weight: 600;
+            font-size: 15px;
             transition: all 0.2s ease;
-        }
-
-        .button:hover {
-            background: #e55a00;
-            transform: translateY(-2px);
+            text-align: center;
+            border: none;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            margin: 4px 6px;
         }
 
         .button-secondary {
-            background: #003366;
-            margin-left: 10px;
+            background-color: #2c5a7a;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .button:hover {
+            background-color: #0f3550;
+            transform: translateY(-1px);
+            text-decoration: none;
         }
 
         .button-secondary:hover {
-            background: #002244;
+            background-color: #1e4a6a;
         }
 
+        /* Fallback link */
+        .fallback-url {
+            margin-top: 20px;
+            background: #f8fafc;
+            padding: 12px 14px;
+            border-radius: 14px;
+            font-size: 12px;
+            color: #2c5f8a;
+            word-break: break-all;
+            font-family: monospace;
+            border: 1px solid #e2e8f0;
+        }
+
+        .divider {
+            height: 2px;
+            background: linear-gradient(90deg, #e2e8f0, #cbd5e1, #e2e8f0);
+            margin: 16px 0 20px;
+        }
+
+        /* Footer */
         .footer {
-            background: #f8f9fa;
-            padding: 20px;
+            background: #fafcff;
+            padding: 24px 20px 20px;
             text-align: center;
-            border-top: 1px solid #e0e0e0;
+            border-top: 1px solid #eef2f8;
         }
 
         .footer p {
-            margin: 5px 0;
-            color: #666;
-            font-size: 11px;
+            margin: 6px 0;
+            color: #5b6e8c;
+            font-size: 12px;
         }
 
         .footer a {
-            color: #ff6600;
+            color: #1e4663;
             text-decoration: none;
+            font-weight: 500;
         }
 
         .footer a:hover {
             text-decoration: underline;
         }
 
-        .action-required {
-            background: #fff3cd;
-            border: 1px solid #ffeeba;
-            color: #856404;
-            padding: 12px;
-            border-radius: 6px;
-            margin: 15px 0;
-            text-align: center;
-            font-size: 13px;
-            font-weight: 600;
-        }
-
-        .divider {
-            height: 2px;
-            background: linear-gradient(90deg, #ff6600, #003366);
-            margin: 20px 0;
-        }
-
-        @media only screen and (max-width: 480px) {
+        /* Responsive tweaks */
+        @media only screen and (max-width: 540px) {
             body {
                 padding: 10px;
             }
 
             .content {
-                padding: 20px;
+                padding: 22px 18px;
             }
 
             .info-row {
                 flex-direction: column;
-                padding: 10px 0;
+                padding: 12px 18px;
             }
 
             .info-label {
                 width: 100%;
-                margin-bottom: 4px;
+                margin-bottom: 6px;
+                font-size: 12px;
+            }
+
+            .info-value {
+                width: 100%;
+                font-size: 14px;
             }
 
             .button {
                 display: block;
-                text-align: center;
-                margin: 10px 0;
+                width: 100%;
+                margin: 8px 0;
+                box-sizing: border-box;
             }
 
-            .button-secondary {
-                margin-left: 0;
+            .button-group {
+                padding: 0;
+            }
+
+            .action-required {
+                font-size: 13px;
+                padding: 12px 14px;
+            }
+
+            .header h1 {
+                font-size: 20px;
+            }
+
+            .ticket-info h3 {
+                padding: 14px 18px;
+                font-size: 16px;
+            }
+        }
+
+        @media only screen and (max-width: 380px) {
+            .logo-img {
+                max-width: 130px;
+            }
+
+            .badge,
+            .priority-badge {
+                font-size: 10px;
+                padding: 3px 10px;
             }
         }
     </style>
 </head>
 
 <body>
-    <div class="container">
-        <!-- HEADER WITH HYBRID LOGO -->
-        <!-- HEADER DENGAN LOGO HOTEL (Hybrid) -->
+    <div class="email-container">
+        <!-- HEADER with hybrid logo (improved fallback) -->
         <div class="header">
-            <!-- 1. GAMBAR LOGO (untuk email client yang mendukung gambar) -->
-            <div style="margin-bottom: 20px;">
-                <img src="https://i.ibb.co.com/G4rpCb1P/2-1.png" alt="Harris Festival Citylink Bandung"
-                    style="display: block; margin: 0 auto; max-width: 180px; height: auto; border: none;" width="180">
-            </div>
-
-            <!-- 2. FALLBACK TEKS (PASTI MUNCUL jika gambar diblokir) -->
-            <div style="margin-bottom: 10px; display: none; mso-hide: all;">
-                <div
-                    style="background: rgba(255, 255, 255, 0.15); padding: 6px 16px; border-radius: 50px; display: inline-block;">
-                    <span style="color: #ff6600; font-size: 16px;">🏨</span>
-                    <span style="color: white; font-size: 14px; font-weight: 600; letter-spacing: 1px;">
-                        HARRIS FESTIVAL CITYLINK
-                    </span>
+            <div class="logo-wrapper">
+                <!-- Primary logo image -->
+                <img src="https://i.ibb.co.com/G4rpCb1P/2-1.png" alt="Harris Festival Citylink Bandung" class="logo-img"
+                    width="160" style="display: block; margin: 0 auto; max-width: 160px;">
+                <!-- Fallback text (only shown when image fails, but hidden in normal clients) -->
+                <div class="logo-fallback" style="display: none; mso-hide: all;">
+                    <span>🏨 HARRIS FESTIVAL CITYLINK</span>
                 </div>
             </div>
-
-            <!-- Judul Email -->
             <h1>MAINTENANCE SYSTEM</h1>
             <h2>{{ $title }}</h2>
         </div>
@@ -302,58 +435,56 @@
                 <strong>Hello {{ $user->name }},</strong>
             </div>
 
-            <!-- Message Box -->
+            <!-- Dynamic message box -->
             <div class="message-box">
                 <p>{{ $messageText }}</p>
             </div>
 
-            <!-- Action Required Notice based on type -->
+            <!-- Action Required based on type (Warna tidak nabrak, soft & jelas) -->
             @if ($type === 'approval')
                 <div class="action-required">
-                    ⚠️ <strong>Action Required:</strong> Please review and take action on this request.
+                    <span>⚠️</span> <strong>Action Required:</strong> Please review and take action on this request.
                 </div>
             @elseif($type === 'assignment')
                 <div class="action-required">
-                    🔧 <strong>Action Required:</strong> This request has been assigned to you.
+                    <span>🔧</span> <strong>Action Required:</strong> This request has been assigned to you.
                 </div>
             @elseif($type === 'check')
                 <div class="action-required">
-                    ✅ <strong>Action Required:</strong> Please check and confirm the completed work.
+                    <span>✅</span> <strong>Action Required:</strong> Please check and confirm the completed work.
                 </div>
             @elseif($type === 'rejection')
-                <div class="action-required" style="background: #f8d7da; border-color: #f5c6cb; color: #721c24;">
-                    ❌ <strong>Action Required:</strong> Your request has been rejected. Please check the reason.
+                <div class="action-required action-rejection">
+                    <span>❌</span> <strong>Action Required:</strong> Your request has been rejected. Please check the
+                    reason.
                 </div>
             @elseif($type === 'vr_request')
                 <div class="action-required">
-                    📄 <strong>Action Required:</strong> Purchase Request needs your approval.
+                    <span>📄</span> <strong>Action Required:</strong> Purchase Request needs your approval.
                 </div>
             @elseif($type === 'closure')
-                <div class="action-required" style="background: #d4edda; border-color: #c3e6cb; color: #155724;">
-                    ✅ <strong>Request Closed:</strong> This maintenance request has been completed and closed.
+                <div class="action-required action-closure">
+                    <span>✅</span> <strong>Request Closed:</strong> This maintenance request has been completed and
+                    closed.
                 </div>
             @elseif($type === 'cancellation')
-                <div class="action-required" style="background: #f8d7da; border-color: #f5c6cb; color: #721c24;">
-                    ❌ <strong>Request Cancelled:</strong> This maintenance request has been cancelled.
+                <div class="action-required action-rejection">
+                    <span>🚫</span> <strong>Request Cancelled:</strong> This maintenance request has been cancelled.
                 </div>
             @endif
 
-            <!-- Ticket Information -->
+            <!-- Ticket Information Card -->
             <div class="ticket-info">
                 <h3>📋 MAINTENANCE REQUEST DETAILS</h3>
 
                 <div class="info-row">
                     <div class="info-label">Request Number:</div>
-                    <div class="info-value">
-                        <strong>#{{ $ticket->ticket_number }}</strong>
-                    </div>
+                    <div class="info-value"><strong>#{{ $ticket->ticket_number }}</strong></div>
                 </div>
-
                 <div class="info-row">
                     <div class="info-label">Title:</div>
                     <div class="info-value">{{ $ticket->title }}</div>
                 </div>
-
                 <div class="info-row">
                     <div class="info-label">Status:</div>
                     <div class="info-value">
@@ -362,30 +493,27 @@
                         </span>
                     </div>
                 </div>
-
                 <div class="info-row">
                     <div class="info-label">Priority:</div>
                     <div class="info-value">
                         @if ($ticket->priority)
-                            <span class="priority-badge" style="background-color: {{ $ticket->priority->color }};">
+                            <span class="priority-badge"
+                                style="background-color: {{ $ticket->priority->color ?? '#f39c12' }};">
                                 {{ $ticket->priority->name }}
                             </span>
                         @else
-                            N/A
+                            <span class="priority-badge" style="background-color: #95a5a6;">N/A</span>
                         @endif
                     </div>
                 </div>
-
                 <div class="info-row">
                     <div class="info-label">Category:</div>
                     <div class="info-value">{{ $ticket->category->name ?? 'N/A' }}</div>
                 </div>
-
                 <div class="info-row">
                     <div class="info-label">Created By:</div>
                     <div class="info-value">{{ $ticket->user->name ?? 'N/A' }}</div>
                 </div>
-
                 <div class="info-row">
                     <div class="info-label">Department:</div>
                     <div class="info-value">{{ $ticket->department->name ?? 'N/A' }}</div>
@@ -414,7 +542,7 @@
                         <div class="info-value">
                             {{ \Carbon\Carbon::parse($ticket->due_date)->format('d M Y, H:i') }}
                             @if ($ticket->due_date < now() && !in_array($ticket->status, ['completed', 'closed', 'cancelled']))
-                                <span style="color: #dc3545; margin-left: 8px;">⚠️ OVERDUE</span>
+                                <span style="color: #c2410c; font-weight: 600; margin-left: 8px;">⚠️ OVERDUE</span>
                             @endif
                         </div>
                     </div>
@@ -444,9 +572,10 @@
 
             <div class="divider"></div>
 
-            <p>To view more details or take action, please click the button below:</p>
+            <p style="font-size: 14px; margin: 8px 0 12px; color: #2c3e50;">To view more details or take action, please
+                click the button below:</p>
 
-            <div style="text-align: center;">
+            <div class="button-group">
                 <a href="{{ route('tickets.show', $ticket->id) }}" class="button">
                     🔍 View Request Details
                 </a>
@@ -455,13 +584,13 @@
                 </a>
             </div>
 
-            <p style="margin-top: 20px; font-size: 12px; color: #666;">
-                If you're unable to click the button, copy and paste this URL into your browser:
-            </p>
-            <p
-                style="word-break: break-all; background: #f8f9fa; padding: 10px; border-radius: 6px; font-size: 12px; color: #003366;">
-                {{ route('tickets.show', $ticket->id) }}
-            </p>
+            <!-- fallback URL -->
+            <div class="fallback-url">
+                If the button doesn’t work, copy and paste this link into your browser:<br>
+                <a href="{{ route('tickets.show', $ticket->id) }}" style="color: #1e4663; text-decoration: underline;">
+                    {{ route('tickets.show', $ticket->id) }}
+                </a>
+            </div>
         </div>
 
         <div class="footer">
